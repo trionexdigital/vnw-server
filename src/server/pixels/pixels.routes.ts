@@ -15,6 +15,7 @@ import dashboardRouter from './api/dashboard/dashboard.routes';
 import adminRouter from './api/admin/admin.routes';
 import notificationsRouter from './api/notifications/notifications.routes';
 import contactRouter from './api/contact/contact.routes';
+import siteRouter from './api/site/site.routes';
 
 // VIP Number World API — mounted at /vipnumberworld
 const vnwRouter = Router();
@@ -35,5 +36,6 @@ vnwRouter.use('/dashboard', dashboardRouter);
 vnwRouter.use('/admin', adminRouter);
 vnwRouter.use('/notifications', notificationsRouter);
 vnwRouter.use('/contact', contactRouter);
+vnwRouter.use('/site', siteRouter);
 
 export default vnwRouter;

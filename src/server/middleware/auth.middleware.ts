@@ -31,6 +31,7 @@ const BypassAuth = [
     `${BASE}/testimonials/list`,// public testimonials
     `${BASE}/banners/list`,     // public hero banners
     `${BASE}/reviews/by-number`,// public product reviews
+    `${BASE}/site`,             // public site config, newsletter, enquiry
     `${BASE}/payments/razorpay/webhook`, // verified via signature, not JWT
 ];
 

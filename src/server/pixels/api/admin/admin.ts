@@ -233,11 +233,63 @@ export class Admin {
         return resModel;
     }
 
+    // ---------- Coupons ----------
+    async couponsList(_payload: any) {
+        let resModel = this.masterModel.getResponseModel();
+        try {
+            const q: any = await this.dao.executeQuery(`SELECT * FROM coupons ORDER BY coupon_id DESC`, []);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        return resModel;
+    }
+    async couponSave(payload: any) {
+        let resModel = this.masterModel.getResponseModel();
+        try {
+            const code = String(payload.code || '').trim().toUpperCase();
+            if (!code) throw new Error('Coupon code is required.');
+            const type = String(payload.type || 'PERCENT').toUpperCase() === 'FLAT' ? 'FLAT' : 'PERCENT';
+            const params = [code, type, Number(payload.value) || 0, Number(payload.min_order) || 0,
+                payload.max_discount ? Number(payload.max_discount) : null, payload.usage_limit ? Number(payload.usage_limit) : null,
+                payload.expires_at || null, payload.is_active === false ? 0 : 1];
+            if (payload.coupon_id) {
+                await this.dao.executeQuery(
+                    `UPDATE coupons SET code=?, type=?, value=?, min_order=?, max_discount=?, usage_limit=?, expires_at=?, is_active=? WHERE coupon_id=?`,
+                    [...params, Number(payload.coupon_id)]);
+                resModel.data = { coupon_id: Number(payload.coupon_id) };
+            } else {
+                const q: any = await this.dao.executeQuery(
+                    `INSERT INTO coupons (code, type, value, min_order, max_discount, usage_limit, expires_at, is_active) VALUES (?,?,?,?,?,?,?,?)`, params);
+                if (q.insertId === 0) throw new Error(q.info && /duplicate/i.test(q.info) ? 'This coupon code already exists.' : 'Unable to save coupon.');
+                resModel.data = { coupon_id: q.insertId };
+            }
+            resModel.status = 1; resModel.info = 'OK';
+        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        return resModel;
+    }
+    async couponDelete(payload: { coupon_id: number }) {
+        let resModel = this.masterModel.getResponseModel();
+        try {
+            await this.dao.executeQuery(`DELETE FROM coupons WHERE coupon_id = ?`, [Number(payload.coupon_id)]);
+            resModel.status = 1; resModel.info = 'OK';
+        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        return resModel;
+    }
+
+    // ---------- Newsletter subscribers ----------
+    async newsletterList(_payload: any) {
+        let resModel = this.masterModel.getResponseModel();
+        try {
+            const q: any = await this.dao.executeQuery(`SELECT * FROM newsletter_subscribers ORDER BY created_at DESC LIMIT 1000`, []);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        return resModel;
+    }
+
     // ---------- Settings (env key/value) ----------
     async settingsGet(_payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const keys = ['SITE_TITLE', 'SITE_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'WHATSAPP', 'SUPPORT_ADDRESS'];
+            const keys = ['SITE_TITLE', 'SITE_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'WHATSAPP', 'SUPPORT_ADDRESS', 'PROMO_TEXT', 'PROMO_COUPON'];
             const q: any = await this.dao.executeQuery(
                 `SELECT key_id, value FROM env WHERE key_id IN (${keys.map(() => '?').join(',')})`, keys);
             const map: any = {};
@@ -249,7 +301,7 @@ export class Admin {
     async settingsSave(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const allowed = ['SITE_TITLE', 'SITE_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'WHATSAPP', 'SUPPORT_ADDRESS'];
+            const allowed = ['SITE_TITLE', 'SITE_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'WHATSAPP', 'SUPPORT_ADDRESS', 'PROMO_TEXT', 'PROMO_COUPON'];
             for (const k of allowed) {
                 if (payload[k] !== undefined) {
                     await this.dao.executeQuery(

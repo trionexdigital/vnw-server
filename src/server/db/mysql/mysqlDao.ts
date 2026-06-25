@@ -351,6 +351,29 @@ export async function ensureSchema(): Promise<void> {
       "`processed_at` timestamp NULL DEFAULT NULL," +
       "PRIMARY KEY (`reset_id`), KEY `user_id` (`user_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    // ---- newsletter_subscribers ----
+    await run('create newsletter_subscribers',
+      "CREATE TABLE IF NOT EXISTS `newsletter_subscribers` (" +
+      "`id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`email` varchar(128) NOT NULL," +
+      "`source` varchar(32) DEFAULT 'footer'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`id`), UNIQUE KEY `email` (`email`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---- extend contact_messages for per-number enquiries (guarded) ----
+    const colExists = async (table: string, col: string): Promise<boolean> => {
+      try {
+        const [rows]: any = await pool.query(
+          `SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ? LIMIT 1`,
+          [db_name, table, col]);
+        return Array.isArray(rows) && rows.length > 0;
+      } catch { return false; }
+    };
+    if (!(await colExists('contact_messages', 'number_id')))
+      await run('add contact_messages.number_id', "ALTER TABLE `contact_messages` ADD COLUMN `number_id` int unsigned NULL");
+    if (!(await colExists('contact_messages', 'type')))
+      await run('add contact_messages.type', "ALTER TABLE `contact_messages` ADD COLUMN `type` varchar(24) NOT NULL DEFAULT 'CONTACT'");
+
     // ===================== SEED DATA =====================
     await seedData(run);
 
@@ -420,6 +443,19 @@ async function seedData(run: (label: string, sql: string, params?: any[]) => Pro
 
   await run('seed coupon',
     "INSERT IGNORE INTO `coupons` (`code`,`type`,`value`,`min_order`,`is_active`) VALUES ('WELCOME10','PERCENT',10,5000,1)");
+  await run('seed coupon FEST20',
+    "INSERT IGNORE INTO `coupons` (`code`,`type`,`value`,`min_order`,`is_active`) VALUES ('FEST20','PERCENT',20,15000,1)");
+
+  // public site config / promo bar (admin-editable via Settings)
+  await run('seed env PROMO_TEXT',
+    "INSERT IGNORE INTO `env` (`key_id`,`value`) VALUES ('PROMO_TEXT', '🎉 MEGA FESTIVAL SALE — use code WELCOME10 for 10% OFF your first VIP number!')");
+  await run('seed env PROMO_COUPON',
+    "INSERT IGNORE INTO `env` (`key_id`,`value`) VALUES ('PROMO_COUPON', 'WELCOME10')");
+  await run('seed env SITE_TITLE', "INSERT IGNORE INTO `env` (`key_id`,`value`) VALUES ('SITE_TITLE', 'VIP Number World')");
+  await run('seed env SITE_TAGLINE', "INSERT IGNORE INTO `env` (`key_id`,`value`) VALUES ('SITE_TAGLINE', 'Your Number. Your Identity.')");
+  await run('seed env CONTACT_PHONE', "INSERT IGNORE INTO `env` (`key_id`,`value`) VALUES ('CONTACT_PHONE', '+91 70091 70092')");
+  await run('seed env CONTACT_EMAIL', "INSERT IGNORE INTO `env` (`key_id`,`value`) VALUES ('CONTACT_EMAIL', 'info@vipnumberworld.com')");
+  await run('seed env WHATSAPP', "INSERT IGNORE INTO `env` (`key_id`,`value`) VALUES ('WHATSAPP', '917009170092')");
 }
 
 

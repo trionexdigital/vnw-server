@@ -71,6 +71,14 @@ router.post('/banners/list', handle((p) => admin.banners.list({ all: true })));
 router.post('/banners/save', handle((p) => admin.banners.save(p)));
 router.post('/banners/delete', handle((p) => admin.banners.remove(p)));
 
+// Coupons
+router.post('/coupons/list', handle((p) => admin.couponsList(p)));
+router.post('/coupons/save', handle((p) => admin.couponSave(p)));
+router.post('/coupons/delete', handle((p) => admin.couponDelete(p)));
+
+// Newsletter subscribers
+router.post('/newsletter/list', handle((p) => admin.newsletterList(p)));
+
 // Contact messages
 router.post('/messages/list', handle((p) => admin.messagesList(p)));
 
