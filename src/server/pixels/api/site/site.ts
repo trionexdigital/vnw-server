@@ -3,11 +3,19 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 
 const PUBLIC_KEYS = ['SITE_TITLE', 'SITE_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'WHATSAPP', 'PROMO_TEXT', 'PROMO_COUPON', 'SUPPORT_ADDRESS'];
+const HERO_STATS_TTL_MS = 5 * 60 * 1000;
+
+interface HeroStats {
+    delivered_numbers: number;
+    available_numbers: number;
+    customers_served: number;
+}
 
 export class Site {
     private dao: MySqlClient;
     private logger: Logger;
     private masterModel: MasterModel;
+    private heroStatsCache: { data: HeroStats; expiresAt: number } | null = null;
 
     constructor() {
         this.dao = new MySqlClient('pixels');
@@ -26,6 +34,39 @@ export class Site {
             resModel.status = 1; resModel.info = 'OK'; resModel.data = map;
         } catch (error) {
             resModel.status = -33; resModel.info = 'catch : ' + error;
+        }
+        return resModel;
+    }
+
+    /** Public, privacy-safe marketplace totals used by the home-page hero. */
+    async heroStats() {
+        let resModel = this.masterModel.getResponseModel();
+        try {
+            const now = Date.now();
+            if (this.heroStatsCache && this.heroStatsCache.expiresAt > now) {
+                resModel.status = 1; resModel.info = 'OK'; resModel.data = this.heroStatsCache.data;
+                return resModel;
+            }
+
+            const q: any = await this.dao.executeQuery(
+                `SELECT
+                    (SELECT COUNT(*) FROM order_items WHERE item_status = 'TRANSFERRED') AS delivered_numbers,
+                    (SELECT COUNT(*) FROM vip_numbers WHERE status = 'AVAILABLE') AS available_numbers,
+                    (SELECT COUNT(DISTINCT user_id) FROM orders WHERE status = 'COMPLETED') AS customers_served`,
+                []
+            );
+            const row = q.rows?.[0] || {};
+            const data: HeroStats = {
+                delivered_numbers: Math.max(0, Number(row.delivered_numbers) || 0),
+                available_numbers: Math.max(0, Number(row.available_numbers) || 0),
+                customers_served: Math.max(0, Number(row.customers_served) || 0),
+            };
+
+            this.heroStatsCache = { data, expiresAt: now + HERO_STATS_TTL_MS };
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = data;
+        } catch (error) {
+            resModel.status = -33; resModel.info = 'catch : ' + error;
+            this.logger.error(JSON.stringify(resModel));
         }
         return resModel;
     }

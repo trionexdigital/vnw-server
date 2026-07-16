@@ -24,6 +24,7 @@ const pub = (fn: (p: any) => Promise<any>) => async (req: Request, res: Response
 };
 
 router.post('/settings', pub((p) => site.settings()));
+router.post('/hero-stats', pub((p) => site.heroStats()));
 router.post('/newsletter', pub((p) => site.subscribe(p)));
 router.post('/enquiry', pub((p) => site.enquiry(p)));
 
