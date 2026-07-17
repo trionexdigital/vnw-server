@@ -251,11 +251,14 @@ export async function ensureSchema(): Promise<void> {
     await run('create banners',
       "CREATE TABLE IF NOT EXISTS `banners` (" +
       "`banner_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`eyebrow` varchar(96) DEFAULT NULL," +
       "`title` varchar(160) DEFAULT NULL," +
       "`subtitle` varchar(255) DEFAULT NULL," +
       "`image` longtext," +
       "`cta_text` varchar(64) DEFAULT NULL," +
       "`cta_link` varchar(255) DEFAULT NULL," +
+      "`content_x` tinyint unsigned NOT NULL DEFAULT '25'," +
+      "`content_y` tinyint unsigned NOT NULL DEFAULT '62'," +
       "`is_active` tinyint(1) NOT NULL DEFAULT '1'," +
       "`sort_order` int NOT NULL DEFAULT '0'," +
       "PRIMARY KEY (`banner_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
@@ -467,6 +470,13 @@ export async function ensureSchema(): Promise<void> {
       await run('add contact_messages.number_id', "ALTER TABLE `contact_messages` ADD COLUMN `number_id` int unsigned NULL");
     if (!(await colExists('contact_messages', 'type')))
       await run('add contact_messages.type', "ALTER TABLE `contact_messages` ADD COLUMN `type` varchar(24) NOT NULL DEFAULT 'CONTACT'");
+
+    if (!(await colExists('banners', 'eyebrow')))
+      await run('add banners.eyebrow', "ALTER TABLE `banners` ADD COLUMN `eyebrow` varchar(96) DEFAULT NULL AFTER `banner_id`");
+    if (!(await colExists('banners', 'content_x')))
+      await run('add banners.content_x', "ALTER TABLE `banners` ADD COLUMN `content_x` tinyint unsigned NOT NULL DEFAULT '25' AFTER `cta_link`");
+    if (!(await colExists('banners', 'content_y')))
+      await run('add banners.content_y', "ALTER TABLE `banners` ADD COLUMN `content_y` tinyint unsigned NOT NULL DEFAULT '62' AFTER `content_x`");
 
     // buy_price = amount the platform pays the seller (credited to their wallet on approval)
     if (!(await colExists('sell_requests', 'buy_price')))

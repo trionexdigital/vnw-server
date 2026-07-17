@@ -16,6 +16,12 @@ function cleanLink(value: unknown): string | null {
     throw new Error('Carousel link must be a site path or an HTTP(S) URL.');
 }
 
+function cleanPosition(value: unknown, fallback: number): number {
+    const position = Number(value);
+    if (!Number.isFinite(position)) return fallback;
+    return Math.round(Math.max(8, Math.min(92, position)));
+}
+
 function validateCarouselImage(value: unknown): string {
     const image = String(value ?? '').trim();
     if (!image) throw new Error('A cropped carousel image is required.');
@@ -45,7 +51,7 @@ export class Banners {
         try {
             const where = payload?.all ? '' : "WHERE is_active = 1 AND image IS NOT NULL AND image <> ''";
             const q: any = await this.dao.executeQuery(
-                `SELECT banner_id, title, subtitle, image, cta_text, cta_link, is_active, sort_order
+                `SELECT banner_id, eyebrow, title, subtitle, image, cta_text, cta_link, content_x, content_y, is_active, sort_order
                  FROM banners ${where} ORDER BY sort_order ASC, banner_id ASC`, []
             );
             resModel.status = 1;
@@ -66,10 +72,13 @@ export class Banners {
         let resModel = this.masterModel.getResponseModel();
         try {
             const bannerId = Number(payload.banner_id) || 0;
+            const eyebrow = cleanText(payload.eyebrow, 96);
             const title = cleanText(payload.title, 160);
             const subtitle = cleanText(payload.subtitle, 255);
             const ctaText = cleanText(payload.cta_text, 64);
             const ctaLink = cleanLink(payload.cta_link);
+            const contentX = cleanPosition(payload.content_x, 25);
+            const contentY = cleanPosition(payload.content_y, 62);
             const isActive = payload.is_active === false || Number(payload.is_active) === 0 ? 0 : 1;
             const sortOrder = Math.max(0, Math.min(9999, Number(payload.sort_order) || 0));
 
@@ -84,14 +93,14 @@ export class Banners {
 
             if (bannerId) {
                 await this.dao.executeQuery(
-                    `UPDATE banners SET title=?, subtitle=?, image=?, cta_text=?, cta_link=?, is_active=?, sort_order=? WHERE banner_id=?`,
-                    [title, subtitle, image, ctaText, ctaLink, isActive, sortOrder, bannerId]
+                    `UPDATE banners SET eyebrow=?, title=?, subtitle=?, image=?, cta_text=?, cta_link=?, content_x=?, content_y=?, is_active=?, sort_order=? WHERE banner_id=?`,
+                    [eyebrow, title, subtitle, image, ctaText, ctaLink, contentX, contentY, isActive, sortOrder, bannerId]
                 );
                 resModel.data = { banner_id: bannerId };
             } else {
                 const q: any = await this.dao.executeQuery(
-                    `INSERT INTO banners (title, subtitle, image, cta_text, cta_link, is_active, sort_order) VALUES (?,?,?,?,?,?,?)`,
-                    [title, subtitle, image, ctaText, ctaLink, isActive, sortOrder]
+                    `INSERT INTO banners (eyebrow, title, subtitle, image, cta_text, cta_link, content_x, content_y, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+                    [eyebrow, title, subtitle, image, ctaText, ctaLink, contentX, contentY, isActive, sortOrder]
                 );
                 resModel.data = { banner_id: q.insertId };
             }
