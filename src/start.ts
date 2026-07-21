@@ -34,11 +34,8 @@ const app = express();
 logger.log("**Checking MySQL connection");
 mysql.checkConnection();
 
-// Reconcile DB schema (idempotent) — drops the obsolete investments.lock_in_until
-// column and applies the other documented required migrations so existing
-// databases keep working without manual ALTERs.
-logger.log("**Reconciling MySQL schema (ensureSchema)");
-mysql.ensureSchema().catch((e) => logger.log("ensureSchema error: " + e));
+// Schema reconciliation is awaited in startServer below so routes never serve
+// a partially migrated catalog.
 
 // securing app
 logger.log("**Securing application with HELMET");
@@ -68,6 +65,19 @@ const PORT = process.env.NODE_EXPRESS_PORT;
 logger.log("**Creating http server ");
 const server = http.createServer(app);
 
-server.listen(PORT, () =>
-  logger.log("*************  Server is running on " + JSON.stringify(server.address()) + "  *************")
-);
+async function startServer() {
+  try {
+    // Required migrations and the automatic-category backfill must finish
+    // before any request can observe the catalog.
+    logger.log("**Reconciling MySQL schema (ensureSchema)");
+    await mysql.ensureSchema();
+    server.listen(PORT, () =>
+      logger.log("*************  Server is running on " + JSON.stringify(server.address()) + "  *************")
+    );
+  } catch (error) {
+    logger.log("*************  Server startup blocked by schema migration: " + error);
+    process.exit(1);
+  }
+}
+
+startServer();

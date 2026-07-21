@@ -1,5 +1,5 @@
 import { connections, ConnectionName } from "./connections";
-import * as gtUtil from "../pixels-utility";
+import { Constants } from "../pixels-utility/constant";
 import { MasterModel } from "../models/MasterModel";
 
 export class MySqlClient {
@@ -40,7 +40,7 @@ export class MySqlClient {
     try {
       const [result]: any = await this.conn.query(sql, params);
 
-      queryModel.status = gtUtil.Constants.SUCCESS;
+      queryModel.status = Constants.SUCCESS;
       queryModel.info = "SUCCESS";
 
       if (Array.isArray(result)) {
@@ -58,7 +58,7 @@ export class MySqlClient {
         queryModel.warningCount = result.warningCount;
       }
     } catch (err: any) {
-      queryModel.status = gtUtil.Constants.DB_QUERY_ERROR;
+      queryModel.status = Constants.DB_QUERY_ERROR;
       queryModel.info = `DB ERROR: ${err.message}`;
     }
 

@@ -1,11 +1,17 @@
 import { MasterModel } from "../../models/MasterModel";
-import * as gtUtil from "../../pixels-utility";
+import { Constants } from "../../pixels-utility/constant";
+import { Logger } from "../../pixels-utility/Logger";
 import { hashPassword } from "../../pixels-utility/password";
 import * as mysql from "mysql2";
 import dotenv from "dotenv";
 import * as util from "util";
+import {
+  CATEGORY_CLASSIFIER_VERSION,
+  classifyNumber,
+  syncNumberCategories,
+} from "../../pixels/api/categories/categoryClassifier";
 
-const logger = new gtUtil.Logger();
+const logger = new Logger();
 const masterModel = new MasterModel();
 dotenv.config();
 
@@ -41,7 +47,7 @@ export function checkConnection() {
 }
 
 //create mysql connection pool
-logger.log('** DB Connection Pool: Starting: ' + JSON.stringify(dbConnectionInfo));
+logger.log('** DB Connection Pool: Starting: ' + JSON.stringify({ ...dbConnectionInfo, password: db_password ? '***REDACTED***' : '' }));
 export const connPool = mysql.createPool(dbConnectionInfo);
 logger.log('** DB Connection Pool: Success');
 
@@ -52,7 +58,7 @@ logger.log('** DB Connection Pool: Success');
  * to run repeatedly and on a fresh, empty `vipnumberworld` database. The schema
  * models a VIP-number e-commerce marketplace (catalog, cart, orders, payments,
  * dealers, reviews, referrals). A small set of seed rows (admin/dealer/demo
- * users, categories, sample numbers, testimonials, banners, env keys) is also
+ * users, sample numbers, testimonials, banners, and env keys) is also
  * inserted so the app is immediately usable.
  *
  * NOTE: the database `vipnumberworld` itself must already exist on the server
@@ -66,7 +72,8 @@ export async function ensureSchema(): Promise<void> {
       await pool.query(sql, params);
       logger.log('** ensureSchema: applied — ' + label);
     } catch (e: any) {
-      // Never block startup on a migration; log and continue.
+      // Base-table reconciliation remains best-effort for legacy deployments.
+      // Required versioned migrations below use direct queries and do block.
       logger.log('** ensureSchema: skipped (' + label + '): ' + (e?.message || e));
     }
   };
@@ -142,6 +149,22 @@ export async function ensureSchema(): Promise<void> {
       "PRIMARY KEY (`number_id`), UNIQUE KEY `number_value` (`number_value`)," +
       "KEY `category_id` (`category_id`), KEY `seller_id` (`seller_id`)," +
       "KEY `status` (`status`), KEY `is_featured` (`is_featured`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Derived, exclusive automatic category. The legacy categories table
+    // and category_id column remain read-only for one compatibility release.
+    await run('create vip_number_categories',
+      "CREATE TABLE IF NOT EXISTS `vip_number_categories` (" +
+      "`number_id` int unsigned NOT NULL," +
+      "`category_slug` varchar(64) NOT NULL," +
+      "`classifier_version` smallint unsigned NOT NULL," +
+      "`matched_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`number_id`,`category_slug`)," +
+      "UNIQUE KEY `number_category_exclusive` (`number_id`)," +
+      "KEY `category_lookup` (`category_slug`,`number_id`)," +
+      "KEY `classifier_version` (`classifier_version`)," +
+      "CONSTRAINT `fk_vip_number_categories_number` FOREIGN KEY (`number_id`) " +
+      "REFERENCES `vip_numbers` (`number_id`) ON DELETE CASCADE" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---- carts / cart_items ----
     await run('create carts',
@@ -259,9 +282,61 @@ export async function ensureSchema(): Promise<void> {
       "`cta_link` varchar(255) DEFAULT NULL," +
       "`content_x` tinyint unsigned NOT NULL DEFAULT '25'," +
       "`content_y` tinyint unsigned NOT NULL DEFAULT '62'," +
+      "`content_width` tinyint unsigned NOT NULL DEFAULT '34'," +
+      "`content_rotation` smallint NOT NULL DEFAULT '0'," +
+      "`content_style` varchar(16) NOT NULL DEFAULT 'light'," +
+      "`text_align` varchar(8) NOT NULL DEFAULT 'left'," +
+      "`font_style` varchar(12) NOT NULL DEFAULT 'serif'," +
+      "`title_size` varchar(8) NOT NULL DEFAULT 'medium'," +
+      "`overlay_style` varchar(12) NOT NULL DEFAULT 'soft'," +
       "`is_active` tinyint(1) NOT NULL DEFAULT '1'," +
       "`sort_order` int NOT NULL DEFAULT '0'," +
       "PRIMARY KEY (`banner_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---- carousel studio (intentionally independent from legacy banners) ----
+    // Draft and published documents live in separate columns so an autosave can
+    // never mutate the version currently rendered by the storefront.
+    await run('create carousel_projects',
+      "CREATE TABLE IF NOT EXISTS `carousel_projects` (" +
+      "`carousel_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`name` varchar(120) NOT NULL DEFAULT 'Untitled carousel'," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "`is_published` tinyint(1) NOT NULL DEFAULT '0'," +
+      "`draft_revision` int unsigned NOT NULL DEFAULT '1'," +
+      "`draft_desktop` longtext," +
+      "`draft_mobile` longtext," +
+      "`draft_desktop_preview_id` int unsigned DEFAULT NULL," +
+      "`draft_mobile_preview_id` int unsigned DEFAULT NULL," +
+      "`published_revision` int unsigned DEFAULT NULL," +
+      "`published_desktop` longtext," +
+      "`published_mobile` longtext," +
+      "`published_desktop_preview_id` int unsigned DEFAULT NULL," +
+      "`published_mobile_preview_id` int unsigned DEFAULT NULL," +
+      "`transition_style` varchar(24) NOT NULL DEFAULT 'fade'," +
+      "`autoplay_seconds` tinyint unsigned NOT NULL DEFAULT '6'," +
+      "`created_by` int unsigned NOT NULL," +
+      "`updated_by` int unsigned NOT NULL," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+      "`published_at` timestamp NULL DEFAULT NULL," +
+      "PRIMARY KEY (`carousel_id`), KEY `published_order` (`is_published`,`sort_order`)) " +
+      "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create carousel_assets',
+      "CREATE TABLE IF NOT EXISTS `carousel_assets` (" +
+      "`asset_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`carousel_id` int unsigned NOT NULL," +
+      "`purpose` enum('source','sticker','preview-desktop','preview-mobile') NOT NULL DEFAULT 'source'," +
+      "`original_name` varchar(180) NOT NULL," +
+      "`mime_type` varchar(64) NOT NULL," +
+      "`byte_size` int unsigned NOT NULL," +
+      "`width` int unsigned NOT NULL," +
+      "`height` int unsigned NOT NULL," +
+      "`content_sha256` char(64) NOT NULL," +
+      "`content` longblob NOT NULL," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`asset_id`), KEY `project_assets` (`carousel_id`,`purpose`)) " +
+      "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---- dealer_profiles ----
     await run('create dealer_profiles',
@@ -477,6 +552,20 @@ export async function ensureSchema(): Promise<void> {
       await run('add banners.content_x', "ALTER TABLE `banners` ADD COLUMN `content_x` tinyint unsigned NOT NULL DEFAULT '25' AFTER `cta_link`");
     if (!(await colExists('banners', 'content_y')))
       await run('add banners.content_y', "ALTER TABLE `banners` ADD COLUMN `content_y` tinyint unsigned NOT NULL DEFAULT '62' AFTER `content_x`");
+    if (!(await colExists('banners', 'content_width')))
+      await run('add banners.content_width', "ALTER TABLE `banners` ADD COLUMN `content_width` tinyint unsigned NOT NULL DEFAULT '34' AFTER `content_y`");
+    if (!(await colExists('banners', 'content_rotation')))
+      await run('add banners.content_rotation', "ALTER TABLE `banners` ADD COLUMN `content_rotation` smallint NOT NULL DEFAULT '0' AFTER `content_width`");
+    if (!(await colExists('banners', 'content_style')))
+      await run('add banners.content_style', "ALTER TABLE `banners` ADD COLUMN `content_style` varchar(16) NOT NULL DEFAULT 'light' AFTER `content_rotation`");
+    if (!(await colExists('banners', 'text_align')))
+      await run('add banners.text_align', "ALTER TABLE `banners` ADD COLUMN `text_align` varchar(8) NOT NULL DEFAULT 'left' AFTER `content_style`");
+    if (!(await colExists('banners', 'font_style')))
+      await run('add banners.font_style', "ALTER TABLE `banners` ADD COLUMN `font_style` varchar(12) NOT NULL DEFAULT 'serif' AFTER `text_align`");
+    if (!(await colExists('banners', 'title_size')))
+      await run('add banners.title_size', "ALTER TABLE `banners` ADD COLUMN `title_size` varchar(8) NOT NULL DEFAULT 'medium' AFTER `font_style`");
+    if (!(await colExists('banners', 'overlay_style')))
+      await run('add banners.overlay_style', "ALTER TABLE `banners` ADD COLUMN `overlay_style` varchar(12) NOT NULL DEFAULT 'soft' AFTER `title_size`");
 
     // buy_price = amount the platform pays the seller (credited to their wallet on approval)
     if (!(await colExists('sell_requests', 'buy_price')))
@@ -485,10 +574,206 @@ export async function ensureSchema(): Promise<void> {
     // ===================== SEED DATA =====================
     await seedData(run);
 
+    // Required: public filters must never start on a partially classified
+    // catalog. Existing values are preflighted before associations are changed.
+    await reconcileAutomaticNumberCategories(pool);
+
     logger.log('** ensureSchema: done.');
   } catch (e: any) {
-    logger.log('** ensureSchema: failed (non-fatal): ' + (e?.message || e));
+    logger.log('** ensureSchema: failed: ' + (e?.message || e));
+    throw e;
   }
+}
+
+interface NumberToClassify {
+  number_id: number;
+  number_value: string;
+}
+
+const CATEGORY_BACKFILL_BATCH_SIZE = 200;
+
+async function scanNumbersForCategoryMigration(
+  pool: any,
+  onlyMissingCurrentVersion: boolean,
+  visit: (rows: NumberToClassify[]) => Promise<void>,
+): Promise<number> {
+  let lastNumberId = 0;
+  let visited = 0;
+  while (true) {
+    const missingSql = onlyMissingCurrentVersion
+      ? `AND (
+           CHAR_LENGTH(n.number_value) <> 10 OR n.number_value REGEXP '[^0-9]' OR
+           (SELECT COUNT(*) FROM vip_number_categories all_vnc WHERE all_vnc.number_id = n.number_id) <> 1 OR
+           NOT EXISTS (
+             SELECT 1 FROM vip_number_categories vnc
+             WHERE vnc.number_id = n.number_id AND vnc.classifier_version = ?
+           )
+         )`
+      : '';
+    const params = onlyMissingCurrentVersion
+      ? [lastNumberId, CATEGORY_CLASSIFIER_VERSION]
+      : [lastNumberId];
+    const [rows]: any = await pool.query(
+      `SELECT n.number_id, n.number_value
+       FROM vip_numbers n
+       WHERE n.number_id > ? ${missingSql}
+       ORDER BY n.number_id ASC
+       LIMIT ${CATEGORY_BACKFILL_BATCH_SIZE}`,
+      params,
+    );
+    const batch = (Array.isArray(rows) ? rows : []) as NumberToClassify[];
+    if (!batch.length) break;
+    await visit(batch);
+    visited += batch.length;
+    lastNumberId = Number(batch[batch.length - 1].number_id);
+  }
+  return visited;
+}
+
+/**
+ * Build/rebuild the versioned automatic category index. Exported so deployment
+ * checks can invoke the same idempotent migration without starting HTTP.
+ */
+export async function reconcileAutomaticNumberCategories(pool: any = connPool.promise()): Promise<void> {
+  await pool.query(
+    "CREATE TABLE IF NOT EXISTS `schema_migrations` (" +
+    "`migration_key` varchar(128) NOT NULL," +
+    "`classifier_version` smallint unsigned DEFAULT NULL," +
+    "`details` text," +
+    "`applied_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+    "PRIMARY KEY (`migration_key`)" +
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  );
+  await pool.query(
+    "CREATE TABLE IF NOT EXISTS `vip_number_categories` (" +
+    "`number_id` int unsigned NOT NULL," +
+    "`category_slug` varchar(64) NOT NULL," +
+    "`classifier_version` smallint unsigned NOT NULL," +
+    "`matched_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+    "PRIMARY KEY (`number_id`,`category_slug`)," +
+    "KEY `category_lookup` (`category_slug`,`number_id`)," +
+    "KEY `classifier_version` (`classifier_version`)," +
+    "CONSTRAINT `fk_vip_number_categories_number` FOREIGN KEY (`number_id`) " +
+    "REFERENCES `vip_numbers` (`number_id`) ON DELETE CASCADE" +
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  );
+
+  const migrationKey = `automatic-number-categories-v${CATEGORY_CLASSIFIER_VERSION}`;
+  const [migrationRows]: any = await pool.query(
+    'SELECT migration_key FROM schema_migrations WHERE migration_key = ? LIMIT 1',
+    [migrationKey],
+  );
+  const firstRunForVersion = !Array.isArray(migrationRows) || migrationRows.length === 0;
+
+  // Always preflight the complete inventory before changing anything. This
+  // catches invalid legacy rows and differently formatted duplicates even
+  // during a rolling deployment with older writers still present.
+  const invalidIds: number[] = [];
+  const idsByCanonicalNumber = new Map<string, number[]>();
+  await scanNumbersForCategoryMigration(pool, false, async (rows) => {
+    for (const row of rows) {
+      try {
+        const canonical = classifyNumber(row.number_value).canonicalNumber;
+        const ids = idsByCanonicalNumber.get(canonical) || [];
+        ids.push(Number(row.number_id));
+        idsByCanonicalNumber.set(canonical, ids);
+      }
+      catch { invalidIds.push(Number(row.number_id)); }
+    }
+  });
+  const duplicateIds = [...idsByCanonicalNumber.values()]
+    .filter((ids) => ids.length > 1)
+    .flat()
+    .sort((left, right) => left - right);
+  if (invalidIds.length || duplicateIds.length) {
+    const describeIds = (ids: number[]) => {
+      const shown = ids.slice(0, 100).join(', ');
+      return shown + (ids.length > 100 ? ` (+${ids.length - 100} more)` : '');
+    };
+    const issues = [
+      ...(invalidIds.length ? [`invalid vip_numbers IDs: ${describeIds(invalidIds)}`] : []),
+      ...(duplicateIds.length ? [`duplicate canonical vip_numbers IDs: ${describeIds(duplicateIds)}`] : []),
+    ];
+    throw new Error(`Automatic category migration blocked by ${issues.join('; ')}`);
+  }
+
+  let canonicalized = 0;
+  const migrated = await scanNumbersForCategoryMigration(pool, !firstRunForVersion, async (rows) => {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      for (const row of rows) {
+        const classification = classifyNumber(row.number_value);
+        if (classification.canonicalNumber !== String(row.number_value)) {
+          await connection.query(
+            'UPDATE vip_numbers SET number_value = ? WHERE number_id = ?',
+            [classification.canonicalNumber, Number(row.number_id)],
+          );
+          canonicalized += 1;
+        }
+        await syncNumberCategories(connection, Number(row.number_id), classification.canonicalNumber);
+      }
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  });
+
+  // An exclusive classifier must leave one and only one current mapping for
+  // every inventory record. Fail before adding the database constraint so a
+  // concurrent v1 writer cannot be hidden by a partially successful rollout.
+  const [invalidMappingRows]: any = await pool.query(
+    `SELECT n.number_id,
+            COUNT(vnc.number_id) AS mapping_count,
+            COALESCE(SUM(vnc.classifier_version = ?), 0) AS current_mapping_count
+     FROM vip_numbers n
+     LEFT JOIN vip_number_categories vnc ON vnc.number_id = n.number_id
+     GROUP BY n.number_id
+     HAVING mapping_count <> 1 OR current_mapping_count <> 1
+     ORDER BY n.number_id ASC
+     LIMIT 100`,
+    [CATEGORY_CLASSIFIER_VERSION],
+  );
+  if (Array.isArray(invalidMappingRows) && invalidMappingRows.length > 0) {
+    const ids = invalidMappingRows.map((row: any) => Number(row.number_id)).join(', ');
+    throw new Error(`Automatic category migration did not produce exactly one v${CATEGORY_CLASSIFIER_VERSION} mapping for vip_numbers IDs: ${ids}. Drain older server processes and retry.`);
+  }
+
+  const [uniqueIndexRows]: any = await pool.query(
+    `SELECT s.INDEX_NAME
+     FROM information_schema.STATISTICS s
+     WHERE s.TABLE_SCHEMA = DATABASE() AND s.TABLE_NAME = 'vip_number_categories'
+       AND s.NON_UNIQUE = 0
+     GROUP BY s.INDEX_NAME
+     HAVING COUNT(*) = 1
+        AND MAX(CASE WHEN s.COLUMN_NAME = 'number_id' THEN 1 ELSE 0 END) = 1`,
+  );
+  if (!Array.isArray(uniqueIndexRows) || uniqueIndexRows.length === 0) {
+    await pool.query(
+      'ALTER TABLE vip_number_categories ADD UNIQUE KEY number_category_exclusive (number_id)',
+    );
+  }
+
+  // Historical category CRUD requests can no longer be replayed. REJECTED is
+  // the current approval enum's safe terminal state.
+  const retirementNote = 'Category Master retired; categories are now detected automatically.';
+  await pool.query(
+    `UPDATE approval_requests
+     SET status = 'REJECTED', review_note = ?, result = ?, reviewed_at = NOW()
+     WHERE status = 'PENDING' AND action_key IN ('categories.save', 'categories.delete')`,
+    [retirementNote, JSON.stringify({ retired: true, classifier_version: CATEGORY_CLASSIFIER_VERSION })],
+  );
+
+  await pool.query(
+    `INSERT INTO schema_migrations (migration_key, classifier_version, details)
+     VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE classifier_version = VALUES(classifier_version), details = VALUES(details)`,
+    [migrationKey, CATEGORY_CLASSIFIER_VERSION, JSON.stringify({ migrated_numbers: migrated, canonicalized_numbers: canonicalized })],
+  );
+  logger.log(`** ensureSchema: automatic categories v${CATEGORY_CLASSIFIER_VERSION}; classified ${migrated}, canonicalized ${canonicalized} number(s).`);
 }
 
 /** Inserts demo/seed rows (idempotent via INSERT IGNORE on stable keys). */
@@ -555,26 +840,17 @@ async function seedData(run: (label: string, sql: string, params?: any[]) => Pro
   await run('seed dealer profile',
     "INSERT IGNORE INTO `dealer_profiles` (`dealer_id`,`business_name`,`commission_pct`,`kyc_status`) VALUES (2, 'Demo Dealer Numbers', 10.00, 'VERIFIED')");
 
-  // Categories (explicit ids)
-  await run('seed categories',
-    "INSERT IGNORE INTO `categories` (`category_id`,`name`,`slug`,`icon`,`description`,`sort_order`) VALUES " +
-    "(1,'Business','business','briefcase','Premium numbers for business & branding',1)," +
-    "(2,'Fancy','fancy','sparkles','Fancy patterned VIP numbers',2)," +
-    "(3,'Lucky','lucky','clover','Numerology-aligned lucky numbers',3)," +
-    "(4,'Premium','premium','crown','Top-tier premium VIP numbers',4)," +
-    "(5,'Easy to Remember','easy-to-remember','smile','Simple, easy-to-recall numbers',5)");
-
   // Sample numbers (from the reference design). seller 1 = admin, one from dealer (2).
   await run('seed vip_numbers',
-    "INSERT IGNORE INTO `vip_numbers` (`number_id`,`number_value`,`display_number`,`category_id`,`seller_id`,`seller_type`,`title_label`,`badge`,`mrp`,`offer_price`,`discount_pct`,`numerology_sum`,`operator`,`stock`,`status`,`is_featured`) VALUES " +
-    "(1,'9193915915','9193 915 915',1,1,'ADMIN','Business VIP Number','HOT_PICK',49999,24999,50,9,'Airtel',1,'AVAILABLE',1)," +
-    "(2,'9353115511','9353 115 511',1,1,'ADMIN','Business VIP Number','PREMIUM',39999,19999,50,5,'Jio',2,'AVAILABLE',1)," +
-    "(3,'9696915915','9696 915 915',1,1,'ADMIN','Business VIP Number','BEST_SELLER',37999,18999,50,9,'Airtel',1,'AVAILABLE',1)," +
-    "(4,'9090909090','9090 909 090',5,1,'ADMIN','Easy To Remember','HOT_DEAL',59999,29999,50,9,'Vi',3,'AVAILABLE',1)," +
-    "(5,'9161551551','9161 551 551',2,2,'DEALER','Fancy VIP Number','PREMIUM',33999,16999,50,6,'Jio',2,'AVAILABLE',1)," +
-    "(6,'9155915915','9155 915 915',3,1,'ADMIN','Lucky VIP Number','NEW_ARRIVAL',31999,15999,50,9,'Airtel',2,'AVAILABLE',1)," +
-    "(7,'7777915915','7777 915 915',4,1,'ADMIN','Premium VIP Number','VALUE_PICK',45999,22999,50,9,'Airtel',1,'AVAILABLE',1)," +
-    "(8,'8888115511','8888 115 511',1,1,'ADMIN','Business VIP Number','PREMIUM',41999,20999,50,5,'Jio',2,'AVAILABLE',1)");
+    "INSERT IGNORE INTO `vip_numbers` (`number_id`,`number_value`,`display_number`,`seller_id`,`seller_type`,`title_label`,`badge`,`mrp`,`offer_price`,`discount_pct`,`numerology_sum`,`operator`,`stock`,`status`,`is_featured`) VALUES " +
+    "(1,'9193915915','9193 915 915',1,'ADMIN','Business VIP Number','HOT_PICK',49999,24999,50,9,'Airtel',1,'AVAILABLE',1)," +
+    "(2,'9353115511','9353 115 511',1,'ADMIN','Business VIP Number','PREMIUM',39999,19999,50,5,'Jio',2,'AVAILABLE',1)," +
+    "(3,'9696915915','9696 915 915',1,'ADMIN','Business VIP Number','BEST_SELLER',37999,18999,50,9,'Airtel',1,'AVAILABLE',1)," +
+    "(4,'9090909090','9090 909 090',1,'ADMIN','Easy To Remember','HOT_DEAL',59999,29999,50,9,'Vi',3,'AVAILABLE',1)," +
+    "(5,'9161551551','9161 551 551',2,'DEALER','Fancy VIP Number','PREMIUM',33999,16999,50,6,'Jio',2,'AVAILABLE',1)," +
+    "(6,'9155915915','9155 915 915',1,'ADMIN','Lucky VIP Number','NEW_ARRIVAL',31999,15999,50,9,'Airtel',2,'AVAILABLE',1)," +
+    "(7,'7777915915','7777 915 915',1,'ADMIN','Premium VIP Number','VALUE_PICK',45999,22999,50,9,'Airtel',1,'AVAILABLE',1)," +
+    "(8,'8888115511','8888 115 511',1,'ADMIN','Business VIP Number','PREMIUM',41999,20999,50,5,'Jio',2,'AVAILABLE',1)");
 
   await run('seed testimonials',
     "INSERT IGNORE INTO `testimonials` (`testimonial_id`,`name`,`role`,`content`,`rating`,`sort_order`) VALUES " +
@@ -623,13 +899,13 @@ export class MySqlMaster {
           // in case of errror in executing the query rejecting the request
           if (err) {
             //throw new Error('Error in Query Execution: ' + err);
-            queryModel.status = gtUtil.Constants.DB_QUERY_ERROR;
+            queryModel.status = Constants.DB_QUERY_ERROR;
             queryModel.info = 'DB: executeQuery(): ERROR: ' + JSON.stringify(err);
             //reject(model);
 
           } else {
             //SUCCESS
-            queryModel.status = gtUtil.Constants.SUCCESS;
+            queryModel.status = Constants.SUCCESS;
             queryModel.info = 'SUCCESS';
             // check for select query results i.e JSON ARRAY of selected Rows
             if (util.isArray(results)) {

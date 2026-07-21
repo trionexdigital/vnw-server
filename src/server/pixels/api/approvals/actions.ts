@@ -39,16 +39,6 @@ export const ACTIONS: Record<string, ActionDef> = {
         summary: (p) => `Reject listing #${p.number_id}`,
         execute: (p) => admin.numberReject(p),
     },
-    'categories.save': {
-        label: 'Save category',
-        summary: (p) => p.category_id ? `Update category #${p.category_id}` : `Create category "${p.name}"`,
-        execute: (p) => admin.categories.save(p),
-    },
-    'categories.delete': {
-        label: 'Delete category',
-        summary: (p) => `Delete category #${p.category_id}`,
-        execute: (p) => admin.categories.remove(p),
-    },
     'orders.update-status': {
         label: 'Update order status',
         summary: (p) => `Set order #${p.order_id} → ${p.status}`,

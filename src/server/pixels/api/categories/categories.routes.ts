@@ -22,4 +22,19 @@ router.post('/list', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/classify', async (req: Request, res: Response) => {
+    let startMS = new Date().getTime();
+    let resModel = masterModel.getResponseModel();
+    try {
+        resModel = await categories.classify(req.body || {});
+    } catch (error) {
+        resModel.status = -9;
+        resModel.info = 'catch: ' + error;
+    } finally {
+        resModel.endDT = new Date();
+        resModel.tat = (new Date().getTime() - startMS) / 1000;
+        res.status(gtUtil.Constants.HTTP_OK).json(resModel);
+    }
+});
+
 export default router;

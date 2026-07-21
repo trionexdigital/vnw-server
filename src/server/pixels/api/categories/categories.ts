@@ -1,6 +1,13 @@
 import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
+import {
+    CATEGORY_CATALOG,
+    CATEGORY_CLASSIFIER_VERSION,
+    categoryMatchToApiModel,
+    categoryToApiModel,
+    classifyNumber,
+} from './categoryClassifier';
 
 export class Categories {
     private dao: MySqlClient;
@@ -13,19 +20,30 @@ export class Categories {
         this.masterModel = new MasterModel();
     }
 
-    /** Public list with live available-count per category. */
-    async list(payload: any) {
+    /** Public immutable catalog with a live available-number count per category. */
+    async list(_payload: any = {}) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         try {
-            const onlyActive = payload?.all ? '' : 'WHERE c.is_active = 1';
             const q: any = await this.dao.executeQuery(
-                `SELECT c.*, (SELECT COUNT(*) FROM vip_numbers n WHERE n.category_id = c.category_id AND n.status = 'AVAILABLE') AS number_count
-                 FROM categories c ${onlyActive} ORDER BY c.sort_order ASC, c.name ASC`, []
+                `SELECT vnc.category_slug AS slug, COUNT(DISTINCT vnc.number_id) AS number_count
+                 FROM vip_number_categories vnc
+                 INNER JOIN vip_numbers n ON n.number_id = vnc.number_id
+                 WHERE n.status = 'AVAILABLE' AND vnc.classifier_version = ?
+                 GROUP BY vnc.category_slug`, [CATEGORY_CLASSIFIER_VERSION]
             );
+            if (q.status !== 1) throw new Error(q.info || 'Unable to load category counts.');
+            const counts = new Map<string, number>();
+            for (const row of (q.rows || [])) counts.set(String(row.slug), Number(row.number_count) || 0);
+
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = q.rows || [];
+            resModel.data = CATEGORY_CATALOG.map((category) => ({
+                ...categoryToApiModel(category),
+                number_count: counts.get(category.slug) || 0,
+                is_active: true,
+                classifier_version: CATEGORY_CLASSIFIER_VERSION,
+            }));
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;
@@ -36,32 +54,37 @@ export class Categories {
         return resModel;
     }
 
-    /** Admin upsert. */
-    async save(payload: any) {
+    /** Read-only preview used by listing forms before the number is submitted. */
+    async classify(payload: { number?: unknown, number_value?: unknown }) {
+        const startMS = new Date().getTime();
+        const resModel = this.masterModel.getResponseModel();
+        try {
+            const classification = classifyNumber(payload?.number ?? payload?.number_value);
+            resModel.status = 1;
+            resModel.info = 'OK';
+            resModel.data = {
+                canonical_number: classification.canonicalNumber,
+                categories: classification.categories.map(categoryMatchToApiModel),
+                primary_category: categoryMatchToApiModel(classification.primaryCategory),
+                classifier_version: classification.classifierVersion,
+            };
+        } catch (error) {
+            resModel.status = -2;
+            resModel.info = error instanceof Error ? error.message : String(error);
+        } finally {
+            resModel.tat = (new Date().getTime() - startMS) / 1000;
+        }
+        return resModel;
+    }
+
+    /** Retained for one release so rolling clients receive an explicit response. */
+    async save(_payload: any) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         try {
-            const name = String(payload.name || '').trim();
-            if (!name) throw new Error('Category name is required.');
-            const slug = String(payload.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-')).replace(/^-|-$/g, '');
-
-            if (payload.category_id) {
-                await this.dao.executeQuery(
-                    `UPDATE categories SET name = ?, slug = ?, icon = ?, description = ?, sort_order = ?, is_active = ? WHERE category_id = ?`,
-                    [name, slug, payload.icon || null, payload.description || null, Number(payload.sort_order) || 0,
-                     payload.is_active === false ? 0 : 1, Number(payload.category_id)]
-                );
-                resModel.data = { category_id: Number(payload.category_id) };
-            } else {
-                const q: any = await this.dao.executeQuery(
-                    `INSERT INTO categories (name, slug, icon, description, sort_order, is_active) VALUES (?,?,?,?,?,?)`,
-                    [name, slug, payload.icon || null, payload.description || null, Number(payload.sort_order) || 0, payload.is_active === false ? 0 : 1]
-                );
-                if (q.insertId === 0) throw new Error(q.info && /duplicate/i.test(q.info) ? 'A category with this slug already exists.' : 'Unable to save category.');
-                resModel.data = { category_id: q.insertId };
-            }
-            resModel.status = 1;
-            resModel.info = 'OK';
+            resModel.status = -410;
+            resModel.info = 'Category Master has been retired. Categories are detected automatically from the number.';
+            resModel.data = { retired: true, classifier_version: CATEGORY_CLASSIFIER_VERSION };
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;
@@ -72,14 +95,13 @@ export class Categories {
         return resModel;
     }
 
-    async remove(payload: { category_id: number }) {
+    async remove(_payload: { category_id?: number }) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         try {
-            if (!payload.category_id) throw new Error('category_id is required.');
-            await this.dao.executeQuery(`DELETE FROM categories WHERE category_id = ?`, [Number(payload.category_id)]);
-            resModel.status = 1;
-            resModel.info = 'OK';
+            resModel.status = -410;
+            resModel.info = 'Category Master has been retired. Automatic categories cannot be deleted.';
+            resModel.data = { retired: true, classifier_version: CATEGORY_CLASSIFIER_VERSION };
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;

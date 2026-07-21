@@ -3,6 +3,7 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { Numbers } from '../numbers/numbers';
 import { Wallet, getBalance } from '../wallet/wallet';
+import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 export class Dealer {
     private dao: MySqlClient;
@@ -93,13 +94,18 @@ export class Dealer {
         try {
             const q: any = await this.dao.executeQuery(
                 `SELECT oi.order_item_id, oi.display_number, oi.price, oi.commission_amount, oi.item_status,
+                        COALESCE(n.number_value, oi.display_number) AS number_value,
                         o.order_no, o.created_at, o.payment_status
                  FROM order_items oi JOIN orders o ON o.order_id = oi.order_id
+                 LEFT JOIN vip_numbers n ON n.number_id = oi.number_id
                  WHERE oi.seller_id = ? ORDER BY o.created_at DESC`, [payload.user_id]
             );
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = q.rows || [];
+            resModel.data = (q.rows || []).map((row: any) => {
+                try { return decorateNumberCategories(row); }
+                catch { return decorateNumberCategories(row, ['unique-numbers']); }
+            });
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;

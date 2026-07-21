@@ -4,6 +4,16 @@ import { MasterModel } from '../../../models/MasterModel';
 import { Numbers } from '../numbers/numbers';
 import { pushNotification } from '../notifications/notifications';
 import { creditWallet } from '../wallet/wallet';
+import { decorateNumberCategories, normalizeIndianNumber } from '../categories/categoryClassifier';
+
+const SELL_REQUEST_COLUMNS = `s.request_id, s.user_id, s.number_value, s.display_number, s.operator,
+    s.asking_price, s.description, s.contact_phone, s.status, s.admin_id, s.admin_note,
+    s.offer_price, s.buy_price, s.number_id, s.created_at, s.processed_at`;
+
+function decorateSellRequest(row: Record<string, any>) {
+    try { return decorateNumberCategories(row); }
+    catch { return decorateNumberCategories(row, ['unique-numbers']); }
+}
 
 /**
  * "Sell your number" workflow. A USER offers a number they own to the platform.
@@ -29,18 +39,19 @@ export class Sell {
     async create(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const number_value = String(payload.number_value || '').replace(/\s+/g, '');
-            if (!number_value || number_value.length < 6) throw new Error('Please enter a valid number.');
-            const display_number = String(payload.display_number || payload.number_value || '').trim();
+            const number_value = normalizeIndianNumber(payload.number_value ?? payload.display_number);
+            const display_number = String(payload.display_number || number_value).trim();
+            if (normalizeIndianNumber(display_number) !== number_value) {
+                throw new Error('Display number must match the submitted mobile number.');
+            }
             const asking = Number(payload.asking_price) || 0;
             if (asking <= 0) throw new Error('Please enter your expected price.');
 
             const q: any = await this.dao.executeQuery(
-                `INSERT INTO sell_requests (user_id, number_value, display_number, operator, category_id, asking_price, description, contact_phone, status)
-                 VALUES (?,?,?,?,?,?,?,?, 'PENDING')`,
+                `INSERT INTO sell_requests (user_id, number_value, display_number, operator, asking_price, description, contact_phone, status)
+                 VALUES (?,?,?,?,?,?,?, 'PENDING')`,
                 [Number(payload.user_id), number_value, display_number, payload.operator || null,
-                 payload.category_id ? Number(payload.category_id) : null, asking,
-                 payload.description || null, payload.contact_phone || null]);
+                 asking, payload.description || null, payload.contact_phone || null]);
             if (q.status !== 1 || q.insertId === 0) throw new Error('Unable to submit your request. Please try again.');
 
             await pushNotification({
@@ -49,7 +60,22 @@ export class Sell {
                 message: `Your request to sell ${display_number} is pending admin review. We'll notify you once it's reviewed.`,
             });
 
-            resModel.status = 1; resModel.info = 'Sell request submitted for review.'; resModel.data = { request_id: q.insertId };
+            const deprecationWarning = payload.category_id !== undefined
+                ? 'category_id is deprecated and was ignored; categories are detected automatically.'
+                : undefined;
+            if (deprecationWarning) this.logger.info(deprecationWarning);
+            const automaticCategory = decorateNumberCategories({ number_value, display_number });
+            resModel.status = 1;
+            resModel.info = deprecationWarning || 'Sell request submitted for review.';
+            resModel.data = {
+                request_id: q.insertId,
+                categories: automaticCategory.categories,
+                primary_category: automaticCategory.primary_category,
+                category_name: automaticCategory.category_name,
+                category_slug: automaticCategory.category_slug,
+                classifier_version: automaticCategory.classifier_version,
+                ...(deprecationWarning ? { deprecation_warning: deprecationWarning } : {}),
+            };
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; this.logger.error(JSON.stringify(resModel)); }
         return resModel;
     }
@@ -59,10 +85,9 @@ export class Sell {
         let resModel = this.masterModel.getResponseModel();
         try {
             const q: any = await this.dao.executeQuery(
-                `SELECT s.*, c.name AS category_name FROM sell_requests s
-                 LEFT JOIN categories c ON c.category_id = s.category_id
+                `SELECT ${SELL_REQUEST_COLUMNS} FROM sell_requests s
                  WHERE s.user_id = ? ORDER BY s.created_at DESC`, [Number(payload.user_id)]);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = (q.rows || []).map(decorateSellRequest);
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -91,12 +116,11 @@ export class Sell {
             if (payload.q) { where.push('(s.display_number LIKE ? OR s.number_value LIKE ?)'); params.push('%' + payload.q + '%', '%' + payload.q + '%'); }
             const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
             const q: any = await this.dao.executeQuery(
-                `SELECT s.*, u.full_name, u.email, u.phone AS user_phone, c.name AS category_name
+                `SELECT ${SELL_REQUEST_COLUMNS}, u.full_name, u.email, u.phone AS user_phone
                  FROM sell_requests s
                  LEFT JOIN auth_user u ON u.user_id = s.user_id
-                 LEFT JOIN categories c ON c.category_id = s.category_id
                  ${whereSql} ORDER BY s.created_at DESC LIMIT 300`, params);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = (q.rows || []).map(decorateSellRequest);
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -106,11 +130,12 @@ export class Sell {
      * number and links it back to the request. `offer_price` is what the platform
      * lists it for (defaults to the user's asking price), `buy_price` optional.
      */
-    async approve(payload: { user_id: number, request_id: number, offer_price?: number, mrp?: number, buy_price?: number, category_id?: number, admin_note?: string }) {
+    async approve(payload: { user_id: number, request_id: number, offer_price?: number, mrp?: number, buy_price?: number, category_id?: unknown, admin_note?: string }) {
         let resModel = this.masterModel.getResponseModel();
         try {
             const rid = Number(payload.request_id);
-            const r: any = await this.dao.executeQuery(`SELECT * FROM sell_requests WHERE request_id = ?`, [rid]);
+            const r: any = await this.dao.executeQuery(
+                `SELECT ${SELL_REQUEST_COLUMNS} FROM sell_requests s WHERE s.request_id = ?`, [rid]);
             if (r.fetchedRows === 0) throw new Error('Sell request not found.');
             const reqRow = r.rows[0];
             if (reqRow.status !== 'PENDING') throw new Error('This request has already been processed.');
@@ -119,13 +144,10 @@ export class Sell {
             const mrp = Number(payload.mrp) || offer;
             // What the platform pays the seller (credited to their wallet). Defaults to asking price.
             const buyPrice = Number(payload.buy_price) || Number(reqRow.asking_price) || 0;
-            const categoryId = payload.category_id ? Number(payload.category_id) : (reqRow.category_id || null);
-
             // Create the catalog listing owned by the platform (admin seller_id = 1).
             const created: any = await this.numbers.create({
                 number_value: reqRow.number_value,
                 display_number: reqRow.display_number,
-                category_id: categoryId,
                 seller_id: 1,
                 seller_type: 'ADMIN',
                 title_label: 'VIP Number',
@@ -158,7 +180,22 @@ export class Sell {
                     : `Your number ${reqRow.display_number} was approved and is now listed.`,
             });
 
-            resModel.status = 1; resModel.info = 'Sell request approved.'; resModel.data = { number_id: newNumberId, buy_price: buyPrice };
+            const deprecationWarning = payload.category_id !== undefined
+                ? 'category_id is deprecated and was ignored; categories are detected automatically.'
+                : undefined;
+            if (deprecationWarning) this.logger.info(deprecationWarning);
+            resModel.status = 1;
+            resModel.info = deprecationWarning || 'Sell request approved.';
+            resModel.data = {
+                number_id: newNumberId,
+                buy_price: buyPrice,
+                categories: created.data?.categories || [],
+                primary_category: created.data?.primary_category || null,
+                category_name: created.data?.category_name || null,
+                category_slug: created.data?.category_slug || null,
+                classifier_version: created.data?.classifier_version || null,
+                ...(deprecationWarning ? { deprecation_warning: deprecationWarning } : {}),
+            };
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }

@@ -3,6 +3,7 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { pushNotification } from '../notifications/notifications';
 import { creditWallet } from '../wallet/wallet';
+import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 export class Orders {
     private dao: MySqlClient;
@@ -208,12 +209,16 @@ export class Orders {
             const oQ: any = await this.dao.executeQuery(`SELECT * FROM orders WHERE order_id = ?${scope}`, params);
             if (oQ.fetchedRows === 0) throw new Error('Order not found.');
             const itemsQ: any = await this.dao.executeQuery(
-                `SELECT oi.*, n.numerology_sum, n.operator, c.name AS category_name
+                `SELECT oi.*, COALESCE(n.number_value, oi.display_number) AS number_value,
+                        n.numerology_sum, n.operator
                  FROM order_items oi LEFT JOIN vip_numbers n ON n.number_id = oi.number_id
-                 LEFT JOIN categories c ON c.category_id = n.category_id WHERE oi.order_id = ?`, [Number(payload.order_id)]
+                 WHERE oi.order_id = ?`, [Number(payload.order_id)]
             );
             const data = oQ.rows[0];
-            data.items = itemsQ.rows || [];
+            data.items = (itemsQ.rows || []).map((row: any) => {
+                try { return decorateNumberCategories(row); }
+                catch { return decorateNumberCategories(row, ['unique-numbers']); }
+            });
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = data;

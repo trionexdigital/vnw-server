@@ -28,8 +28,12 @@ const BypassAuth = [
     `${BASE}/contact/submit`,
     `${BASE}/numbers`,          // public catalog browse/search/detail
     `${BASE}/categories/list`,  // public category list
+    `${BASE}/categories/classify`, // public, read-only category preview
     `${BASE}/testimonials/list`,// public testimonials
     `${BASE}/banners/list`,     // public hero banners
+    `${BASE}/carousel/list`,    // public published carousel studio slides
+    `${BASE}/carousel/asset`,   // published carousel binary media
+    `${BASE}/carousel/preview`, // published carousel static previews
     `${BASE}/reviews/by-number`,// public product reviews
     `${BASE}/site`,             // public site config, newsletter, enquiry
     `${BASE}/payments/razorpay/webhook`, // verified via signature, not JWT

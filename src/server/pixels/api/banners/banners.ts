@@ -22,6 +22,17 @@ function cleanPosition(value: unknown, fallback: number): number {
     return Math.round(Math.max(8, Math.min(92, position)));
 }
 
+function cleanRange(value: unknown, fallback: number, min: number, max: number): number {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.round(Math.max(min, Math.min(max, number)));
+}
+
+function cleanChoice<T extends string>(value: unknown, choices: readonly T[], fallback: T): T {
+    const choice = String(value ?? '').trim() as T;
+    return choices.includes(choice) ? choice : fallback;
+}
+
 function validateCarouselImage(value: unknown): string {
     const image = String(value ?? '').trim();
     if (!image) throw new Error('A cropped carousel image is required.');
@@ -51,7 +62,9 @@ export class Banners {
         try {
             const where = payload?.all ? '' : "WHERE is_active = 1 AND image IS NOT NULL AND image <> ''";
             const q: any = await this.dao.executeQuery(
-                `SELECT banner_id, eyebrow, title, subtitle, image, cta_text, cta_link, content_x, content_y, is_active, sort_order
+                `SELECT banner_id, eyebrow, title, subtitle, image, cta_text, cta_link, content_x, content_y,
+                        content_width, content_rotation, content_style, text_align, font_style, title_size, overlay_style,
+                        is_active, sort_order
                  FROM banners ${where} ORDER BY sort_order ASC, banner_id ASC`, []
             );
             resModel.status = 1;
@@ -79,6 +92,13 @@ export class Banners {
             const ctaLink = cleanLink(payload.cta_link);
             const contentX = cleanPosition(payload.content_x, 25);
             const contentY = cleanPosition(payload.content_y, 62);
+            const contentWidth = cleanRange(payload.content_width, 34, 24, 68);
+            const contentRotation = cleanRange(payload.content_rotation, 0, -12, 12);
+            const contentStyle = cleanChoice(payload.content_style, ['light', 'dark', 'brand', 'minimal'] as const, 'light');
+            const textAlign = cleanChoice(payload.text_align, ['left', 'center', 'right'] as const, 'left');
+            const fontStyle = cleanChoice(payload.font_style, ['serif', 'sans', 'display'] as const, 'serif');
+            const titleSize = cleanChoice(payload.title_size, ['small', 'medium', 'large'] as const, 'medium');
+            const overlayStyle = cleanChoice(payload.overlay_style, ['soft', 'dark', 'light', 'brand', 'none'] as const, 'soft');
             const isActive = payload.is_active === false || Number(payload.is_active) === 0 ? 0 : 1;
             const sortOrder = Math.max(0, Math.min(9999, Number(payload.sort_order) || 0));
 
@@ -93,14 +113,14 @@ export class Banners {
 
             if (bannerId) {
                 await this.dao.executeQuery(
-                    `UPDATE banners SET eyebrow=?, title=?, subtitle=?, image=?, cta_text=?, cta_link=?, content_x=?, content_y=?, is_active=?, sort_order=? WHERE banner_id=?`,
-                    [eyebrow, title, subtitle, image, ctaText, ctaLink, contentX, contentY, isActive, sortOrder, bannerId]
+                    `UPDATE banners SET eyebrow=?, title=?, subtitle=?, image=?, cta_text=?, cta_link=?, content_x=?, content_y=?, content_width=?, content_rotation=?, content_style=?, text_align=?, font_style=?, title_size=?, overlay_style=?, is_active=?, sort_order=? WHERE banner_id=?`,
+                    [eyebrow, title, subtitle, image, ctaText, ctaLink, contentX, contentY, contentWidth, contentRotation, contentStyle, textAlign, fontStyle, titleSize, overlayStyle, isActive, sortOrder, bannerId]
                 );
                 resModel.data = { banner_id: bannerId };
             } else {
                 const q: any = await this.dao.executeQuery(
-                    `INSERT INTO banners (eyebrow, title, subtitle, image, cta_text, cta_link, content_x, content_y, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-                    [eyebrow, title, subtitle, image, ctaText, ctaLink, contentX, contentY, isActive, sortOrder]
+                    `INSERT INTO banners (eyebrow, title, subtitle, image, cta_text, cta_link, content_x, content_y, content_width, content_rotation, content_style, text_align, font_style, title_size, overlay_style, is_active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                    [eyebrow, title, subtitle, image, ctaText, ctaLink, contentX, contentY, contentWidth, contentRotation, contentStyle, textAlign, fontStyle, titleSize, overlayStyle, isActive, sortOrder]
                 );
                 resModel.data = { banner_id: q.insertId };
             }

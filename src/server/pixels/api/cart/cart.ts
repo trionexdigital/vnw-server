@@ -1,6 +1,7 @@
 import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
+import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 export class Cart {
     private dao: MySqlClient;
@@ -26,13 +27,12 @@ export class Cart {
         try {
             const cartId = await this.getCartId(payload.user_id);
             const q: any = await this.dao.executeQuery(
-                `SELECT ci.cart_item_id, n.number_id, n.display_number, n.title_label, n.badge, n.mrp, n.offer_price,
-                        n.discount_pct, n.numerology_sum, n.operator, n.status, c.name AS category_name
+                `SELECT ci.cart_item_id, n.number_id, n.number_value, n.display_number, n.title_label, n.badge, n.mrp, n.offer_price,
+                        n.discount_pct, n.numerology_sum, n.operator, n.status
                  FROM cart_items ci JOIN vip_numbers n ON n.number_id = ci.number_id
-                 LEFT JOIN categories c ON c.category_id = n.category_id
                  WHERE ci.cart_id = ? ORDER BY ci.added_at DESC`, [cartId]
             );
-            const items = q.rows || [];
+            const items = (q.rows || []).map((row: any) => decorateNumberCategories(row));
             const subtotal = items.reduce((s: number, x: any) => s + Number(x.offer_price), 0);
             resModel.status = 1;
             resModel.info = 'OK';

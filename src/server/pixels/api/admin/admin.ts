@@ -10,6 +10,7 @@ import { pushNotification } from '../notifications/notifications';
 import { Rbac } from '../rbac/rbac';
 import { hashPassword } from '../../../pixels-utility/password';
 import { reverseWithdrawal } from '../wallet/wallet';
+import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 export class Admin {
     private dao: MySqlClient;
@@ -50,7 +51,7 @@ export class Admin {
                  FROM orders o LEFT JOIN auth_user u ON u.user_id = o.user_id ORDER BY o.created_at DESC LIMIT 8`, []
             );
             const topNumbers: any = await this.dao.executeQuery(
-                `SELECT number_id, display_number, views, offer_price, status FROM vip_numbers ORDER BY views DESC LIMIT 6`, []
+                `SELECT number_id, number_value, display_number, views, offer_price, status FROM vip_numbers ORDER BY views DESC LIMIT 6`, []
             );
             // last 6 months revenue trend
             const trend: any = await this.dao.executeQuery(
@@ -60,7 +61,12 @@ export class Admin {
             );
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = { kpi: kpi.rows?.[0] || {}, recent_orders: recentOrders.rows || [], top_numbers: topNumbers.rows || [], trend: trend.rows || [] };
+            resModel.data = {
+                kpi: kpi.rows?.[0] || {},
+                recent_orders: recentOrders.rows || [],
+                top_numbers: (topNumbers.rows || []).map((row: any) => decorateNumberCategories(row)),
+                trend: trend.rows || [],
+            };
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;

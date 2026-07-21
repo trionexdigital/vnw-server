@@ -1,6 +1,7 @@
 import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
+import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 export class Wishlist {
     private dao: MySqlClient;
@@ -18,15 +19,15 @@ export class Wishlist {
         let resModel = this.masterModel.getResponseModel();
         try {
             const q: any = await this.dao.executeQuery(
-                `SELECT w.wishlist_id, n.number_id, n.display_number, n.title_label, n.badge, n.mrp, n.offer_price,
-                        n.discount_pct, n.numerology_sum, n.operator, n.status, n.stock, c.name AS category_name
+                `SELECT w.wishlist_id, n.number_id, n.number_value, n.display_number, n.title_label, n.badge, n.mrp, n.offer_price,
+                        n.discount_pct, n.numerology_sum, n.operator, n.status, n.stock
                  FROM wishlist w JOIN vip_numbers n ON n.number_id = w.number_id
-                 LEFT JOIN categories c ON c.category_id = n.category_id
                  WHERE w.user_id = ? ORDER BY w.created_at DESC`, [payload.user_id]
             );
+            const items = (q.rows || []).map((row: any) => decorateNumberCategories(row));
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = { items: q.rows || [], count: (q.rows || []).length };
+            resModel.data = { items, count: items.length };
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;

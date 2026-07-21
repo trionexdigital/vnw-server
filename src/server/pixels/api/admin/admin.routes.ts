@@ -4,12 +4,23 @@ import * as gtUtil from "../../../pixels-utility";
 import { Admin } from './admin';
 import { Sell } from '../sell/sell';
 import { Approvals } from '../approvals/approvals';
+import { CarouselStudio } from '../carousel/carousel';
+import { CATEGORY_CLASSIFIER_VERSION } from '../categories/categoryClassifier';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
 const sell = new Sell();
 const approvals = new Approvals();
+const carousel = new CarouselStudio();
 const router = Router();
+
+const categoryMutationRetired = async () => {
+    const response = masterModel.getResponseModel();
+    response.status = -410;
+    response.info = 'Category Master has been retired. Categories are detected automatically from the mobile number.';
+    response.data = { retired: true, classifier_version: CATEGORY_CLASSIFIER_VERSION };
+    return response;
+};
 
 // Every admin endpoint requires ADMIN role (verified against the DB).
 const handle = (fn: (p: any) => Promise<any>) => async (req: Request, res: Response) => {
@@ -40,8 +51,8 @@ router.post('/numbers/reject', handle((p) => admin.numberReject(p)));
 
 // Categories
 router.post('/categories/list', handle((p) => admin.categories.list({ all: true })));
-router.post('/categories/save', handle((p) => admin.categories.save(p)));
-router.post('/categories/delete', handle((p) => admin.categories.remove(p)));
+router.post('/categories/save', handle(categoryMutationRetired));
+router.post('/categories/delete', handle(categoryMutationRetired));
 
 // Orders
 router.post('/orders/list', handle((p) => admin.ordersList(p)));
@@ -93,6 +104,46 @@ router.post('/testimonials/delete', handle((p) => admin.testimonials.remove(p)))
 router.post('/banners/list', handle((p) => admin.banners.list({ all: true })));
 router.post('/banners/save', handle((p) => admin.banners.save(p)));
 router.post('/banners/delete', handle((p) => admin.banners.remove(p)));
+
+// Carousel Studio (separate from the legacy banners subsystem)
+router.post('/carousel/list', handle(() => carousel.adminList()));
+router.post('/carousel/create', handle((p) => carousel.create(p)));
+router.post('/carousel/get', handle((p) => carousel.get(p)));
+router.post('/carousel/draft/save', handle((p) => carousel.saveDraft(p)));
+router.post('/carousel/publish', handle((p) => carousel.publish(p)));
+router.post('/carousel/unpublish', handle((p) => carousel.unpublish(p)));
+router.post('/carousel/duplicate', handle((p) => carousel.duplicate(p)));
+router.post('/carousel/reorder', handle((p) => carousel.reorder(p)));
+router.post('/carousel/delete', handle((p) => carousel.remove(p)));
+router.post('/carousel/asset/delete', handle((p) => carousel.deleteAsset(p)));
+
+router.post('/carousel/asset/upload', async (req: Request, res: Response) => {
+    let response = masterModel.getResponseModel();
+    try {
+        const payload = req.body || {};
+        payload.user_id = await gtUtil.requireAdmin(req);
+        response = await carousel.uploadAsset(payload, (req as any).files?.file);
+    } catch (error) {
+        response.status = -9;
+        response.info = 'catch: ' + error;
+    }
+    res.status(gtUtil.Constants.HTTP_OK).json(response);
+});
+
+router.get('/carousel/asset/:id', async (req: Request, res: Response) => {
+    try {
+        await gtUtil.requireAdmin(req);
+        const asset = await carousel.getAsset(Number(req.params.id), false);
+        if (!asset) return res.status(404).end();
+        const etag = `\"${asset.content_sha256}\"`;
+        if (req.headers['if-none-match'] === etag) return res.status(304).end();
+        res.setHeader('Content-Type', asset.mime_type);
+        res.setHeader('Content-Length', String(asset.byte_size));
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        res.setHeader('ETag', etag);
+        return res.status(200).send(asset.content);
+    } catch { return res.status(404).end(); }
+});
 
 // Coupons
 router.post('/coupons/list', handle((p) => admin.couponsList(p)));
