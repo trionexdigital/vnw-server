@@ -12,10 +12,31 @@ import {
     normalizeIndianNumber,
     syncNumberCategories,
 } from '../categories/categoryClassifier';
+import {
+    StructuredNumberSearch,
+    compileStructuredSearch,
+    normalizeStructuredSearch,
+    sanitizeAiFilters,
+    validatePrice,
+} from './numberSearch';
 
 const SELECT_COLS = `n.number_id, n.number_value, n.display_number,
     n.seller_id, n.seller_type, n.title_label, n.badge, n.mrp, n.offer_price, n.discount_pct,
     n.numerology_sum, n.operator, n.description, n.stock, n.status, n.is_featured, n.views, n.created_at`;
+
+interface ListingResult {
+    items: any[];
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+}
+
+interface SearchAlternative {
+    relaxed_key: string;
+    label: string;
+    items: any[];
+}
 
 export class Numbers {
     private dao: MySqlClient;
@@ -28,76 +49,205 @@ export class Numbers {
         this.masterModel = new MasterModel();
     }
 
-    /** Public catalog listing with filters, search, sorting and pagination. */
+    private async queryListing(payload: any): Promise<ListingResult> {
+        const where: string[] = [];
+        const params: any[] = [];
+
+        // Public browsing only shows AVAILABLE unless an explicit status is requested (admin).
+        const status = payload.status ? String(payload.status).toUpperCase() : 'AVAILABLE';
+        if (status !== 'ALL') { where.push('n.status = ?'); params.push(status); }
+
+        if (payload.category !== undefined && payload.category !== null && payload.category !== '') {
+            const category = String(payload.category).trim();
+            if (!isCategorySlug(category)) throw new Error(`Unknown category slug: ${category}`);
+            where.push(`EXISTS (
+                SELECT 1 FROM vip_number_categories vnc
+                WHERE vnc.number_id = n.number_id
+                  AND vnc.category_slug = ? AND vnc.classifier_version = ?
+            )`);
+            params.push(category, CATEGORY_CLASSIFIER_VERSION);
+        }
+        if (payload.q) {
+            const q = '%' + String(payload.q).replace(/\s+/g, '') + '%';
+            where.push('(REPLACE(n.display_number, " ", "") LIKE ? OR n.number_value LIKE ?)');
+            params.push(q, q);
+        }
+
+        const priceMin = validatePrice(payload.price_min, 'price_min');
+        const priceMax = validatePrice(payload.price_max, 'price_max');
+        if (priceMin !== undefined && priceMax !== undefined && priceMin > priceMax) {
+            throw new Error('price_min cannot exceed price_max.');
+        }
+        if (priceMin !== undefined) { where.push('n.offer_price >= ?'); params.push(priceMin); }
+        if (priceMax !== undefined) { where.push('n.offer_price <= ?'); params.push(priceMax); }
+
+        if (payload.numerology) {
+            const numerology = Number(payload.numerology);
+            if (!Number.isInteger(numerology) || numerology < 1 || numerology > 9) {
+                throw new Error('numerology must be from 1 to 9.');
+            }
+            where.push('n.numerology_sum = ?');
+            params.push(numerology);
+        }
+        if (payload.operator) { where.push('n.operator = ?'); params.push(String(payload.operator)); }
+        if (payload.badge) { where.push('n.badge = ?'); params.push(String(payload.badge).toUpperCase()); }
+        if (payload.is_featured) { where.push('n.is_featured = 1'); }
+        if (payload.seller_id) { where.push('n.seller_id = ?'); params.push(Number(payload.seller_id)); }
+
+        const compiled = compileStructuredSearch(payload.search);
+        where.push(...compiled.where);
+        params.push(...compiled.params);
+        const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+
+        let orderBy = 'n.created_at DESC';
+        switch (payload.sort) {
+            case 'price_asc': orderBy = 'n.offer_price ASC'; break;
+            case 'price_desc': orderBy = 'n.offer_price DESC'; break;
+            case 'popular': orderBy = 'n.views DESC'; break;
+            case 'discount': orderBy = 'n.discount_pct DESC'; break;
+            default: orderBy = 'n.created_at DESC';
+        }
+
+        const page = Math.max(1, Number(payload.page) || 1);
+        const limit = Math.min(60, Math.max(1, Number(payload.limit) || 12));
+        const offset = (page - 1) * limit;
+
+        const countQ: any = await this.dao.executeQuery(
+            `SELECT COUNT(*) AS total FROM vip_numbers n ${whereSql}`,
+            params,
+        );
+        if (countQ.status !== 1) throw new Error(countQ.info || 'Unable to count numbers.');
+        const total = Number(countQ.rows?.[0]?.total) || 0;
+
+        const rowsQ: any = await this.dao.executeQuery(
+            `SELECT ${SELECT_COLS} FROM vip_numbers n
+             ${whereSql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+            [...params, limit, offset],
+        );
+        if (rowsQ.status !== 1) throw new Error(rowsQ.info || 'Unable to load numbers.');
+
+        return {
+            items: (rowsQ.rows || []).map((row: any) => decorateNumberCategories(row)),
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit),
+        };
+    }
+
+    private withoutSearchKeys(payload: any, keys: Array<keyof StructuredNumberSearch>, topLevel: string[] = []) {
+        const search = { ...normalizeStructuredSearch(payload.search) } as any;
+        keys.forEach((key) => delete search[key]);
+        delete search.include_alternatives;
+        const next = { ...payload, search, include_alternatives: false, page: 1, limit: 6 };
+        topLevel.forEach((key) => delete next[key]);
+        return next;
+    }
+
+    private async findAlternatives(payload: any): Promise<SearchAlternative[]> {
+        const search = normalizeStructuredSearch(payload.search);
+        const plans = [
+            {
+                active: Boolean(search.exact_mask),
+                key: 'exact_mask',
+                label: 'Closest matches without the exact position mask',
+                payload: this.withoutSearchKeys(payload, ['exact_mask']),
+            },
+            {
+                active: Boolean(payload.q || search.starts_with || search.starts_with_pattern
+                    || search.anywhere || search.ends_with || search.ends_with_pattern),
+                key: 'position_pattern',
+                label: 'Closest matches with number position or pattern relaxed',
+                payload: this.withoutSearchKeys(payload, [
+                    'starts_with', 'starts_with_pattern', 'anywhere', 'ends_with', 'ends_with_pattern',
+                ], ['q']),
+            },
+            {
+                active: Boolean(search.must_contain?.length || search.must_not_contain?.length),
+                key: 'inclusion_exclusion',
+                label: 'Closest matches without required or excluded digit groups',
+                payload: this.withoutSearchKeys(payload, ['must_contain', 'must_not_contain']),
+            },
+            {
+                active: Boolean(search.digit_frequencies?.length),
+                key: 'frequency',
+                label: 'Closest matches with digit frequency relaxed',
+                payload: this.withoutSearchKeys(payload, ['digit_frequencies']),
+            },
+            {
+                active: search.digit_sum !== undefined || search.mid_sum !== undefined || search.score_sum !== undefined
+                    || Boolean(payload.numerology),
+                key: 'sums',
+                label: 'Closest matches without the requested number sums',
+                payload: this.withoutSearchKeys(
+                    payload,
+                    ['digit_sum', 'mid_sum', 'score_sum'],
+                    ['numerology'],
+                ),
+            },
+            {
+                active: payload.price_min !== undefined && payload.price_min !== ''
+                    || payload.price_max !== undefined && payload.price_max !== '',
+                key: 'price',
+                label: 'Closest matches outside the selected price range',
+                payload: this.withoutSearchKeys(payload, [], ['price_min', 'price_max']),
+            },
+            {
+                active: Boolean(payload.category),
+                key: 'category',
+                label: 'Closest matches from other categories',
+                payload: this.withoutSearchKeys(payload, [], ['category']),
+            },
+        ].filter((plan) => plan.active).slice(0, 6);
+
+        const alternatives: SearchAlternative[] = [];
+        const seen = new Set<string>();
+        for (const plan of plans) {
+            const result = await this.queryListing(plan.payload);
+            const items = result.items.filter((item: any) => {
+                const key = String(item.number_id ?? item.number_value);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            }).slice(0, 6);
+            if (items.length) alternatives.push({ relaxed_key: plan.key, label: plan.label, items });
+            if (alternatives.length === 3) break;
+        }
+
+        if (alternatives.length === 0) {
+            const popular = await this.queryListing({
+                status: 'AVAILABLE',
+                sort: 'popular',
+                page: 1,
+                limit: 6,
+            });
+            if (popular.items.length) {
+                alternatives.push({
+                    relaxed_key: 'popular',
+                    label: 'Popular alternatives',
+                    items: popular.items.slice(0, 6),
+                });
+            }
+        }
+        return alternatives;
+    }
+
+    /** Public catalog listing with filters, structured search, sorting and pagination. */
     async list(payload: any) {
-        let startMS = new Date().getTime();
-        let resModel = this.masterModel.getResponseModel();
+        const startMS = new Date().getTime();
+        const resModel = this.masterModel.getResponseModel();
         try {
-            const where: string[] = [];
-            const params: any[] = [];
-
-            // Public browsing only shows AVAILABLE unless an explicit status is requested (admin).
-            const status = payload.status ? String(payload.status).toUpperCase() : 'AVAILABLE';
-            if (status !== 'ALL') { where.push('n.status = ?'); params.push(status); }
-
-            if (payload.category !== undefined && payload.category !== null && payload.category !== '') {
-                const category = String(payload.category).trim();
-                if (!isCategorySlug(category)) throw new Error(`Unknown category slug: ${category}`);
-                where.push(`EXISTS (
-                    SELECT 1 FROM vip_number_categories vnc
-                    WHERE vnc.number_id = n.number_id
-                      AND vnc.category_slug = ? AND vnc.classifier_version = ?
-                )`);
-                params.push(category, CATEGORY_CLASSIFIER_VERSION);
-            }
-            if (payload.q) {
-                const q = '%' + String(payload.q).replace(/\s+/g, '') + '%';
-                where.push('(REPLACE(n.display_number, " ", "") LIKE ? OR n.number_value LIKE ?)');
-                params.push(q, q);
-            }
-            if (payload.price_min) { where.push('n.offer_price >= ?'); params.push(Number(payload.price_min)); }
-            if (payload.price_max) { where.push('n.offer_price <= ?'); params.push(Number(payload.price_max)); }
-            if (payload.numerology) { where.push('n.numerology_sum = ?'); params.push(Number(payload.numerology)); }
-            if (payload.operator) { where.push('n.operator = ?'); params.push(String(payload.operator)); }
-            if (payload.badge) { where.push('n.badge = ?'); params.push(String(payload.badge).toUpperCase()); }
-            if (payload.is_featured) { where.push('n.is_featured = 1'); }
-            if (payload.seller_id) { where.push('n.seller_id = ?'); params.push(Number(payload.seller_id)); }
-
-            const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
-
-            let orderBy = 'n.created_at DESC';
-            switch (payload.sort) {
-                case 'price_asc': orderBy = 'n.offer_price ASC'; break;
-                case 'price_desc': orderBy = 'n.offer_price DESC'; break;
-                case 'popular': orderBy = 'n.views DESC'; break;
-                case 'discount': orderBy = 'n.discount_pct DESC'; break;
-                default: orderBy = 'n.created_at DESC';
-            }
-
-            const page = Math.max(1, Number(payload.page) || 1);
-            const limit = Math.min(60, Math.max(1, Number(payload.limit) || 12));
-            const offset = (page - 1) * limit;
-
-            const countQ: any = await this.dao.executeQuery(
-                `SELECT COUNT(*) AS total FROM vip_numbers n ${whereSql}`,
-                params
-            );
-            if (countQ.status !== 1) throw new Error(countQ.info || 'Unable to count numbers.');
-            const total = Number(countQ.rows?.[0]?.total) || 0;
-
-            const rowsQ: any = await this.dao.executeQuery(
-                `SELECT ${SELECT_COLS} FROM vip_numbers n
-                 ${whereSql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
-                [...params, limit, offset]
-            );
-            if (rowsQ.status !== 1) throw new Error(rowsQ.info || 'Unable to load numbers.');
-
+            const data = await this.queryListing(payload || {});
+            const search = normalizeStructuredSearch(payload?.search);
+            const includeAlternatives = payload?.include_alternatives === true || search.include_alternatives === true;
+            const alternatives = data.total === 0 && includeAlternatives
+                ? await this.findAlternatives(payload || {})
+                : [];
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = {
-                items: (rowsQ.rows || []).map((row: any) => decorateNumberCategories(row)),
-                total, page, limit,
-                pages: Math.ceil(total / limit),
+                ...data,
+                ...(includeAlternatives && data.total === 0 ? { alternatives } : {}),
             };
         } catch (error) {
             resModel.status = -33;
@@ -118,23 +268,97 @@ export class Numbers {
         const text = String(query || '').toLowerCase();
         const compact = text.replace(/\s+/g, '');
         const filters: any = { limit: 12, sort: 'popular' };
+        const search: StructuredNumberSearch = {};
         const explanation: string[] = [];
 
-        const numberMatch = compact.match(/\d{2,}/);
-        if (numberMatch) {
-            filters.q = numberMatch[0];
-            explanation.push(`matched digits ${numberMatch[0]}`);
+        if (/^\d{1,10}$/.test(compact)) {
+            search.anywhere = compact;
+            explanation.push(`contains ${compact}`);
+        } else {
+            const startsMatch = text.match(/(?:starts?(?:\s+with)?|starting|shuru)\s*(?:se|with)?\s*(\d{1,10})/);
+            const endsMatch = text.match(/(?:ends?(?:\s+with)?|ending|last|akhir)\s*(?:me|mein|with)?\s*(\d{1,10})/);
+            const excludeMatch = text.match(/(?:without|exclude|not contain|nahi)\s*(\d{1,10})/);
+            const containsMatch = text.match(/(?:contains?|include|with|ke saath)\s*(\d{1,10})/);
+            if (startsMatch) {
+                search.starts_with = startsMatch[1];
+                explanation.push(`starts with ${startsMatch[1]}`);
+            }
+            if (endsMatch) {
+                search.ends_with = endsMatch[1];
+                explanation.push(`ends with ${endsMatch[1]}`);
+            }
+            if (excludeMatch) {
+                search.must_not_contain = [excludeMatch[1]];
+                explanation.push(`excludes ${excludeMatch[1]}`);
+            }
+            if (containsMatch && !excludeMatch && !startsMatch && !endsMatch) {
+                search.must_contain = [containsMatch[1]];
+                explanation.push(`contains ${containsMatch[1]}`);
+            }
         }
 
-        const sumMatch = text.match(/(?:sum|total|numerology)\s*(?:is|=|of)?\s*([1-9])/);
-        if (sumMatch) {
-            filters.numerology = Number(sumMatch[1]);
-            explanation.push(`numerology sum ${sumMatch[1]}`);
+        const exactMask = compact.match(/(?:mask|position|format)([0-9?]{10})/)?.[1]
+            || compact.match(/^[0-9?]{10}$/)?.[0];
+        if (exactMask && exactMask.includes('?')) {
+            search.exact_mask = exactMask;
+            explanation.push(`position mask ${exactMask}`);
         }
 
-        const priceMatch = text.match(/(?:under|below|less than|upto|up to)\s*(?:rs\.?|₹|inr)?\s*([\d,]+)/);
+        const sumMatch = text.match(/(?:digit|full|literal|liter)\s*sum\s*(?:is|=|of)?\s*(\d{1,2})/);
+        const midMatch = text.match(/(?:mid|middle|trap)\s*sum\s*(?:is|=|of)?\s*(\d{1,2})/);
+        const scoreMatch = text.match(/(?:score|root|numerology)\s*(?:sum)?\s*(?:is|=|of)?\s*([1-9])/);
+        if (sumMatch && Number(sumMatch[1]) <= 90) {
+            search.digit_sum = Number(sumMatch[1]);
+            explanation.push(`full digit sum ${sumMatch[1]}`);
+        }
+        if (midMatch && Number(midMatch[1]) <= 17) {
+            search.mid_sum = Number(midMatch[1]);
+            explanation.push(`mid sum ${midMatch[1]}`);
+        }
+        if (scoreMatch) {
+            search.score_sum = Number(scoreMatch[1]);
+            explanation.push(`root sum ${scoreMatch[1]}`);
+        }
+
+        const frequencyMatch = text.match(/(?:digit\s*)?(\d)\s*(?:at least\s*)?(\d{1,2})\s*(?:times?|baar)/);
+        if (frequencyMatch && Number(frequencyMatch[2]) >= 1 && Number(frequencyMatch[2]) <= 10) {
+            search.digit_frequencies = [{
+                digit: Number(frequencyMatch[1]),
+                min: Number(frequencyMatch[2]),
+            }];
+            explanation.push(`${frequencyMatch[1]} at least ${frequencyMatch[2]} times`);
+        }
+
+        const presetAliases: Array<{ pattern: RegExp; preset: any }> = [
+            { pattern: /\bsemi[\s-]?mirror\b/, preset: 'semi_mirror' },
+            { pattern: /\bmirror\b/, preset: 'mirror' },
+            { pattern: /\babc[\s-]?abc\b/, preset: 'abc_abc' },
+            { pattern: /\bab[\s-]?ab\b/, preset: 'ab_ab' },
+            { pattern: /\bdoubling\b/, preset: 'doubling' },
+            { pattern: /\bcounting\b|\bsequence\b/, preset: 'counting' },
+            { pattern: /\bhexa\b|six repeated/, preset: 'hexa' },
+            { pattern: /\bpenta\b|five repeated/, preset: 'penta' },
+            { pattern: /\btetra\b|four repeated/, preset: 'tetra' },
+            { pattern: /\btriple\b|three repeated/, preset: 'triple' },
+            { pattern: /\bdouble\b|two repeated/, preset: 'double' },
+        ];
+        const preset = presetAliases.find((entry) => entry.pattern.test(text));
+        if (preset) {
+            if (/(?:end|last|akhir)/.test(text)) {
+                if (!search.ends_with) search.ends_with_pattern = preset.preset;
+                else if (!search.starts_with) search.starts_with_pattern = preset.preset;
+            } else if (!search.starts_with) {
+                search.starts_with_pattern = preset.preset;
+            }
+            explanation.push(`${preset.preset.replace(/_/g, ' ')} pattern`);
+        }
+
+        const priceMatch = text.match(/(?:under|below|less than|upto|up to|tak)\s*(?:rs\.?|₹|inr)?\s*([\d,.]+)\s*(lakh|lac|k)?/)
+            || text.match(/(?:rs\.?|₹|inr)?\s*([\d,.]+)\s*(lakh|lac|k)?\s*(?:tak|or less|max)/);
         if (priceMatch) {
-            filters.price_max = Number(priceMatch[1].replace(/,/g, ''));
+            const unit = priceMatch[2];
+            const multiplier = unit === 'lakh' || unit === 'lac' ? 100000 : unit === 'k' ? 1000 : 1;
+            filters.price_max = Math.min(1000000, Number(priceMatch[1].replace(/,/g, '')) * multiplier);
             explanation.push(`under ₹${filters.price_max.toLocaleString('en-IN')}`);
         }
 
@@ -158,6 +382,7 @@ export class Numbers {
 
         if (/(cheap|budget|low price|affordable)/.test(text)) filters.sort = 'price_asc';
         if (/(discount|deal|offer)/.test(text)) filters.sort = 'discount';
+        if (Object.keys(search).length) filters.search = search;
 
         return { filters, explanation: explanation.length ? explanation.join(', ') : 'best available VIP numbers' };
     }
@@ -171,7 +396,7 @@ export class Numbers {
                 input: [
                     {
                         role: 'system',
-                        content: `Convert VIP mobile number search text into JSON filters. Return only JSON with keys: q, category, numerology, price_min, price_max, operator, badge, sort, explanation. Allowed sort: newest, price_asc, price_desc, discount, popular. Allowed category slugs: ${CATEGORY_CATALOG.map((category) => category.slug).join(', ')}.`
+                        content: `Convert VIP mobile-number search text into a JSON object. Allowed top-level keys are category, numerology, price_min, price_max, operator, badge, sort, search, explanation. search may contain only starts_with, starts_with_pattern, anywhere, ends_with, ends_with_pattern, must_contain, must_not_contain, digit_sum, mid_sum, score_sum, exact_mask, and digit_frequencies. Pattern enums: double, triple, tetra, penta, hexa, counting, doubling, abc_abc, ab_ab, mirror, semi_mirror. digit_frequencies entries have digit and optional min/max. Never invent a constraint. Allowed sort: newest, price_asc, price_desc, discount, popular. Allowed category slugs: ${CATEGORY_CATALOG.map((category) => category.slug).join(', ')}.`
                     },
                     { role: 'user', content: query }
                 ],
@@ -182,19 +407,13 @@ export class Numbers {
             });
             const raw = response.data?.output_text || response.data?.output?.[0]?.content?.[0]?.text || '{}';
             const parsed = JSON.parse(raw);
+            const filters: any = sanitizeAiFilters(parsed);
+            if (filters.category && !isCategorySlug(filters.category)) delete filters.category;
             return {
-                filters: {
-                    q: parsed.q || undefined,
-                    category: isCategorySlug(parsed.category) ? parsed.category : undefined,
-                    numerology: parsed.numerology || undefined,
-                    price_min: parsed.price_min || undefined,
-                    price_max: parsed.price_max || undefined,
-                    operator: parsed.operator || undefined,
-                    badge: parsed.badge || undefined,
-                    sort: parsed.sort || 'popular',
-                    limit: 12,
-                },
-                explanation: parsed.explanation || 'AI matched your request to the closest VIP numbers',
+                filters,
+                explanation: typeof parsed.explanation === 'string'
+                    ? parsed.explanation.slice(0, 500)
+                    : 'AI matched your request to the closest VIP numbers',
             };
         } catch (error) {
             this.logger.error('OpenAI AI search fallback: ' + error);
@@ -208,9 +427,26 @@ export class Numbers {
         try {
             const query = String(payload.query || payload.q || '').trim();
             if (!query) throw new Error('query is required.');
+            if (query.length > 500) throw new Error('query must be 500 characters or fewer.');
             const ai = await this.openAiFilters(query);
             const parsed = ai || this.localAiFilters(query);
-            const result: any = await this.list({ ...parsed.filters, status: 'AVAILABLE', page: payload.page || 1 });
+            const result: any = await this.list({
+                ...parsed.filters,
+                ...(payload.category ? { category: payload.category } : {}),
+                ...(payload.price_min !== undefined && payload.price_min !== '' ? { price_min: payload.price_min } : {}),
+                ...(payload.price_max !== undefined && payload.price_max !== '' ? { price_max: payload.price_max } : {}),
+                ...(payload.numerology ? { numerology: payload.numerology } : {}),
+                ...(payload.badge ? { badge: payload.badge } : {}),
+                ...(payload.operator ? { operator: payload.operator } : {}),
+                ...(payload.sort ? { sort: payload.sort } : {}),
+                status: 'AVAILABLE',
+                page: payload.page || 1,
+                search: {
+                    ...(parsed.filters.search || {}),
+                    ...(payload.search || {}),
+                    include_alternatives: true,
+                },
+            });
             resModel.status = result.status;
             resModel.info = result.info;
             resModel.data = {
