@@ -2,9 +2,11 @@ import { Router, Request, Response } from 'express';
 import { MasterModel } from "../../../models/MasterModel";
 import * as gtUtil from "../../../pixels-utility";
 import { Site } from './site';
+import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
 
 const masterModel = new MasterModel();
 const site = new Site();
+const dealsOfDay = new DealsOfDay();
 const router = Router();
 
 // All public (path is in the auth bypass list).
@@ -25,6 +27,7 @@ const pub = (fn: (p: any) => Promise<any>) => async (req: Request, res: Response
 
 router.post('/settings', pub((p) => site.settings()));
 router.post('/hero-stats', pub((p) => site.heroStats()));
+router.post('/deals-of-day', pub(() => dealsOfDay.publicList()));
 router.post('/newsletter', pub((p) => site.subscribe(p)));
 router.post('/enquiry', pub((p) => site.enquiry(p)));
 

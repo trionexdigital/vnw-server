@@ -6,12 +6,14 @@ import { Sell } from '../sell/sell';
 import { Approvals } from '../approvals/approvals';
 import { CarouselStudio } from '../carousel/carousel';
 import { CATEGORY_CLASSIFIER_VERSION } from '../categories/categoryClassifier';
+import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
 const sell = new Sell();
 const approvals = new Approvals();
 const carousel = new CarouselStudio();
+const dealsOfDay = new DealsOfDay();
 const router = Router();
 
 const categoryMutationRetired = async () => {
@@ -48,6 +50,12 @@ router.post('/numbers/save', handle((p) => admin.numberSave(p)));
 router.post('/numbers/delete', handle((p) => admin.numberDelete(p)));
 router.post('/numbers/approve', handle((p) => admin.numberApprove(p)));
 router.post('/numbers/reject', handle((p) => admin.numberReject(p)));
+
+// Deal of the Day master
+router.post('/deals-of-day/list', handle(() => dealsOfDay.adminList()));
+router.post('/deals-of-day/save', handle((p) => dealsOfDay.save(p)));
+router.post('/deals-of-day/reorder', handle((p) => dealsOfDay.reorder(p)));
+router.post('/deals-of-day/delete', handle((p) => dealsOfDay.remove(p)));
 
 // Categories
 router.post('/categories/list', handle((p) => admin.categories.list({ all: true })));
