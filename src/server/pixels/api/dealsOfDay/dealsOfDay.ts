@@ -5,7 +5,8 @@ import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 const NUMBER_COLUMNS = `n.number_id, n.number_value, n.display_number,
     n.seller_id, n.seller_type, n.title_label, n.badge, n.mrp, n.offer_price, n.discount_pct,
-    n.numerology_sum, n.operator, n.description, n.stock, n.status, n.is_featured, n.views, n.created_at`;
+    n.numerology_sum, n.operator, n.description, n.stock, n.status, n.rtp_status, n.rtp_available_at,
+    n.is_featured, n.views, n.created_at`;
 
 const cleanOptionalText = (value: unknown, maxLength: number): string | null => {
     const text = String(value ?? '').trim();
@@ -28,6 +29,7 @@ export class DealsOfDay {
     private decorate(rows: any[], source: 'CURATED' | 'FEATURED_FALLBACK') {
         return rows.map((row: any, index: number) => ({
             ...decorateNumberCategories(row),
+            is_premium: Boolean(Number(row.is_featured)),
             deal_id: row.deal_id == null ? null : Number(row.deal_id),
             sort_order: row.sort_order == null ? index : Number(row.sort_order),
             is_active: row.is_active == null ? true : Boolean(Number(row.is_active)),

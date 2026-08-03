@@ -15,6 +15,7 @@ import { router as RateLimitRouter } from "./server/middleware/rateLimit.middlew
 import { router as AuthRouter } from "./server/middleware/auth.middleware"
 import { ServerRouter } from "./server/server.routes";
 import * as mysql from "./server/db/mysql/mysqlDao";
+import { startPrebookLifecycle } from './server/pixels/api/prebooks/prebooks';
 
 
 process.on("uncaughtException", e => {
@@ -71,6 +72,7 @@ async function startServer() {
     // before any request can observe the catalog.
     logger.log("**Reconciling MySQL schema (ensureSchema)");
     await mysql.ensureSchema();
+    startPrebookLifecycle();
     server.listen(PORT, () =>
       logger.log("*************  Server is running on " + JSON.stringify(server.address()) + "  *************")
     );

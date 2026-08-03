@@ -26,6 +26,7 @@ const handle = (fn: (p: any) => Promise<any>) => async (req: Request, res: Respo
 
 router.post('/list', handle((p) => cart.list(p)));
 router.post('/add', handle((p) => cart.add(p)));
+router.post('/add-many', handle((p) => cart.addMany(p)));
 router.post('/remove', handle((p) => cart.remove(p)));
 router.post('/clear', handle((p) => cart.clear(p)));
 

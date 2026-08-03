@@ -27,5 +27,6 @@ router.post('/list', pub((p) => numbers.list(p)));
 router.post('/ai-search', pub((p) => numbers.aiSearch(p)));
 router.post('/featured', pub((p) => numbers.featured(p)));
 router.post('/detail', pub((p) => numbers.detail(p)));
+router.post('/operators', pub(() => numbers.operators()));
 
 export default router;

@@ -20,7 +20,7 @@ export class Wishlist {
         try {
             const q: any = await this.dao.executeQuery(
                 `SELECT w.wishlist_id, n.number_id, n.number_value, n.display_number, n.title_label, n.badge, n.mrp, n.offer_price,
-                        n.discount_pct, n.numerology_sum, n.operator, n.status, n.stock
+                        n.discount_pct, n.numerology_sum, n.operator, n.status, n.stock, n.rtp_status, n.rtp_available_at
                  FROM wishlist w JOIN vip_numbers n ON n.number_id = w.number_id
                  WHERE w.user_id = ? ORDER BY w.created_at DESC`, [payload.user_id]
             );

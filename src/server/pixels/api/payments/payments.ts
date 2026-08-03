@@ -3,6 +3,7 @@ import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { Orders } from '../orders/orders';
+import { Prebooks } from '../prebooks/prebooks';
 
 // Razorpay is required lazily so the server still boots without the package/keys.
 let RazorpayLib: any = null;
@@ -17,12 +18,14 @@ export class Payments {
     private logger: Logger;
     private masterModel: MasterModel;
     private orders: Orders;
+    private prebooks: Prebooks;
 
     constructor() {
         this.dao = new MySqlClient('pixels');
         this.logger = new Logger();
         this.masterModel = new MasterModel();
         this.orders = new Orders();
+        this.prebooks = new Prebooks();
     }
 
     private gatewayReady(): boolean {
@@ -40,6 +43,7 @@ export class Payments {
             const order = oQ.rows?.[0];
             if (!order) throw new Error('Order not found.');
             if (order.payment_status === 'PAID') throw new Error('Order is already paid.');
+            if (order.payment_expires_at && new Date(order.payment_expires_at + 'Z') <= new Date()) throw new Error('Payment hold has expired. Please start again.');
 
             const amountPaise = Math.round(Number(order.total) * 100);
 
@@ -99,14 +103,16 @@ export class Payments {
             }
 
             // Ensure the order belongs to this user.
-            const oQ: any = await this.dao.executeQuery(`SELECT user_id FROM orders WHERE order_id = ?`, [Number(order_id)]);
+            const oQ: any = await this.dao.executeQuery(`SELECT user_id,order_type FROM orders WHERE order_id = ?`, [Number(order_id)]);
             if (oQ.fetchedRows === 0 || oQ.rows[0].user_id !== payload.user_id) throw new Error('Order not found.');
 
             await this.dao.executeQuery(
                 `UPDATE payments SET razorpay_payment_id = ?, status = 'CAPTURED' WHERE razorpay_order_id = ?`,
                 [razorpay_payment_id, razorpay_order_id]
             );
-            const order = await this.orders.finalizePaid(Number(order_id), { razorpay_order_id, razorpay_payment_id, razorpay_signature });
+            const order = oQ.rows[0].order_type === 'PREBOOK'
+                ? await this.prebooks.finalizePaid(Number(order_id), { razorpay_order_id, razorpay_payment_id, razorpay_signature })
+                : await this.orders.finalizePaid(Number(order_id), { razorpay_order_id, razorpay_payment_id, razorpay_signature });
 
             resModel.status = 1;
             resModel.info = 'Payment verified.';
@@ -136,17 +142,37 @@ export class Payments {
             }
             const event = body?.event;
             const entity = body?.payload?.payment?.entity || body?.payload?.order?.entity;
+            const refundEntity = body?.payload?.refund?.entity;
+            if ((event === 'refund.processed' || event === 'refund.failed') && refundEntity) {
+                await this.prebooks.handleRefundWebhook(event, refundEntity, body);
+                resModel.status = 1;
+                resModel.info = 'OK';
+                return resModel;
+            }
             const rzpOrderId = entity?.order_id || entity?.id;
             if ((event === 'payment.captured' || event === 'order.paid') && rzpOrderId) {
-                const oQ: any = await this.dao.executeQuery(`SELECT order_id FROM orders WHERE razorpay_order_id = ?`, [rzpOrderId]);
+                const oQ: any = await this.dao.executeQuery(`SELECT order_id,order_type FROM orders WHERE razorpay_order_id = ?`, [rzpOrderId]);
                 const orderId = oQ.rows?.[0]?.order_id;
                 if (orderId) {
                     await this.dao.executeQuery(
                         `UPDATE payments SET razorpay_payment_id = ?, status = 'CAPTURED', raw_payload = ? WHERE razorpay_order_id = ?`,
                         [entity?.id || null, JSON.stringify(body).slice(0, 60000), rzpOrderId]
                     );
-                    await this.orders.finalizePaid(orderId, { razorpay_order_id: rzpOrderId, razorpay_payment_id: entity?.id });
+                    if (oQ.rows[0].order_type === 'PREBOOK') {
+                        await this.prebooks.finalizePaid(orderId, { razorpay_order_id: rzpOrderId, razorpay_payment_id: entity?.id });
+                    } else {
+                        await this.orders.finalizePaid(orderId, { razorpay_order_id: rzpOrderId, razorpay_payment_id: entity?.id });
+                    }
                 }
+            }
+            if (event === 'payment.failed' && rzpOrderId) {
+                const oQ: any = await this.dao.executeQuery(`SELECT order_id,order_type FROM orders WHERE razorpay_order_id = ?`, [rzpOrderId]);
+                const order = oQ.rows?.[0];
+                if (order?.order_type === 'PREBOOK') await this.prebooks.failPending(Number(order.order_id));
+                await this.dao.executeQuery(
+                    `UPDATE payments SET razorpay_payment_id=?,status='FAILED',raw_payload=? WHERE razorpay_order_id=?`,
+                    [entity?.id || null, JSON.stringify(body).slice(0, 60000), rzpOrderId],
+                );
             }
             resModel.status = 1;
             resModel.info = 'OK';

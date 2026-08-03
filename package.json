@@ -17,7 +17,9 @@
         "clean": "tsc --build --clean",
         "test:categories": "tsc --build && node --test dist/server/pixels/api/categories/categoryClassifier.test.js dist/server/pixels/api/numbers/numbers.automaticCategories.test.js dist/server/pixels/api/numbers/numbers.search.test.js dist/server/db/mysql/automaticCategoryMigration.test.js",
         "test:search": "tsc --build && node --test dist/server/pixels/api/numbers/numbers.search.test.js",
-        "test:deals": "tsc --build && node --test dist/server/pixels/api/dealsOfDay/dealsOfDay.test.js"
+        "test:deals": "tsc --build && node --test dist/server/pixels/api/dealsOfDay/dealsOfDay.test.js",
+        "test:marketplace": "tsc --build && node --test dist/server/pixels/api/site/marketplaceContent.test.js dist/server/pixels/api/cart/cart.addMany.test.js",
+        "test:prebooks": "tsc --build && node --test dist/server/pixels/api/prebooks/prebooks.test.js"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.962.0",

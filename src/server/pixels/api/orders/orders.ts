@@ -4,16 +4,19 @@ import { MasterModel } from '../../../models/MasterModel';
 import { pushNotification } from '../notifications/notifications';
 import { creditWallet } from '../wallet/wallet';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
+import { Prebooks } from '../prebooks/prebooks';
 
 export class Orders {
     private dao: MySqlClient;
     private logger: Logger;
     private masterModel: MasterModel;
+    private prebooks: Prebooks;
 
     constructor() {
         this.dao = new MySqlClient('pixels');
         this.logger = new Logger();
         this.masterModel = new MasterModel();
+        this.prebooks = new Prebooks();
     }
 
     private genOrderNo(): string {
@@ -28,7 +31,9 @@ export class Orders {
     async create(payload: { user_id: number, number_id?: number, coupon_code?: string, customer?: any }) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
+        let connection: any;
         try {
+            await this.prebooks.reconcile();
             const userId = payload.user_id;
 
             // Resolve the set of numbers being purchased.
@@ -42,17 +47,21 @@ export class Orders {
                 numberIds = (cartQ.rows || []).map((r: any) => r.number_id);
             }
             if (numberIds.length === 0) throw new Error('No items to order.');
+            numberIds = Array.from(new Set(numberIds));
+            connection = await this.dao.getConnection();
+            await connection.beginTransaction();
 
-            // Load & validate the numbers (must be AVAILABLE).
+            // Lock before validating so purchase and pre-book checkout cannot
+            // reserve the same number concurrently.
             const placeholders = numberIds.map(() => '?').join(',');
-            const numsQ: any = await this.dao.executeQuery(
-                `SELECT number_id, display_number, offer_price, seller_id, seller_type, status FROM vip_numbers WHERE number_id IN (${placeholders})`,
+            const [nums]: any = await connection.query(
+                `SELECT number_id, display_number, offer_price, seller_id, seller_type, status, stock, rtp_status FROM vip_numbers WHERE number_id IN (${placeholders}) FOR UPDATE`,
                 numberIds
             );
-            const nums = numsQ.rows || [];
-            if (nums.length === 0) throw new Error('Selected numbers not found.');
+            if ((nums || []).length !== numberIds.length) throw new Error('One or more selected numbers were not found.');
             for (const n of nums) {
-                if (n.status !== 'AVAILABLE') throw new Error(`Number ${n.display_number} is no longer available.`);
+                if (n.status !== 'AVAILABLE' || Number(n.stock) <= 0) throw new Error(`Number ${n.display_number} is no longer available.`);
+                if (n.rtp_status !== 'RTP') throw new Error(`Number ${n.display_number} must be pre-booked until its RTP date.`);
             }
 
             const subtotal = nums.reduce((s: number, n: any) => s + Number(n.offer_price), 0);
@@ -60,10 +69,10 @@ export class Orders {
             // Optional coupon.
             let discount = 0; let appliedCoupon: string | null = null;
             if (payload.coupon_code) {
-                const cQ: any = await this.dao.executeQuery(
+                const [coupons]: any = await connection.query(
                     `SELECT * FROM coupons WHERE code = ? AND is_active = 1`, [String(payload.coupon_code).toUpperCase()]
                 );
-                const c = cQ.rows?.[0];
+                const c = coupons?.[0];
                 if (c && subtotal >= Number(c.min_order) && (!c.expires_at || new Date(c.expires_at) >= new Date())) {
                     discount = c.type === 'PERCENT' ? (subtotal * Number(c.value)) / 100 : Number(c.value);
                     if (c.max_discount) discount = Math.min(discount, Number(c.max_discount));
@@ -74,12 +83,12 @@ export class Orders {
             const total = Math.max(0, subtotal - discount);
 
             // Customer snapshot.
-            const uQ: any = await this.dao.executeQuery(`SELECT full_name, email, phone FROM auth_user WHERE user_id = ?`, [userId]);
-            const u = uQ.rows?.[0] || {};
+            const [users]: any = await connection.query(`SELECT full_name, email, phone FROM auth_user WHERE user_id = ?`, [userId]);
+            const u = users?.[0] || {};
             const cust = payload.customer || {};
 
             const orderNo = this.genOrderNo();
-            const ordIns: any = await this.dao.executeQuery(
+            const [ordIns]: any = await connection.query(
                 `INSERT INTO orders (order_no, user_id, subtotal, discount, total, status, payment_status, coupon_code, customer_name, customer_email, customer_phone)
                  VALUES (?,?,?,?,?, 'PENDING','UNPAID', ?,?,?,?)`,
                 [orderNo, userId, subtotal, discount, total, appliedCoupon, cust.name || u.full_name, cust.email || u.email, cust.phone || u.phone]
@@ -91,26 +100,30 @@ export class Orders {
             for (const n of nums) {
                 let commission = 0;
                 if (n.seller_type === 'DEALER') {
-                    const dQ: any = await this.dao.executeQuery(`SELECT commission_pct FROM dealer_profiles WHERE dealer_id = ?`, [n.seller_id]);
-                    const pct = Number(dQ.rows?.[0]?.commission_pct ?? 10);
+                    const [dealers]: any = await connection.query(`SELECT commission_pct FROM dealer_profiles WHERE dealer_id = ?`, [n.seller_id]);
+                    const pct = Number(dealers?.[0]?.commission_pct ?? 10);
                     commission = (Number(n.offer_price) * pct) / 100;
                 }
-                await this.dao.executeQuery(
+                await connection.query(
                     `INSERT INTO order_items (order_id, number_id, seller_id, display_number, price, commission_amount, item_status)
                      VALUES (?,?,?,?,?,?, 'PENDING')`,
                     [orderId, n.number_id, n.seller_id, n.display_number, n.offer_price, commission]
                 );
-                await this.dao.executeQuery(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ?`, [n.number_id]);
+                const [reserved]: any = await connection.query(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ? AND status='AVAILABLE' AND stock>0 AND rtp_status='RTP'`, [n.number_id]);
+                if (reserved.affectedRows !== 1) throw new Error(`Number ${n.display_number} was just reserved by another customer.`);
             }
+            await connection.commit();
 
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = { order_id: orderId, order_no: orderNo, subtotal, discount, total };
         } catch (error) {
+            if (connection) { try { await connection.rollback(); } catch {} }
             resModel.status = -33;
             resModel.info = 'catch : ' + error;
             this.logger.error(JSON.stringify(resModel));
         } finally {
+            if (connection) connection.release();
             try { resModel.tat = (new Date().getTime() - startMS) / 1000; } catch (e) { }
         }
         return resModel;
@@ -210,7 +223,7 @@ export class Orders {
             if (oQ.fetchedRows === 0) throw new Error('Order not found.');
             const itemsQ: any = await this.dao.executeQuery(
                 `SELECT oi.*, COALESCE(n.number_value, oi.display_number) AS number_value,
-                        n.numerology_sum, n.operator
+                        n.numerology_sum, n.operator, n.status, n.rtp_status, n.rtp_available_at
                  FROM order_items oi LEFT JOIN vip_numbers n ON n.number_id = oi.number_id
                  WHERE oi.order_id = ?`, [Number(payload.order_id)]
             );

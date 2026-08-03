@@ -7,6 +7,8 @@ import { Approvals } from '../approvals/approvals';
 import { CarouselStudio } from '../carousel/carousel';
 import { CATEGORY_CLASSIFIER_VERSION } from '../categories/categoryClassifier';
 import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
+import { MarketplaceContent } from '../site/marketplaceContent';
+import { Prebooks } from '../prebooks/prebooks';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
@@ -14,6 +16,8 @@ const sell = new Sell();
 const approvals = new Approvals();
 const carousel = new CarouselStudio();
 const dealsOfDay = new DealsOfDay();
+const marketplace = new MarketplaceContent();
+const prebooks = new Prebooks();
 const router = Router();
 
 const categoryMutationRetired = async () => {
@@ -67,6 +71,15 @@ router.post('/orders/list', handle((p) => admin.ordersList(p)));
 router.post('/orders/detail', handle((p) => admin.orderDetail(p)));
 router.post('/orders/update-status', handle((p) => admin.orderUpdateStatus(p)));
 
+// Paid NON-RTP reservations and refund review
+router.post('/prebooks/list', handle((p) => prebooks.adminList(p)));
+router.post('/prebooks/fulfill', handle((p) => prebooks.fulfill(p)));
+router.post('/prebooks/mark-unavailable', handle((p) => prebooks.markUnavailable(p)));
+router.post('/prebook-refunds/list', handle((p) => prebooks.refundList(p)));
+router.post('/prebook-refunds/approve', handle((p) => prebooks.approveRefund(p)));
+router.post('/prebook-refunds/reject', handle((p) => prebooks.rejectRefund(p)));
+router.post('/prebook-refunds/retry', handle((p) => prebooks.approveRefund(p)));
+
 // Users
 router.post('/users/list', handle((p) => admin.usersList(p)));
 router.post('/users/set-role', handle((p) => admin.userSetRole(p)));
@@ -107,6 +120,30 @@ router.post('/reviews/moderate', handle((p) => admin.reviewModerate(p)));
 router.post('/testimonials/list', handle((p) => admin.testimonials.list({ all: true })));
 router.post('/testimonials/save', handle((p) => admin.testimonials.save(p)));
 router.post('/testimonials/delete', handle((p) => admin.testimonials.remove(p)));
+
+// Trusted clients
+router.post('/trusted-clients/list', handle(() => marketplace.clients(true)));
+router.post('/trusted-clients/save', handle((p) => marketplace.clientSave(p)));
+router.post('/trusted-clients/reorder', handle((p) => marketplace.clientReorder(p)));
+router.post('/trusted-clients/delete', handle((p) => marketplace.clientDelete(p)));
+router.post('/trusted-clients/logo/upload', async (req: Request, res: Response) => {
+    let response = masterModel.getResponseModel();
+    try {
+        const payload = req.body || {};
+        payload.user_id = await gtUtil.requireAdmin(req);
+        response = await marketplace.clientUpload(payload, (req as any).files?.file);
+    } catch (error) {
+        response.status = -9;
+        response.info = 'catch: ' + error;
+    }
+    res.status(gtUtil.Constants.HTTP_OK).json(response);
+});
+
+// Frequently asked questions
+router.post('/faqs/list', handle(() => marketplace.faqs(true)));
+router.post('/faqs/save', handle((p) => marketplace.faqSave(p)));
+router.post('/faqs/reorder', handle((p) => marketplace.faqReorder(p)));
+router.post('/faqs/delete', handle((p) => marketplace.faqDelete(p)));
 
 // Banners
 router.post('/banners/list', handle((p) => admin.banners.list({ all: true })));

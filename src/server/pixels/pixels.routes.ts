@@ -21,6 +21,7 @@ import rbacRouter from './api/rbac/rbac.routes';
 import sellRouter from './api/sell/sell.routes';
 import employeeRouter from './api/approvals/employee.routes';
 import walletRouter from './api/wallet/wallet.routes';
+import prebooksRouter from './api/prebooks/prebooks.routes';
 
 // VIP Number World API — mounted at /vipnumberworld
 const vnwRouter = Router();
@@ -41,6 +42,7 @@ vnwRouter.use('/rbac', rbacRouter);
 vnwRouter.use('/sell', sellRouter);
 vnwRouter.use('/employee', employeeRouter);
 vnwRouter.use('/wallet', walletRouter);
+vnwRouter.use('/prebooks', prebooksRouter);
 vnwRouter.use('/referral', referralRouter);
 vnwRouter.use('/dashboard', dashboardRouter);
 vnwRouter.use('/admin', adminRouter);

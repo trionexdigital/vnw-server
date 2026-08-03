@@ -36,6 +36,7 @@ const BypassAuth = [
     `${BASE}/carousel/preview`, // published carousel static previews
     `${BASE}/reviews/by-number`,// public product reviews
     `${BASE}/site`,             // public site config, newsletter, enquiry
+    `${BASE}/prebooks/catalog`, // public NON-RTP catalog
     `${BASE}/payments/razorpay/webhook`, // verified via signature, not JWT
 ];
 

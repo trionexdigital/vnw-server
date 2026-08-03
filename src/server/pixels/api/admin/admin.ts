@@ -51,7 +51,7 @@ export class Admin {
                  FROM orders o LEFT JOIN auth_user u ON u.user_id = o.user_id ORDER BY o.created_at DESC LIMIT 8`, []
             );
             const topNumbers: any = await this.dao.executeQuery(
-                `SELECT number_id, number_value, display_number, views, offer_price, status FROM vip_numbers ORDER BY views DESC LIMIT 6`, []
+                `SELECT number_id, number_value, display_number, views, offer_price, status, rtp_status, rtp_available_at FROM vip_numbers ORDER BY views DESC LIMIT 6`, []
             );
             // last 6 months revenue trend
             const trend: any = await this.dao.executeQuery(

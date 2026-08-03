@@ -107,6 +107,7 @@ test('deterministic AI fallback understands common English and Hinglish constrai
 
 test('numbers/list combines category, price and structured predicates with AND', async () => {
     const numbers = new Numbers();
+    (numbers as any).prebooks = { reconcile: async () => undefined };
     const calls: Array<{ sql: string; params: any[] }> = [];
     (numbers as any).dao = {
         executeQuery: async (sql: string, params: any[] = []) => {
@@ -134,6 +135,7 @@ test('numbers/list combines category, price and structured predicates with AND',
 
 test('closest matches relax one transparent condition and cap each group at six', async () => {
     const numbers = new Numbers();
+    (numbers as any).prebooks = { reconcile: async () => undefined };
     (numbers as any).dao = {
         executeQuery: async (sql: string) => {
             const hasMask = sql.includes('LIKE ?');
@@ -162,6 +164,7 @@ test('closest matches relax one transparent condition and cap each group at six'
 
 test('alternatives are absent when exact results exist', async () => {
     const numbers = new Numbers();
+    (numbers as any).prebooks = { reconcile: async () => undefined };
     (numbers as any).dao = {
         executeQuery: async (sql: string) => sql.includes('COUNT(*)')
             ? queryResult([{ total: 1 }])

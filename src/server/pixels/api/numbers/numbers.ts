@@ -19,10 +19,13 @@ import {
     sanitizeAiFilters,
     validatePrice,
 } from './numberSearch';
+import { Prebooks, istDateToUtc } from '../prebooks/prebooks';
+import { pushNotification } from '../notifications/notifications';
 
 const SELECT_COLS = `n.number_id, n.number_value, n.display_number,
     n.seller_id, n.seller_type, n.title_label, n.badge, n.mrp, n.offer_price, n.discount_pct,
-    n.numerology_sum, n.operator, n.description, n.stock, n.status, n.is_featured, n.views, n.created_at`;
+    n.numerology_sum, n.operator, n.description, n.stock, n.status, n.rtp_status, n.rtp_available_at,
+    n.is_featured, n.views, n.created_at`;
 
 interface ListingResult {
     items: any[];
@@ -42,14 +45,17 @@ export class Numbers {
     private dao: MySqlClient;
     private logger: Logger;
     private masterModel: MasterModel;
+    private prebooks: Prebooks;
 
     constructor() {
         this.dao = new MySqlClient('pixels');
         this.logger = new Logger();
         this.masterModel = new MasterModel();
+        this.prebooks = new Prebooks();
     }
 
     private async queryListing(payload: any): Promise<ListingResult> {
+        await this.prebooks.reconcile();
         const where: string[] = [];
         const params: any[] = [];
 
@@ -91,8 +97,19 @@ export class Numbers {
         }
         if (payload.operator) { where.push('n.operator = ?'); params.push(String(payload.operator)); }
         if (payload.badge) { where.push('n.badge = ?'); params.push(String(payload.badge).toUpperCase()); }
-        if (payload.is_featured) { where.push('n.is_featured = 1'); }
+        if (payload.is_featured || payload.is_premium) { where.push('n.is_featured = 1'); }
         if (payload.seller_id) { where.push('n.seller_id = ?'); params.push(Number(payload.seller_id)); }
+        if (payload.rtp_status) {
+            const rtpStatus = String(payload.rtp_status).toUpperCase();
+            if (!['RTP', 'NON_RTP'].includes(rtpStatus)) throw new Error('rtp_status must be RTP or NON_RTP.');
+            where.push('n.rtp_status = ?'); params.push(rtpStatus);
+        }
+        if (payload.rtp_from) { where.push('n.rtp_available_at >= ?'); params.push(istDateToUtc(payload.rtp_from)); }
+        if (payload.rtp_to) {
+            const end = new Date(istDateToUtc(payload.rtp_to).replace(' ', 'T') + 'Z');
+            end.setUTCDate(end.getUTCDate() + 1);
+            where.push('n.rtp_available_at < ?'); params.push(end.toISOString().slice(0, 19).replace('T', ' '));
+        }
 
         const compiled = compileStructuredSearch(payload.search);
         where.push(...compiled.where);
@@ -127,12 +144,30 @@ export class Numbers {
         if (rowsQ.status !== 1) throw new Error(rowsQ.info || 'Unable to load numbers.');
 
         return {
-            items: (rowsQ.rows || []).map((row: any) => decorateNumberCategories(row)),
+            items: (rowsQ.rows || []).map((row: any) => ({
+                ...decorateNumberCategories(row),
+                is_premium: Boolean(Number(row.is_featured)),
+            })),
             total,
             page,
             limit,
             pages: Math.ceil(total / limit),
         };
+    }
+
+    async operators() {
+        const resModel = this.masterModel.getResponseModel();
+        try {
+            const q: any = await this.dao.executeQuery(
+                `SELECT TRIM(operator) AS operator, COUNT(*) AS count FROM vip_numbers
+                 WHERE status = 'AVAILABLE' AND stock > 0 AND TRIM(COALESCE(operator,'')) <> ''
+                 GROUP BY TRIM(operator) ORDER BY count DESC, operator ASC`, [],
+            );
+            if (q.status !== 1) throw new Error(q.info || 'Unable to load operators.');
+            resModel.status = 1; resModel.info = 'OK';
+            resModel.data = (q.rows || []).map((row: any) => ({ operator: row.operator, count: Number(row.count) }));
+        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        return resModel;
     }
 
     private withoutSearchKeys(payload: any, keys: Array<keyof StructuredNumberSearch>, topLevel: string[] = []) {
@@ -473,6 +508,7 @@ export class Numbers {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         try {
+            await this.prebooks.reconcile();
             const id = Number(payload.number_id);
             if (!id) throw new Error('number_id is required.');
             await this.dao.executeQuery(`UPDATE vip_numbers SET views = views + 1 WHERE number_id = ?`, [id]);
@@ -488,7 +524,10 @@ export class Numbers {
                  LEFT JOIN auth_user u ON u.user_id = r.user_id
                  WHERE r.number_id = ? AND r.status = 'APPROVED' ORDER BY r.created_at DESC LIMIT 20`, [id]
             );
-            const data = decorateNumberCategories(q.rows[0]);
+            const data = {
+                ...decorateNumberCategories(q.rows[0]),
+                is_premium: Boolean(Number(q.rows[0].is_featured)),
+            };
             data.reviews = rev.rows || [];
             data.avg_rating = data.reviews.length
                 ? Number((data.reviews.reduce((s: number, x: any) => s + x.rating, 0) / data.reviews.length).toFixed(1)) : 0;
@@ -512,6 +551,7 @@ export class Numbers {
         let resModel = this.masterModel.getResponseModel();
         let connection: any;
         try {
+            await this.prebooks.reconcile();
             const number_value = normalizeIndianNumber(payload.number_value ?? payload.display_number);
             const display_number = String(payload.display_number || payload.number_value || number_value).trim();
             if (normalizeIndianNumber(display_number) !== number_value) {
@@ -520,6 +560,10 @@ export class Numbers {
             const mrp = Number(payload.mrp) || 0;
             const offer = Number(payload.offer_price) || mrp;
             const discount = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
+            const rtpStatus = String(payload.rtp_status || 'RTP').toUpperCase();
+            if (!['RTP', 'NON_RTP'].includes(rtpStatus)) throw new Error('RTP Status must be RTP or NON-RTP.');
+            const rtpAvailableAt = rtpStatus === 'NON_RTP' ? istDateToUtc(payload.rtp_available_date) : null;
+            if (rtpAvailableAt && new Date(rtpAvailableAt.replace(' ', 'T') + 'Z') <= new Date()) throw new Error('NON-RTP availability date must be in the future.');
 
             connection = await this.dao.getConnection();
             let insertId = 0;
@@ -528,12 +572,12 @@ export class Numbers {
             try {
                 const [result]: any = await connection.query(
                 `INSERT INTO vip_numbers (number_value, display_number, seller_id, seller_type,
-                 title_label, badge, mrp, offer_price, discount_pct, numerology_sum, operator, description, stock, status, is_featured)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                 title_label, badge, mrp, offer_price, discount_pct, numerology_sum, operator, description, stock, status, rtp_status, rtp_available_at, is_featured)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 [number_value, display_number, payload.seller_id, payload.seller_type || 'ADMIN',
                  payload.title_label || 'VIP Number', (payload.badge || 'NONE').toUpperCase(), mrp, offer, discount,
                  payload.numerology_sum || null, payload.operator || null, payload.description || null,
-                 Number(payload.stock) || 1, payload.status || 'AVAILABLE', payload.is_featured ? 1 : 0]
+                 Number(payload.stock) || 1, payload.status || 'AVAILABLE', rtpStatus, rtpAvailableAt, payload.is_featured ? 1 : 0]
                 );
                 insertId = Number(result?.insertId) || 0;
                 if (!insertId) throw new Error('Unable to create listing.');
@@ -577,6 +621,7 @@ export class Numbers {
         let resModel = this.masterModel.getResponseModel();
         let connection: any;
         try {
+            await this.prebooks.reconcile();
             const id = Number(payload.number_id);
             if (!id) throw new Error('number_id is required.');
 
@@ -587,10 +632,11 @@ export class Numbers {
                 const ownerScope = payload.owner_id ? ' AND seller_id = ?' : '';
                 const ownerParams = payload.owner_id ? [id, Number(payload.owner_id)] : [id];
                 const [rows]: any = await connection.query(
-                    `SELECT number_value, display_number, mrp, offer_price
+                    `SELECT number_value, display_number, mrp, offer_price, status, rtp_status, rtp_available_at
                      FROM vip_numbers WHERE number_id = ?${ownerScope} FOR UPDATE`, ownerParams);
                 if (!Array.isArray(rows) || rows.length === 0) throw new Error('Number not found.');
                 const current = rows[0];
+                let dateChangeUserId = 0;
 
                 const numberValue = payload.number_value !== undefined
                     ? normalizeIndianNumber(payload.number_value)
@@ -627,6 +673,38 @@ export class Numbers {
                         : key === 'badge' ? String(payload[key]).toUpperCase() : payload[key]);
                 }
 
+                if (payload.rtp_status !== undefined || payload.rtp_available_date !== undefined) {
+                    const rtpStatus = String(payload.rtp_status ?? current.rtp_status ?? 'RTP').toUpperCase();
+                    if (!['RTP', 'NON_RTP'].includes(rtpStatus)) throw new Error('RTP Status must be RTP or NON-RTP.');
+                    if (current.status === 'RESERVED' && rtpStatus !== current.rtp_status) throw new Error('RTP status cannot change while this number is reserved by an order.');
+                    const rtpAvailableAt = rtpStatus === 'NON_RTP' ? istDateToUtc(payload.rtp_available_date) : null;
+                    if (rtpAvailableAt && new Date(rtpAvailableAt.replace(' ', 'T') + 'Z') <= new Date()) throw new Error('NON-RTP availability date must be in the future.');
+                    const [active]: any = await connection.query(
+                        `SELECT p.prebook_id,p.user_id,p.rtp_available_at_snapshot FROM prebookings p
+                         WHERE p.number_id=? AND p.status IN ('BOOKED','READY','CANCEL_REQUESTED','REFUND_PENDING') LIMIT 1 FOR UPDATE`, [id],
+                    );
+                    let writeRtpFields = true;
+                    if (active?.[0]) {
+                        // Once the date has arrived reconciliation legitimately
+                        // changes the inventory status to RTP. A normal admin edit
+                        // must not be mistaken for removing the paid date snapshot.
+                        if (rtpStatus === 'RTP' && current.rtp_status === 'RTP' && !payload.rtp_available_date) {
+                            writeRtpFields = false;
+                        } else {
+                            if (rtpStatus !== 'NON_RTP' || !rtpAvailableAt) throw new Error('RTP status cannot be removed while a paid pre-book is active.');
+                            const oldDate = new Date(String(active[0].rtp_available_at_snapshot).replace(' ', 'T') + 'Z');
+                            const newDate = new Date(rtpAvailableAt.replace(' ', 'T') + 'Z');
+                            if (newDate > oldDate) throw new Error('A paid pre-book RTP date can only be moved earlier.');
+                            await connection.query(`UPDATE prebookings SET rtp_available_at_snapshot=? WHERE prebook_id=?`, [rtpAvailableAt, active[0].prebook_id]);
+                            dateChangeUserId = Number(active[0].user_id);
+                        }
+                    }
+                    if (writeRtpFields) {
+                        fields.push('rtp_status = ?', 'rtp_available_at = ?');
+                        params.push(rtpStatus, rtpAvailableAt);
+                    }
+                }
+
                 if (payload.mrp !== undefined || payload.offer_price !== undefined) {
                     const mrp = payload.mrp !== undefined ? Number(payload.mrp) : Number(current.mrp);
                     const offer = payload.offer_price !== undefined ? Number(payload.offer_price) : Number(current.offer_price);
@@ -642,12 +720,16 @@ export class Numbers {
                         `UPDATE vip_numbers SET ${fields.join(', ')} WHERE number_id = ?${ownerScope}`,
                         updateParams,
                     );
+                    if (payload.rtp_status === 'NON_RTP') await connection.query(`DELETE FROM cart_items WHERE number_id=?`, [id]);
                 }
 
                 classification = numberValue !== String(current.number_value)
                     ? await syncNumberCategories(connection, id, numberValue)
                     : classifyNumber(numberValue);
                 await connection.commit();
+                if (dateChangeUserId) {
+                    await pushNotification({ user_id: dateChangeUserId, type: 'order', title: 'RTP date moved earlier', message: `${displayNumber} will be ready sooner than originally scheduled.` });
+                }
             } catch (error) {
                 await connection.rollback();
                 throw error;

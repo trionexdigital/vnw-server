@@ -8,6 +8,7 @@ function queryResult(rows: any[] = []) {
 
 test('numbers/list rejects anything except a catalog category slug', async () => {
     const numbers = new Numbers();
+    (numbers as any).prebooks = { reconcile: async () => undefined };
     let queried = false;
     (numbers as any).dao = {
         executeQuery: async () => {
@@ -24,6 +25,7 @@ test('numbers/list rejects anything except a catalog category slug', async () =>
 
 test('numbers/list filters through the derived index and returns one exclusive category with evidence', async () => {
     const numbers = new Numbers();
+    (numbers as any).prebooks = { reconcile: async () => undefined };
     const calls: Array<{ sql: string; params: any[] }> = [];
     (numbers as any).dao = {
         executeQuery: async (sql: string, params: any[] = []) => {
@@ -62,6 +64,7 @@ test('numbers/list filters through the derived index and returns one exclusive c
 
 test('numbers/create classifies in the same transaction and ignores legacy category_id', async () => {
     const numbers = new Numbers();
+    (numbers as any).prebooks = { reconcile: async () => undefined };
     const sql: string[] = [];
     let began = 0;
     let committed = 0;
@@ -112,6 +115,7 @@ test('numbers/create classifies in the same transaction and ignores legacy categ
 
 test('numbers/update locks the row and reclassifies a changed canonical number', async () => {
     const numbers = new Numbers();
+    (numbers as any).prebooks = { reconcile: async () => undefined };
     const calls: Array<{ sql: string; params?: any[] }> = [];
     const connection = {
         beginTransaction: async () => undefined,

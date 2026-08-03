@@ -142,6 +142,8 @@ export async function ensureSchema(): Promise<void> {
       "`description` text," +
       "`stock` int NOT NULL DEFAULT '1'," +
       "`status` enum('AVAILABLE','RESERVED','SOLD','PENDING_APPROVAL','REJECTED','INACTIVE') NOT NULL DEFAULT 'AVAILABLE'," +
+      "`rtp_status` enum('RTP','NON_RTP') NOT NULL DEFAULT 'RTP'," +
+      "`rtp_available_at` datetime DEFAULT NULL," +
       "`is_featured` tinyint(1) NOT NULL DEFAULT '0'," +
       "`views` int NOT NULL DEFAULT '0'," +
       "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
@@ -184,6 +186,64 @@ export async function ensureSchema(): Promise<void> {
       "REFERENCES `vip_numbers` (`number_id`) ON DELETE CASCADE" +
       ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    // ---- corporate elite packs (admin-curated number bundles) ----
+    await run('create corporate_packs',
+      "CREATE TABLE IF NOT EXISTS `corporate_packs` (" +
+      "`pack_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`title` varchar(96) NOT NULL," +
+      "`pack_type` enum('SERIES','MIXED','SIMILAR_START','SIMILAR_END','SIMILAR_BOTH') NOT NULL," +
+      "`description` varchar(320) DEFAULT NULL," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "`is_active` tinyint(1) NOT NULL DEFAULT '1'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`pack_id`), KEY `pack_published_order` (`is_active`,`sort_order`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create corporate_pack_items',
+      "CREATE TABLE IF NOT EXISTS `corporate_pack_items` (" +
+      "`pack_item_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`pack_id` int unsigned NOT NULL," +
+      "`number_id` int unsigned NOT NULL," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "PRIMARY KEY (`pack_item_id`)," +
+      "UNIQUE KEY `pack_number_unique` (`pack_id`,`number_id`)," +
+      "KEY `corporate_pack_item_number` (`number_id`)," +
+      "CONSTRAINT `fk_corporate_pack_item_pack` FOREIGN KEY (`pack_id`) REFERENCES `corporate_packs` (`pack_id`) ON DELETE CASCADE," +
+      "CONSTRAINT `fk_corporate_pack_item_number` FOREIGN KEY (`number_id`) REFERENCES `vip_numbers` (`number_id`) ON DELETE CASCADE" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---- trusted clients (admin-only publishing, public logo feed) ----
+    await run('create trusted_clients',
+      "CREATE TABLE IF NOT EXISTS `trusted_clients` (" +
+      "`client_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`name` varchar(96) NOT NULL," +
+      "`website_url` varchar(512) DEFAULT NULL," +
+      "`alt_text` varchar(160) DEFAULT NULL," +
+      "`logo_mime` varchar(32) DEFAULT NULL," +
+      "`logo_data` longblob," +
+      "`logo_sha256` char(64) DEFAULT NULL," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "`is_active` tinyint(1) NOT NULL DEFAULT '1'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`client_id`), KEY `trusted_client_published_order` (`is_active`,`sort_order`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---- frequently asked questions ----
+    await run('create faqs',
+      "CREATE TABLE IF NOT EXISTS `faqs` (" +
+      "`faq_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`category` varchar(64) NOT NULL," +
+      "`question` varchar(255) NOT NULL," +
+      "`answer` text NOT NULL," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "`is_active` tinyint(1) NOT NULL DEFAULT '1'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`faq_id`), KEY `faq_published_order` (`is_active`,`sort_order`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     // ---- carts / cart_items ----
     await run('create carts',
       "CREATE TABLE IF NOT EXISTS `carts` (" +
@@ -222,6 +282,8 @@ export async function ensureSchema(): Promise<void> {
       "`total` decimal(18,2) NOT NULL DEFAULT '0.00'," +
       "`status` enum('PENDING','PAID','PROCESSING','COMPLETED','CANCELLED','REFUNDED') NOT NULL DEFAULT 'PENDING'," +
       "`payment_status` enum('UNPAID','PAID','FAILED','REFUNDED') NOT NULL DEFAULT 'UNPAID'," +
+      "`order_type` enum('PURCHASE','PREBOOK') NOT NULL DEFAULT 'PURCHASE'," +
+      "`payment_expires_at` datetime DEFAULT NULL," +
       "`coupon_code` varchar(32) DEFAULT NULL," +
       "`razorpay_order_id` varchar(64) DEFAULT NULL," +
       "`razorpay_payment_id` varchar(64) DEFAULT NULL," +
@@ -262,6 +324,50 @@ export async function ensureSchema(): Promise<void> {
       "`raw_payload` longtext," +
       "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
       "PRIMARY KEY (`payment_id`), KEY `order_id` (`order_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---- paid, exclusive NON-RTP reservations ----
+    await run('create prebookings',
+      "CREATE TABLE IF NOT EXISTS `prebookings` (" +
+      "`prebook_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`order_id` int unsigned NOT NULL," +
+      "`user_id` int unsigned NOT NULL," +
+      "`number_id` int unsigned NOT NULL," +
+      "`status` enum('PENDING_PAYMENT','BOOKED','READY','CANCEL_REQUESTED','REFUND_PENDING','REFUNDED','FULFILLED','FAILED') NOT NULL DEFAULT 'PENDING_PAYMENT'," +
+      "`rtp_available_at_snapshot` datetime NOT NULL," +
+      "`hold_expires_at` datetime NOT NULL," +
+      "`paid_at` datetime DEFAULT NULL," +
+      "`cancellation_deadline` datetime DEFAULT NULL," +
+      "`fulfilled_at` datetime DEFAULT NULL," +
+      "`refunded_at` datetime DEFAULT NULL," +
+      "`issue_note` varchar(1000) DEFAULT NULL," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`prebook_id`), UNIQUE KEY `prebook_order_unique` (`order_id`)," +
+      "KEY `prebook_user` (`user_id`,`created_at`), KEY `prebook_number_state` (`number_id`,`status`)," +
+      "KEY `prebook_due` (`status`,`rtp_available_at_snapshot`), KEY `prebook_hold` (`status`,`hold_expires_at`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create prebook_refund_requests',
+      "CREATE TABLE IF NOT EXISTS `prebook_refund_requests` (" +
+      "`refund_request_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`prebook_id` int unsigned NOT NULL," +
+      "`user_id` int unsigned NOT NULL," +
+      "`reason_type` enum('CUSTOMER_CANCELLATION','DELIVERY_ISSUE','UPC_ISSUE','ACTIVATION_ISSUE','NUMBER_UNAVAILABLE') NOT NULL," +
+      "`status` enum('PENDING','APPROVED','REJECTED','PROCESSING','PROCESSED','FAILED') NOT NULL DEFAULT 'PENDING'," +
+      "`status_before_request` enum('BOOKED','READY') NOT NULL," +
+      "`amount` decimal(18,2) NOT NULL," +
+      "`customer_note` varchar(1000) DEFAULT NULL," +
+      "`admin_note` varchar(1000) DEFAULT NULL," +
+      "`reviewed_by` int unsigned DEFAULT NULL," +
+      "`razorpay_refund_id` varchar(64) DEFAULT NULL," +
+      "`gateway_status` varchar(32) DEFAULT NULL," +
+      "`gateway_payload` longtext," +
+      "`requested_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`reviewed_at` datetime DEFAULT NULL," +
+      "`processed_at` datetime DEFAULT NULL," +
+      "PRIMARY KEY (`refund_request_id`), KEY `prebook_refund_history` (`prebook_id`,`status`)," +
+      "UNIQUE KEY `razorpay_refund_unique` (`razorpay_refund_id`), KEY `refund_queue` (`status`,`requested_at`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---- reviews ----
     await run('create reviews',
@@ -559,6 +665,14 @@ export async function ensureSchema(): Promise<void> {
         return Array.isArray(rows) && rows.length > 0;
       } catch { return false; }
     };
+    const indexExists = async (table: string, index: string): Promise<boolean> => {
+      try {
+        const [rows]: any = await pool.query(
+          `SELECT 1 FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ? LIMIT 1`,
+          [db_name, table, index]);
+        return Array.isArray(rows) && rows.length > 0;
+      } catch { return false; }
+    };
     if (!(await colExists('contact_messages', 'number_id')))
       await run('add contact_messages.number_id', "ALTER TABLE `contact_messages` ADD COLUMN `number_id` int unsigned NULL");
     if (!(await colExists('contact_messages', 'type')))
@@ -588,6 +702,25 @@ export async function ensureSchema(): Promise<void> {
     // buy_price = amount the platform pays the seller (credited to their wallet on approval)
     if (!(await colExists('sell_requests', 'buy_price')))
       await run('add sell_requests.buy_price', "ALTER TABLE `sell_requests` ADD COLUMN `buy_price` decimal(18,2) DEFAULT NULL");
+
+    // RTP is backward-compatible: every legacy number remains immediately purchasable.
+    if (!(await colExists('vip_numbers', 'rtp_status')))
+      await run('add vip_numbers.rtp_status', "ALTER TABLE `vip_numbers` ADD COLUMN `rtp_status` enum('RTP','NON_RTP') NOT NULL DEFAULT 'RTP' AFTER `status`");
+    if (!(await colExists('vip_numbers', 'rtp_available_at')))
+      await run('add vip_numbers.rtp_available_at', "ALTER TABLE `vip_numbers` ADD COLUMN `rtp_available_at` datetime DEFAULT NULL AFTER `rtp_status`");
+    if (!(await colExists('orders', 'order_type')))
+      await run('add orders.order_type', "ALTER TABLE `orders` ADD COLUMN `order_type` enum('PURCHASE','PREBOOK') NOT NULL DEFAULT 'PURCHASE' AFTER `payment_status`");
+    if (!(await colExists('orders', 'payment_expires_at')))
+      await run('add orders.payment_expires_at', "ALTER TABLE `orders` ADD COLUMN `payment_expires_at` datetime DEFAULT NULL AFTER `order_type`");
+
+    // Existing deployments may have narrower enums. Widening preserves all
+    // rows while enabling the complete reservation/refund lifecycle.
+    await run('ensure vip number reservation statuses', "ALTER TABLE `vip_numbers` MODIFY COLUMN `status` enum('AVAILABLE','RESERVED','SOLD','PENDING_APPROVAL','REJECTED','INACTIVE') NOT NULL DEFAULT 'AVAILABLE'");
+    await run('ensure prebook order statuses', "ALTER TABLE `orders` MODIFY COLUMN `status` enum('PENDING','PAID','PROCESSING','COMPLETED','CANCELLED','REFUNDED') NOT NULL DEFAULT 'PENDING'");
+    await run('ensure prebook payment statuses', "ALTER TABLE `orders` MODIFY COLUMN `payment_status` enum('UNPAID','PAID','FAILED','REFUNDED') NOT NULL DEFAULT 'UNPAID'");
+    if (await indexExists('prebook_refund_requests', 'prebook_open_refund')) {
+      await run('replace invalid prebook refund uniqueness', "ALTER TABLE `prebook_refund_requests` DROP INDEX `prebook_open_refund`, ADD KEY `prebook_refund_history` (`prebook_id`,`status`)");
+    }
 
     // ===================== SEED DATA =====================
     await seedData(run);
@@ -876,6 +1009,16 @@ async function seedData(run: (label: string, sql: string, params?: any[]) => Pro
     "(2,'Priya Mehta','Entrepreneur','The premium gold numbers are stunning. My clients remember my number instantly.',5,2)," +
     "(3,'Imran Khan','Reseller','As a dealer, listing and selling numbers here is effortless. Great commissions.',5,3)," +
     "(4,'Anita Desai','Influencer','Loved the lucky number selection. Numerology details helped me pick the right one.',5,4)");
+
+  await run('seed faqs',
+    "INSERT IGNORE INTO `faqs` (`faq_id`,`category`,`question`,`answer`,`sort_order`,`is_active`) VALUES " +
+    "(1,'Buying & Porting','How do I purchase a VIP number?','Choose an available number, add it to your cart, complete the secure checkout, and follow the transfer guidance shared with your order.',1,1)," +
+    "(2,'Buying & Porting','Can I keep my preferred network operator?','Operator availability is shown on each listing. Porting and activation remain subject to the selected operator’s eligibility and verification requirements.',2,1)," +
+    "(3,'Payments & Security','How is my payment handled?','Checkout uses the existing secure payment flow. Your order screen records the payment and subsequent transfer status.',3,1)," +
+    "(4,'Number Selection','How are number categories assigned?','VIP Number World analyses each number automatically and assigns its strongest matching pattern category.',4,1)," +
+    "(5,'Number Selection','What makes a number premium?','Premium numbers are curated listings selected for memorable patterns, presentation, demand, and overall distinctiveness.',5,1)," +
+    "(6,'Numerology','Can I search by numerology sum?','Yes. Use the numerology tools or shop filters to calculate a root number and explore available listings with that sum.',6,1)," +
+    "(7,'Support','What happens after checkout?','Our team guides you through UPC delivery, MNP initiation, and activation using the contact details attached to your order.',7,1)");
 
   await run('seed banners',
     "INSERT IGNORE INTO `banners` (`banner_id`,`title`,`subtitle`,`cta_text`,`cta_link`,`sort_order`) VALUES " +

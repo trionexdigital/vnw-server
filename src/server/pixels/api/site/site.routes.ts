@@ -3,10 +3,12 @@ import { MasterModel } from "../../../models/MasterModel";
 import * as gtUtil from "../../../pixels-utility";
 import { Site } from './site';
 import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
+import { MarketplaceContent } from './marketplaceContent';
 
 const masterModel = new MasterModel();
 const site = new Site();
 const dealsOfDay = new DealsOfDay();
+const marketplace = new MarketplaceContent();
 const router = Router();
 
 // All public (path is in the auth bypass list).
@@ -30,5 +32,23 @@ router.post('/hero-stats', pub((p) => site.heroStats()));
 router.post('/deals-of-day', pub(() => dealsOfDay.publicList()));
 router.post('/newsletter', pub((p) => site.subscribe(p)));
 router.post('/enquiry', pub((p) => site.enquiry(p)));
+router.post('/corporate-packs', pub((p) => marketplace.packs(p)));
+router.post('/operators', pub(() => marketplace.operators()));
+router.post('/trusted-clients', pub(() => marketplace.clients(false)));
+router.post('/faqs', pub(() => marketplace.faqs(false)));
+
+router.get('/trusted-clients/:id/logo', async (req: Request, res: Response) => {
+    try {
+        const logo = await marketplace.clientLogo(Number(req.params.id));
+        if (!logo?.logo_data) return res.status(404).end();
+        const etag = `\"${logo.logo_sha256}\"`;
+        if (req.headers['if-none-match'] === etag) return res.status(304).end();
+        res.setHeader('Content-Type', logo.logo_mime);
+        res.setHeader('Content-Length', String(logo.logo_data.length));
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('ETag', etag);
+        return res.status(200).send(logo.logo_data);
+    } catch { return res.status(404).end(); }
+});
 
 export default router;
