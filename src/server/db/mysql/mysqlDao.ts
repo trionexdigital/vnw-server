@@ -186,7 +186,7 @@ export async function ensureSchema(): Promise<void> {
       "REFERENCES `vip_numbers` (`number_id`) ON DELETE CASCADE" +
       ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-    // ---- corporate elite packs (admin-curated number bundles) ----
+    // ---- family packs (legacy compatibility tables) ----
     await run('create corporate_packs',
       "CREATE TABLE IF NOT EXISTS `corporate_packs` (" +
       "`pack_id` int unsigned NOT NULL AUTO_INCREMENT," +

@@ -55,7 +55,7 @@ router.post('/numbers/delete', handle((p) => admin.numberDelete(p)));
 router.post('/numbers/approve', handle((p) => admin.numberApprove(p)));
 router.post('/numbers/reject', handle((p) => admin.numberReject(p)));
 
-// Deal of the Day master
+// Lucky Pick of the Day master (legacy route name retained for compatibility)
 router.post('/deals-of-day/list', handle(() => dealsOfDay.adminList()));
 router.post('/deals-of-day/save', handle((p) => dealsOfDay.save(p)));
 router.post('/deals-of-day/reorder', handle((p) => dealsOfDay.reorder(p)));

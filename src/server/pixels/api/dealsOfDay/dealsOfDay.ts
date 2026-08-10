@@ -50,7 +50,7 @@ export class DealsOfDay {
                  ORDER BY d.sort_order ASC, d.deal_id ASC`,
                 [],
             );
-            if (curated.status !== 1) throw new Error(curated.info || 'Unable to load Deal of the Day.');
+            if (curated.status !== 1) throw new Error(curated.info || 'Unable to load Lucky Pick of the Day.');
 
             if ((curated.rows || []).length) {
                 resModel.status = 1;
@@ -68,7 +68,7 @@ export class DealsOfDay {
                  LIMIT 8`,
                 [],
             );
-            if (fallback.status !== 1) throw new Error(fallback.info || 'Unable to load featured Deal of the Day numbers.');
+            if (fallback.status !== 1) throw new Error(fallback.info || 'Unable to load featured Lucky Pick of the Day numbers.');
 
             if (!(fallback.rows || []).length) {
                 fallback = await this.dao.executeQuery(
@@ -80,7 +80,7 @@ export class DealsOfDay {
                      LIMIT 8`,
                     [],
                 );
-                if (fallback.status !== 1) throw new Error(fallback.info || 'Unable to load fallback Deal of the Day numbers.');
+                if (fallback.status !== 1) throw new Error(fallback.info || 'Unable to load fallback Lucky Pick of the Day numbers.');
             }
 
             resModel.status = 1;
@@ -109,7 +109,7 @@ export class DealsOfDay {
                  ORDER BY d.sort_order ASC, d.deal_id ASC`,
                 [],
             );
-            if (query.status !== 1) throw new Error(query.info || 'Unable to load Deal of the Day master.');
+            if (query.status !== 1) throw new Error(query.info || 'Unable to load Lucky Pick of the Day master.');
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = this.decorate(query.rows || [], 'CURATED');
@@ -139,8 +139,8 @@ export class DealsOfDay {
                 'SELECT deal_id FROM deal_of_day_numbers WHERE number_id = ? AND deal_id <> ? LIMIT 1',
                 [numberId, dealId],
             );
-            if (duplicate.status !== 1) throw new Error(duplicate.info || 'Unable to validate this deal.');
-            if ((duplicate.rows || []).length) throw new Error('This number is already in Deal of the Day.');
+            if (duplicate.status !== 1) throw new Error(duplicate.info || 'Unable to validate this Lucky Pick.');
+            if ((duplicate.rows || []).length) throw new Error('This number is already in Lucky Pick of the Day.');
 
             const heroLabel = cleanOptionalText(payload.hero_label, 64);
             const heroDescription = cleanOptionalText(payload.hero_description, 160);
@@ -153,7 +153,7 @@ export class DealsOfDay {
                      WHERE deal_id = ?`,
                     [numberId, heroLabel, heroDescription, isActive, dealId],
                 );
-                if (update.status !== 1 || update.affectedRows === 0) throw new Error('Deal of the Day entry not found.');
+                if (update.status !== 1 || update.affectedRows === 0) throw new Error('Lucky Pick of the Day entry not found.');
                 resModel.data = { deal_id: dealId };
             } else {
                 const insert: any = await this.dao.executeQuery(
@@ -163,12 +163,12 @@ export class DealsOfDay {
                      FROM deal_of_day_numbers`,
                     [numberId, heroLabel, heroDescription, isActive],
                 );
-                if (insert.status !== 1 || !insert.insertId) throw new Error(insert.info || 'Unable to add Deal of the Day entry.');
+                if (insert.status !== 1 || !insert.insertId) throw new Error(insert.info || 'Unable to add Lucky Pick of the Day entry.');
                 resModel.data = { deal_id: Number(insert.insertId) };
             }
 
             resModel.status = 1;
-            resModel.info = 'Deal of the Day entry saved.';
+            resModel.info = 'Lucky Pick of the Day entry saved.';
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;
@@ -184,7 +184,7 @@ export class DealsOfDay {
         const uniqueIds = Array.from(new Set(dealIds));
         let connection: any;
         try {
-            if (uniqueIds.length !== dealIds.length) throw new Error('Deal ordering contains duplicate entries.');
+            if (uniqueIds.length !== dealIds.length) throw new Error('Lucky Pick ordering contains duplicate entries.');
             connection = await this.dao.getConnection();
             await connection.beginTransaction();
             const [rows]: any = await connection.query(
@@ -195,7 +195,7 @@ export class DealsOfDay {
                 existingIds.length !== uniqueIds.length
                 || existingIds.some((id: number) => !uniqueIds.includes(id))
             ) {
-                throw new Error('Deal ordering is stale. Refresh the list and try again.');
+                throw new Error('Lucky Pick ordering is stale. Refresh the list and try again.');
             }
 
             for (let index = 0; index < uniqueIds.length; index += 1) {
@@ -206,7 +206,7 @@ export class DealsOfDay {
             }
             await connection.commit();
             resModel.status = 1;
-            resModel.info = 'Deal of the Day order updated.';
+            resModel.info = 'Lucky Pick of the Day order updated.';
             resModel.data = { deal_ids: uniqueIds };
         } catch (error) {
             if (connection) {
@@ -229,9 +229,9 @@ export class DealsOfDay {
                 'DELETE FROM deal_of_day_numbers WHERE deal_id = ?',
                 [dealId],
             );
-            if (query.status !== 1 || query.affectedRows === 0) throw new Error('Deal of the Day entry not found.');
+            if (query.status !== 1 || query.affectedRows === 0) throw new Error('Lucky Pick of the Day entry not found.');
             resModel.status = 1;
-            resModel.info = 'Deal of the Day entry removed.';
+            resModel.info = 'Lucky Pick of the Day entry removed.';
             resModel.data = {};
         } catch (error) {
             resModel.status = -33;

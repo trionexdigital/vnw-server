@@ -32,6 +32,8 @@ router.post('/hero-stats', pub((p) => site.heroStats()));
 router.post('/deals-of-day', pub(() => dealsOfDay.publicList()));
 router.post('/newsletter', pub((p) => site.subscribe(p)));
 router.post('/enquiry', pub((p) => site.enquiry(p)));
+router.post('/family-packs', pub((p) => marketplace.packs(p)));
+// Backward-compatible alias for older clients and saved integrations.
 router.post('/corporate-packs', pub((p) => marketplace.packs(p)));
 router.post('/operators', pub(() => marketplace.operators()));
 router.post('/trusted-clients', pub(() => marketplace.clients(false)));

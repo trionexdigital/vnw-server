@@ -90,7 +90,7 @@ describe('DealsOfDay', () => {
 
         const response: any = await service.save({ number_id: 1, is_active: true });
         assert.equal(response.status, -33);
-        assert.match(response.info, /already in Deal of the Day/);
+        assert.match(response.info, /already in Lucky Pick of the Day/);
     });
 
     it('trims hero overrides and appends a new deal after the current ordering', async () => {
