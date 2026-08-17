@@ -37,7 +37,17 @@ const BypassAuth = [
     `${BASE}/reviews/by-number`,// public product reviews
     `${BASE}/site`,             // public site config, newsletter, enquiry
     `${BASE}/prebooks/catalog`, // public NON-RTP catalog
+    `${BASE}/accessories/list`, // public accessories catalog
+    `${BASE}/accessories/detail`, // public accessory detail
+    `${BASE}/accessories/image`, // public accessory images
     `${BASE}/payments/razorpay/webhook`, // verified via signature, not JWT
+];
+
+// Browser <img> requests cannot attach the rotating API authorization header.
+// Keep this list restricted to read-only binary resources whose handlers accept
+// only an integer id and never expose private account data.
+const PublicBinaryPaths = [
+    `${BASE}/accessories/image/`,
 ];
 
 //setting response for all
@@ -59,6 +69,10 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
         token = req.headers['token'] + ''; // Express headers are auto converted to lowercase
         //Skip on Status
         if (req.path === '/status' || req.path === '/vipnumberworld/status') {
+            next();
+            return;
+        }
+        if (PublicBinaryPaths.some((prefix) => req.path.startsWith(prefix))) {
             next();
             return;
         }

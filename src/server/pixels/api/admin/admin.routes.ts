@@ -9,6 +9,7 @@ import { CATEGORY_CLASSIFIER_VERSION } from '../categories/categoryClassifier';
 import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
 import { MarketplaceContent } from '../site/marketplaceContent';
 import { Prebooks } from '../prebooks/prebooks';
+import { Accessories } from '../accessories/accessories';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
@@ -18,6 +19,7 @@ const carousel = new CarouselStudio();
 const dealsOfDay = new DealsOfDay();
 const marketplace = new MarketplaceContent();
 const prebooks = new Prebooks();
+const accessories = new Accessories();
 const router = Router();
 
 const categoryMutationRetired = async () => {
@@ -54,6 +56,36 @@ router.post('/numbers/save', handle((p) => admin.numberSave(p)));
 router.post('/numbers/delete', handle((p) => admin.numberDelete(p)));
 router.post('/numbers/approve', handle((p) => admin.numberApprove(p)));
 router.post('/numbers/reject', handle((p) => admin.numberReject(p)));
+
+// Homepage premium number curation
+router.post('/home-premium/list', handle(() => accessories.homePremium(true)));
+router.post('/home-premium/save', handle((p) => accessories.homePremiumSave(p)));
+router.post('/home-premium/reorder', handle((p) => accessories.homePremiumReorder(p)));
+router.post('/home-premium/remove', handle((p) => accessories.homePremiumRemove(p)));
+
+// Accessories catalog, images, homepage selection, fulfilment, and returns
+router.post('/accessories/list', handle((p) => accessories.list(p, true)));
+router.post('/accessories/detail', handle((p) => accessories.detail(p, true)));
+router.post('/accessories/save', handle((p) => accessories.save(p)));
+router.post('/accessories/archive', handle((p) => accessories.archive(p)));
+router.post('/accessories/images/delete', handle((p) => accessories.imageDelete(p)));
+router.post('/accessories/images/reorder', handle((p) => accessories.imageOrder(p)));
+router.post('/accessories/home/list', handle(() => accessories.homeAccessories(true)));
+router.post('/accessories/home/save', handle((p) => accessories.homeAccessorySave(p)));
+router.post('/accessories/home/reorder', handle((p) => accessories.homeAccessoryReorder(p)));
+router.post('/accessories/home/remove', handle((p) => accessories.homeAccessoryRemove(p)));
+router.post('/accessories/returns/list', handle((p) => accessories.returns(p, true)));
+router.post('/accessories/returns/resolve', handle((p) => accessories.resolveReturn(p)));
+router.post('/accessories/fulfilment/update', handle((p) => accessories.updateFulfillment(p)));
+router.post('/accessories/images/upload', async (req: Request, res: Response) => {
+    let response = masterModel.getResponseModel();
+    try {
+        const payload = req.body || {};
+        payload.user_id = await gtUtil.requireAdmin(req);
+        response = await accessories.upload(payload, (req as any).files?.file);
+    } catch (error) { response.status = -9; response.info = 'catch: ' + error; }
+    res.status(gtUtil.Constants.HTTP_OK).json(response);
+});
 
 // Lucky Pick of the Day master (legacy route name retained for compatibility)
 router.post('/deals-of-day/list', handle(() => dealsOfDay.adminList()));

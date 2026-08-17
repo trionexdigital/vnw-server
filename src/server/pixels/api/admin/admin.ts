@@ -391,7 +391,8 @@ export class Admin {
     async settingsGet(_payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const keys = ['SITE_TITLE', 'SITE_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'WHATSAPP', 'SUPPORT_ADDRESS', 'PROMO_TEXT', 'PROMO_COUPON'];
+            const keys = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON',
+                'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
             const q: any = await this.dao.executeQuery(
                 `SELECT key_id, value FROM env WHERE key_id IN (${keys.map(() => '?').join(',')})`, keys);
             const map: any = {};
@@ -403,7 +404,8 @@ export class Admin {
     async settingsSave(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const allowed = ['SITE_TITLE', 'SITE_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'WHATSAPP', 'SUPPORT_ADDRESS', 'PROMO_TEXT', 'PROMO_COUPON'];
+            const allowed = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON',
+                'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
             for (const k of allowed) {
                 if (payload[k] !== undefined) {
                     await this.dao.executeQuery(

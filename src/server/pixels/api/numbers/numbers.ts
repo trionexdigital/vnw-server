@@ -160,8 +160,8 @@ export class Numbers {
         try {
             const q: any = await this.dao.executeQuery(
                 `SELECT TRIM(operator) AS operator, COUNT(*) AS count FROM vip_numbers
-                 WHERE status = 'AVAILABLE' AND stock > 0 AND TRIM(COALESCE(operator,'')) <> ''
-                 GROUP BY TRIM(operator) ORDER BY count DESC, operator ASC`, [],
+                 WHERE status = 'AVAILABLE' AND stock > 0 AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
+                 GROUP BY TRIM(operator) ORDER BY FIELD(operator,'Airtel','Jio','Vi','BSNL')`, [],
             );
             if (q.status !== 1) throw new Error(q.info || 'Unable to load operators.');
             resModel.status = 1; resModel.info = 'OK';

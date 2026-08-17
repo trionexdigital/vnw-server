@@ -4,6 +4,7 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { Orders } from '../orders/orders';
 import { Prebooks } from '../prebooks/prebooks';
+import { Accessories } from '../accessories/accessories';
 
 // Razorpay is required lazily so the server still boots without the package/keys.
 let RazorpayLib: any = null;
@@ -19,6 +20,7 @@ export class Payments {
     private masterModel: MasterModel;
     private orders: Orders;
     private prebooks: Prebooks;
+    private accessories: Accessories;
 
     constructor() {
         this.dao = new MySqlClient('pixels');
@@ -26,6 +28,7 @@ export class Payments {
         this.masterModel = new MasterModel();
         this.orders = new Orders();
         this.prebooks = new Prebooks();
+        this.accessories = new Accessories();
     }
 
     private gatewayReady(): boolean {
@@ -95,16 +98,18 @@ export class Payments {
             if (!order_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
                 throw new Error('Incomplete payment confirmation.');
             }
+            // Establish ownership before any failure path is allowed to mutate
+            // or release the order's reserved inventory.
+            const oQ: any = await this.dao.executeQuery(`SELECT user_id,order_type,razorpay_order_id FROM orders WHERE order_id = ?`, [Number(order_id)]);
+            if (oQ.fetchedRows === 0 || Number(oQ.rows[0].user_id) !== Number(payload.user_id)) throw new Error('Order not found.');
+            if (oQ.rows[0].razorpay_order_id && oQ.rows[0].razorpay_order_id !== razorpay_order_id) throw new Error('Payment order does not match this purchase.');
             const expected = crypto.createHmac('sha256', KEY_SECRET())
                 .update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
             if (expected !== razorpay_signature) {
-                await this.dao.executeQuery(`UPDATE orders SET payment_status = 'FAILED' WHERE order_id = ?`, [Number(order_id)]);
+                if (oQ.rows?.[0]?.order_type === 'PURCHASE') await this.orders.failPurchase(Number(order_id));
+                else await this.dao.executeQuery(`UPDATE orders SET payment_status = 'FAILED' WHERE order_id = ?`, [Number(order_id)]);
                 throw new Error('Payment signature verification failed.');
             }
-
-            // Ensure the order belongs to this user.
-            const oQ: any = await this.dao.executeQuery(`SELECT user_id,order_type FROM orders WHERE order_id = ?`, [Number(order_id)]);
-            if (oQ.fetchedRows === 0 || oQ.rows[0].user_id !== payload.user_id) throw new Error('Order not found.');
 
             await this.dao.executeQuery(
                 `UPDATE payments SET razorpay_payment_id = ?, status = 'CAPTURED' WHERE razorpay_order_id = ?`,
@@ -144,7 +149,8 @@ export class Payments {
             const entity = body?.payload?.payment?.entity || body?.payload?.order?.entity;
             const refundEntity = body?.payload?.refund?.entity;
             if ((event === 'refund.processed' || event === 'refund.failed') && refundEntity) {
-                await this.prebooks.handleRefundWebhook(event, refundEntity, body);
+                const handled = await this.accessories.handleRefundWebhook(event, refundEntity);
+                if (!handled) await this.prebooks.handleRefundWebhook(event, refundEntity, body);
                 resModel.status = 1;
                 resModel.info = 'OK';
                 return resModel;
@@ -169,6 +175,7 @@ export class Payments {
                 const oQ: any = await this.dao.executeQuery(`SELECT order_id,order_type FROM orders WHERE razorpay_order_id = ?`, [rzpOrderId]);
                 const order = oQ.rows?.[0];
                 if (order?.order_type === 'PREBOOK') await this.prebooks.failPending(Number(order.order_id));
+                else if (order?.order_type === 'PURCHASE') await this.orders.failPurchase(Number(order.order_id));
                 await this.dao.executeQuery(
                     `UPDATE payments SET razorpay_payment_id=?,status='FAILED',raw_payload=? WHERE razorpay_order_id=?`,
                     [entity?.id || null, JSON.stringify(body).slice(0, 60000), rzpOrderId],

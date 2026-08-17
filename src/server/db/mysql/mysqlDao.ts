@@ -244,6 +244,72 @@ export async function ensureSchema(): Promise<void> {
       "PRIMARY KEY (`faq_id`), KEY `faq_published_order` (`is_active`,`sort_order`)" +
       ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    // ---- accessories catalog and homepage merchandising ----
+    await run('create accessory_products',
+      "CREATE TABLE IF NOT EXISTS `accessory_products` (" +
+      "`accessory_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`slug` varchar(180) NOT NULL," +
+      "`name` varchar(180) NOT NULL," +
+      "`brand` varchar(96) NOT NULL," +
+      "`model` varchar(96) DEFAULT NULL," +
+      "`sku` varchar(64) NOT NULL," +
+      "`category` varchar(96) DEFAULT NULL," +
+      "`mrp` decimal(18,2) NOT NULL DEFAULT '0.00'," +
+      "`offer_price` decimal(18,2) NOT NULL DEFAULT '0.00'," +
+      "`discount_pct` int NOT NULL DEFAULT '0'," +
+      "`stock` int unsigned NOT NULL DEFAULT '0'," +
+      "`reserved_stock` int unsigned NOT NULL DEFAULT '0'," +
+      "`short_description` varchar(320) DEFAULT NULL," +
+      "`description` text," +
+      "`highlights` longtext," +
+      "`specifications` longtext," +
+      "`warranty` varchar(255) DEFAULT NULL," +
+      "`status` enum('DRAFT','ACTIVE','INACTIVE','ARCHIVED') NOT NULL DEFAULT 'DRAFT'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`accessory_id`), UNIQUE KEY `accessory_slug` (`slug`), UNIQUE KEY `accessory_sku` (`sku`)," +
+      "KEY `accessory_catalog` (`status`,`category`,`brand`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create accessory_images',
+      "CREATE TABLE IF NOT EXISTS `accessory_images` (" +
+      "`image_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`accessory_id` int unsigned NOT NULL," +
+      "`original_name` varchar(180) NOT NULL," +
+      "`mime_type` varchar(64) NOT NULL," +
+      "`byte_size` int unsigned NOT NULL," +
+      "`content_sha256` char(64) NOT NULL," +
+      "`content` longblob NOT NULL," +
+      "`alt_text` varchar(180) DEFAULT NULL," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "`is_primary` tinyint(1) NOT NULL DEFAULT '0'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`image_id`), UNIQUE KEY `accessory_image_hash` (`accessory_id`,`content_sha256`)," +
+      "KEY `accessory_image_order` (`accessory_id`,`is_primary`,`sort_order`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create homepage_accessories',
+      "CREATE TABLE IF NOT EXISTS `homepage_accessories` (" +
+      "`homepage_accessory_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`accessory_id` int unsigned NOT NULL," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "`is_active` tinyint(1) NOT NULL DEFAULT '1'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`homepage_accessory_id`), UNIQUE KEY `homepage_accessory_product` (`accessory_id`)," +
+      "KEY `homepage_accessory_order` (`is_active`,`sort_order`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create homepage_premium_numbers',
+      "CREATE TABLE IF NOT EXISTS `homepage_premium_numbers` (" +
+      "`homepage_premium_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`number_id` int unsigned NOT NULL," +
+      "`sort_order` int NOT NULL DEFAULT '0'," +
+      "`is_active` tinyint(1) NOT NULL DEFAULT '1'," +
+      "`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`homepage_premium_id`), UNIQUE KEY `homepage_premium_number` (`number_id`)," +
+      "KEY `homepage_premium_order` (`is_active`,`sort_order`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     // ---- carts / cart_items ----
     await run('create carts',
       "CREATE TABLE IF NOT EXISTS `carts` (" +
@@ -260,6 +326,17 @@ export async function ensureSchema(): Promise<void> {
       "`added_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
       "PRIMARY KEY (`cart_item_id`), UNIQUE KEY `cart_number` (`cart_id`,`number_id`)," +
       "KEY `number_id` (`number_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create accessory_cart_items',
+      "CREATE TABLE IF NOT EXISTS `accessory_cart_items` (" +
+      "`accessory_cart_item_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`cart_id` int unsigned NOT NULL," +
+      "`accessory_id` int unsigned NOT NULL," +
+      "`quantity` int unsigned NOT NULL DEFAULT '1'," +
+      "`added_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "PRIMARY KEY (`accessory_cart_item_id`), UNIQUE KEY `cart_accessory` (`cart_id`,`accessory_id`)," +
+      "KEY `accessory_cart_product` (`accessory_id`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---- wishlist ----
     await run('create wishlist',
@@ -309,6 +386,46 @@ export async function ensureSchema(): Promise<void> {
       "`item_status` enum('PENDING','PAID','TRANSFERRED','CANCELLED') NOT NULL DEFAULT 'PENDING'," +
       "PRIMARY KEY (`order_item_id`), KEY `order_id` (`order_id`)," +
       "KEY `number_id` (`number_id`), KEY `seller_id` (`seller_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create accessory_order_items',
+      "CREATE TABLE IF NOT EXISTS `accessory_order_items` (" +
+      "`accessory_order_item_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`order_id` int unsigned NOT NULL," +
+      "`accessory_id` int unsigned NOT NULL," +
+      "`name` varchar(180) NOT NULL," +
+      "`brand` varchar(96) NOT NULL," +
+      "`model` varchar(96) DEFAULT NULL," +
+      "`sku` varchar(64) NOT NULL," +
+      "`quantity` int unsigned NOT NULL," +
+      "`unit_price` decimal(18,2) NOT NULL," +
+      "`line_total` decimal(18,2) NOT NULL," +
+      "`fulfillment_status` enum('PENDING','PACKED','SHIPPED','DELIVERED','CANCELLED','REFUNDED','REPLACEMENT') NOT NULL DEFAULT 'PENDING'," +
+      "`carrier` varchar(96) DEFAULT NULL," +
+      "`tracking_number` varchar(128) DEFAULT NULL," +
+      "`shipped_at` datetime DEFAULT NULL," +
+      "`delivered_at` datetime DEFAULT NULL," +
+      "PRIMARY KEY (`accessory_order_item_id`), KEY `accessory_order` (`order_id`), KEY `accessory_order_product` (`accessory_id`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    await run('create accessory_return_requests',
+      "CREATE TABLE IF NOT EXISTS `accessory_return_requests` (" +
+      "`return_request_id` int unsigned NOT NULL AUTO_INCREMENT," +
+      "`accessory_order_item_id` int unsigned NOT NULL," +
+      "`user_id` int unsigned NOT NULL," +
+      "`reason` enum('DAMAGED','DEFECTIVE','WRONG_ITEM') NOT NULL," +
+      "`requested_resolution` enum('REFUND','REPLACEMENT') NOT NULL," +
+      "`status` enum('PENDING','APPROVED','REJECTED','PROCESSING','REFUNDED','REPLACEMENT_SENT','FAILED') NOT NULL DEFAULT 'PENDING'," +
+      "`customer_note` varchar(1000) DEFAULT NULL," +
+      "`admin_note` varchar(1000) DEFAULT NULL," +
+      "`reviewed_by` int unsigned DEFAULT NULL," +
+      "`razorpay_refund_id` varchar(64) DEFAULT NULL," +
+      "`refund_amount` decimal(18,2) DEFAULT NULL," +
+      "`requested_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+      "`reviewed_at` datetime DEFAULT NULL," +
+      "`processed_at` datetime DEFAULT NULL," +
+      "PRIMARY KEY (`return_request_id`), KEY `accessory_return_item` (`accessory_order_item_id`,`status`)," +
+      "KEY `accessory_return_queue` (`status`,`requested_at`)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---- payments (Razorpay audit) ----
     await run('create payments',
@@ -712,6 +829,15 @@ export async function ensureSchema(): Promise<void> {
       await run('add orders.order_type', "ALTER TABLE `orders` ADD COLUMN `order_type` enum('PURCHASE','PREBOOK') NOT NULL DEFAULT 'PURCHASE' AFTER `payment_status`");
     if (!(await colExists('orders', 'payment_expires_at')))
       await run('add orders.payment_expires_at', "ALTER TABLE `orders` ADD COLUMN `payment_expires_at` datetime DEFAULT NULL AFTER `order_type`");
+    const orderColumns: Array<[string, string]> = [
+      ['shipping_name', "varchar(96) DEFAULT NULL"], ['shipping_phone', "varchar(20) DEFAULT NULL"],
+      ['shipping_address_line1', "varchar(255) DEFAULT NULL"], ['shipping_address_line2', "varchar(255) DEFAULT NULL"],
+      ['shipping_city', "varchar(96) DEFAULT NULL"], ['shipping_state', "varchar(96) DEFAULT NULL"],
+      ['shipping_postal_code', "varchar(12) DEFAULT NULL"], ['refunded_amount', "decimal(18,2) NOT NULL DEFAULT '0.00'"],
+    ];
+    for (const [column, definition] of orderColumns) {
+      if (!(await colExists('orders', column))) await run(`add orders.${column}`, `ALTER TABLE \`orders\` ADD COLUMN \`${column}\` ${definition}`);
+    }
 
     // Existing deployments may have narrower enums. Widening preserves all
     // rows while enabling the complete reservation/refund lifecycle.
@@ -1029,6 +1155,19 @@ async function seedData(run: (label: string, sql: string, params?: any[]) => Pro
     "INSERT IGNORE INTO `coupons` (`code`,`type`,`value`,`min_order`,`is_active`) VALUES ('WELCOME10','PERCENT',10,5000,1)");
   await run('seed coupon FEST20',
     "INSERT IGNORE INTO `coupons` (`code`,`type`,`value`,`min_order`,`is_active`) VALUES ('FEST20','PERCENT',20,15000,1)");
+
+  // Curated demo accessories give a fresh installation a complete storefront;
+  // admins can replace, hide, or reorder every selection.
+  await run('seed accessories',
+    "INSERT IGNORE INTO `accessory_products` (`slug`,`name`,`brand`,`model`,`sku`,`category`,`mrp`,`offer_price`,`discount_pct`,`stock`,`short_description`,`description`,`highlights`,`specifications`,`warranty`,`status`) VALUES " +
+    "('vnw-20w-fast-charger','20W Fast Wall Charger','VNW Essentials','C20','VNW-C20','Chargers',1299,899,31,25,'Compact fast charging for compatible mobile devices.','A travel-friendly fast charger designed for dependable everyday use.','[\"20W fast output\",\"Compact travel design\",\"Over-current protection\"]','[{\"label\":\"Output\",\"value\":\"20W\"},{\"label\":\"Connector\",\"value\":\"USB-C\"}]','6 month warranty','ACTIVE')," +
+    "('vnw-braided-type-c-cable','Braided USB-C Fast Charging Cable','VNW Essentials','B100','VNW-B100','Cables',799,499,38,40,'Durable braided cable for charging and data.','A reinforced one-metre cable designed for daily charging and data transfer.','[\"Reinforced braid\",\"Fast-charge compatible\",\"One metre length\"]','[{\"label\":\"Length\",\"value\":\"1 metre\"},{\"label\":\"Connector\",\"value\":\"USB-C\"}]','3 month warranty','ACTIVE')," +
+    "('vnw-magnetic-car-holder','Magnetic Car Phone Holder','DriveMate','M360','DM-M360','Car Accessories',1499,999,33,18,'A compact dashboard mount with adjustable viewing angle.','Secure your compatible phone for navigation with an adjustable magnetic mount.','[\"360-degree adjustment\",\"Compact dashboard mount\",\"Strong magnetic grip\"]','[{\"label\":\"Mount\",\"value\":\"Dashboard\"},{\"label\":\"Rotation\",\"value\":\"360 degrees\"}]','6 month warranty','ACTIVE')," +
+    "('vnw-10000mah-power-bank','10000mAh Pocket Power Bank','VNW Essentials','P10','VNW-P10','Power Banks',2499,1799,28,15,'Portable backup power with dual-device charging.','A slim backup battery for travel and busy workdays.','[\"10000mAh capacity\",\"Dual-device charging\",\"LED power indicator\"]','[{\"label\":\"Capacity\",\"value\":\"10000mAh\"},{\"label\":\"Ports\",\"value\":\"USB-C and USB-A\"}]','12 month warranty','ACTIVE')");
+  await run('seed homepage accessories',
+    "INSERT IGNORE INTO `homepage_accessories` (`accessory_id`,`sort_order`,`is_active`) SELECT accessory_id,CASE sku WHEN 'VNW-C20' THEN 0 WHEN 'VNW-B100' THEN 1 WHEN 'DM-M360' THEN 2 ELSE 3 END,1 FROM accessory_products WHERE sku IN ('VNW-C20','VNW-B100','DM-M360','VNW-P10')");
+  await run('seed homepage premium numbers',
+    "INSERT IGNORE INTO `homepage_premium_numbers` (`number_id`,`sort_order`,`is_active`) VALUES (1,0,1),(2,1,1),(4,2,1),(7,3,1)");
 
   // public site config / promo bar (admin-editable via Settings)
   await run('seed env PROMO_TEXT',

@@ -28,6 +28,9 @@ router.post('/list', handle((p) => cart.list(p)));
 router.post('/add', handle((p) => cart.add(p)));
 router.post('/add-many', handle((p) => cart.addMany(p)));
 router.post('/remove', handle((p) => cart.remove(p)));
+router.post('/accessory/add', handle((p) => cart.addAccessory(p)));
+router.post('/accessory/update', handle((p) => cart.updateAccessory(p)));
+router.post('/accessory/remove', handle((p) => cart.removeAccessory(p)));
 router.post('/clear', handle((p) => cart.clear(p)));
 
 export default router;

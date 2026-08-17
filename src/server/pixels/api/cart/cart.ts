@@ -35,8 +35,23 @@ export class Cart {
                  FROM cart_items ci JOIN vip_numbers n ON n.number_id = ci.number_id
                  WHERE ci.cart_id = ? ORDER BY ci.added_at DESC`, [cartId]
             );
-            const items = (q.rows || []).map((row: any) => decorateNumberCategories(row));
-            const subtotal = items.reduce((s: number, x: any) => s + Number(x.offer_price), 0);
+            const numberItems = (q.rows || []).map((row: any) => ({
+                ...decorateNumberCategories(row), item_type: 'NUMBER', item_id: Number(row.number_id), quantity: 1,
+                unit_price: Number(row.offer_price), line_total: Number(row.offer_price),
+            }));
+            const accessoryQ: any = await this.dao.executeQuery(
+                `SELECT aci.accessory_cart_item_id,p.accessory_id,p.slug,p.name,p.brand,p.model,p.sku,p.offer_price,p.mrp,
+                        p.stock,p.reserved_stock,(p.stock-p.reserved_stock) AS available_stock,p.status,aci.quantity,
+                        (SELECT image_id FROM accessory_images ai WHERE ai.accessory_id=p.accessory_id ORDER BY ai.is_primary DESC,ai.sort_order,image_id LIMIT 1) AS primary_image_id
+                 FROM accessory_cart_items aci INNER JOIN accessory_products p ON p.accessory_id=aci.accessory_id
+                 WHERE aci.cart_id=? ORDER BY aci.added_at DESC`, [cartId]);
+            const accessoryItems = (accessoryQ.rows || []).map((row: any) => ({
+                ...row, item_type: 'ACCESSORY', item_id: Number(row.accessory_id), quantity: Number(row.quantity),
+                unit_price: Number(row.offer_price), line_total: Number(row.offer_price) * Number(row.quantity),
+                available_stock: Math.max(0, Number(row.available_stock)),
+            }));
+            const items = [...numberItems, ...accessoryItems];
+            const subtotal = items.reduce((s: number, x: any) => s + Number(x.line_total), 0);
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = { items, count: items.length, subtotal };
@@ -74,6 +89,46 @@ export class Cart {
             try { resModel.tat = (new Date().getTime() - startMS) / 1000; } catch (e) { }
         }
         return resModel;
+    }
+
+    async addAccessory(payload: { user_id: number, accessory_id: number, quantity?: number }) {
+        const resModel = this.masterModel.getResponseModel();
+        try {
+            const id = Number(payload.accessory_id); const quantity = Math.min(10, Math.max(1, Math.floor(Number(payload.quantity) || 1)));
+            const cartId = await this.getCartId(payload.user_id);
+            const q: any = await this.dao.executeQuery("SELECT stock,reserved_stock,status FROM accessory_products WHERE accessory_id=?", [id]);
+            const product = q.rows?.[0];
+            if (!product || product.status !== 'ACTIVE') throw new Error('Accessory is not available.');
+            if (Number(product.stock) - Number(product.reserved_stock) < quantity) throw new Error('Requested quantity is not available.');
+            await this.dao.executeQuery(`INSERT INTO accessory_cart_items (cart_id,accessory_id,quantity) VALUES (?,?,?)
+                ON DUPLICATE KEY UPDATE quantity=LEAST(10,quantity+VALUES(quantity))`, [cartId, id, quantity]);
+            const current: any = await this.dao.executeQuery('SELECT quantity FROM accessory_cart_items WHERE cart_id=? AND accessory_id=?', [cartId, id]);
+            if (Number(current.rows?.[0]?.quantity) > Number(product.stock) - Number(product.reserved_stock)) {
+                await this.dao.executeQuery('UPDATE accessory_cart_items SET quantity=? WHERE cart_id=? AND accessory_id=?', [Math.max(1, Number(product.stock) - Number(product.reserved_stock)), cartId, id]);
+            }
+            resModel.status = 1; resModel.info = 'Accessory added to cart.'; resModel.data = (await this.list(payload)).data;
+        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        return resModel;
+    }
+
+    async updateAccessory(payload: { user_id: number, accessory_id: number, quantity: number }) {
+        const resModel = this.masterModel.getResponseModel();
+        try {
+            const cartId = await this.getCartId(payload.user_id); const id = Number(payload.accessory_id);
+            const quantity = Math.min(10, Math.max(0, Math.floor(Number(payload.quantity) || 0)));
+            if (!quantity) await this.dao.executeQuery('DELETE FROM accessory_cart_items WHERE cart_id=? AND accessory_id=?', [cartId, id]);
+            else {
+                const q: any = await this.dao.executeQuery("SELECT stock,reserved_stock,status FROM accessory_products WHERE accessory_id=?", [id]);
+                if (!q.rows?.[0] || q.rows[0].status !== 'ACTIVE' || Number(q.rows[0].stock) - Number(q.rows[0].reserved_stock) < quantity) throw new Error('Requested quantity is not available.');
+                await this.dao.executeQuery('UPDATE accessory_cart_items SET quantity=? WHERE cart_id=? AND accessory_id=?', [quantity, cartId, id]);
+            }
+            resModel.status = 1; resModel.info = 'Cart updated.'; resModel.data = (await this.list(payload)).data;
+        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        return resModel;
+    }
+
+    async removeAccessory(payload: { user_id: number, accessory_id: number }) {
+        return this.updateAccessory({ ...payload, quantity: 0 });
     }
 
     /** Atomically validates and adds a complete curated pack to the user's cart. */
@@ -149,6 +204,7 @@ export class Cart {
         try {
             const cartId = await this.getCartId(payload.user_id);
             await this.dao.executeQuery(`DELETE FROM cart_items WHERE cart_id = ?`, [cartId]);
+            await this.dao.executeQuery(`DELETE FROM accessory_cart_items WHERE cart_id = ?`, [cartId]);
             resModel.status = 1;
             resModel.info = 'Cart cleared.';
             resModel.data = { items: [], count: 0, subtotal: 0 };
