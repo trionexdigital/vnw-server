@@ -21,6 +21,7 @@ import {
 } from './numberSearch';
 import { Prebooks, istDateToUtc } from '../prebooks/prebooks';
 import { pushNotification } from '../notifications/notifications';
+import { rankSimilarNumbers } from './similarNumbers';
 
 const SELECT_COLS = `n.number_id, n.number_value, n.display_number,
     n.seller_id, n.seller_type, n.title_label, n.badge, n.mrp, n.offer_price, n.discount_pct,
@@ -297,6 +298,79 @@ export class Numbers {
     /** Featured numbers for the landing page. */
     async featured(payload: any) {
         return this.list({ ...payload, is_featured: 1, limit: payload.limit || 8, sort: 'newest' });
+    }
+
+    /** Public, deterministic recommendations for a single catalog number. */
+    async similar(payload: { number_id: number; page?: number; limit?: number }) {
+        const startMS = new Date().getTime();
+        const resModel = this.masterModel.getResponseModel();
+        try {
+            await this.prebooks.reconcile();
+            const id = Number(payload?.number_id);
+            if (!Number.isInteger(id) || id <= 0) throw new Error('number_id is required.');
+            const page = Math.max(1, Number(payload?.page) || 1);
+            const limit = Math.min(24, Math.max(1, Number(payload?.limit) || 12));
+
+            const sourceQ: any = await this.dao.executeQuery(
+                `SELECT ${SELECT_COLS} FROM vip_numbers n WHERE n.number_id = ? LIMIT 1`,
+                [id],
+            );
+            if (sourceQ.status !== 1) throw new Error(sourceQ.info || 'Unable to load source number.');
+            if (!sourceQ.rows?.length) throw new Error('Number not found.');
+            const source = decorateNumberCategories(sourceQ.rows[0]);
+            const sourceValue = normalizeIndianNumber(source.number_value ?? source.display_number);
+            const categorySlug = source.primary_category.slug;
+
+            // The priority expression brings pattern-adjacent candidates to the
+            // front while still filling the bounded pool with popular inventory.
+            const candidatesQ: any = await this.dao.executeQuery(
+                `SELECT ${SELECT_COLS} FROM vip_numbers n
+                 WHERE n.number_id <> ? AND n.status = 'AVAILABLE' AND n.stock > 0
+                 ORDER BY CASE WHEN
+                    EXISTS (SELECT 1 FROM vip_number_categories vnc
+                        WHERE vnc.number_id = n.number_id
+                          AND vnc.category_slug = ? AND vnc.classifier_version = ?)
+                    OR n.numerology_sum = ?
+                    OR LEFT(n.number_value, 2) = ?
+                    OR RIGHT(n.number_value, 2) = ?
+                 THEN 0 ELSE 1 END,
+                 n.views DESC, n.created_at DESC, n.number_id DESC
+                 LIMIT 600`,
+                [
+                    id,
+                    categorySlug,
+                    CATEGORY_CLASSIFIER_VERSION,
+                    Number(source.numerology_sum) || 0,
+                    sourceValue.slice(0, 2),
+                    sourceValue.slice(-2),
+                ],
+            );
+            if (candidatesQ.status !== 1) throw new Error(candidatesQ.info || 'Unable to load similar numbers.');
+
+            const ranked = rankSimilarNumbers(source, candidatesQ.rows || []);
+            const total = ranked.length;
+            const offset = (page - 1) * limit;
+            resModel.status = 1;
+            resModel.info = 'OK';
+            resModel.data = {
+                source: {
+                    ...source,
+                    is_premium: Boolean(Number(source.is_featured)),
+                },
+                items: ranked.slice(offset, offset + limit),
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit),
+            };
+        } catch (error) {
+            resModel.status = -33;
+            resModel.info = 'catch : ' + error;
+            this.logger.error(JSON.stringify(resModel));
+        } finally {
+            try { resModel.tat = (new Date().getTime() - startMS) / 1000; } catch (e) { }
+        }
+        return resModel;
     }
 
     private localAiFilters(query: string) {
