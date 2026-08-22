@@ -87,7 +87,7 @@ export type NumberCategoryMatchApiModel = Omit<NumberCategoryApiModel, 'match_sp
 };
 
 const catalog: NumberCategory[] = [
-    { slug: 'without-248-numbers', name: 'Without 248 Numbers', description: 'Numbers that contain none of the digits 2, 4, or 8.', icon: 'shield-check', examples: ['9653107539'], aliases: ['without-248', 'without-248-number'], sortOrder: 1, priority: 180 },
+    { slug: 'without-248-numbers', name: 'Without 248 Numbers (Numerology)', description: 'Numbers that contain none of the digits 2, 4, or 8.', icon: 'shield-check', examples: ['9653107539'], aliases: ['without-248', 'without-248-number'], sortOrder: 1, priority: 180 },
     { slug: 'mirror-numbers', name: 'Mirror Numbers', description: 'A palindrome or a number made from two identical five-digit halves.', icon: 'mirror', examples: ['7693976939'], aliases: ['mirror', 'mirror-number'], sortOrder: 2, priority: 20 },
     { slug: 'semi-mirror-numbers', name: 'Semi Mirror Numbers', description: 'A four-digit block that appears twice without overlapping.', icon: 'panels-top-left', examples: ['6005646005'], aliases: ['semi-mirror', 'semi-mirror-number'], sortOrder: 3, priority: 70 },
     { slug: 'two-digit-numbers', name: 'Two Digit Numbers', description: 'The complete number uses exactly two distinct digits.', icon: 'binary', examples: ['6969669699'], aliases: ['two-digit', '2-digit-numbers'], sortOrder: 4, priority: 160 },
