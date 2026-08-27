@@ -4,13 +4,13 @@ import * as gtUtil from "../../../pixels-utility";
 import { Site } from './site';
 import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
 import { MarketplaceContent } from './marketplaceContent';
-import { Accessories } from '../accessories/accessories';
+import { HomePremium } from './homePremium';
 
 const masterModel = new MasterModel();
 const site = new Site();
 const dealsOfDay = new DealsOfDay();
 const marketplace = new MarketplaceContent();
-const accessories = new Accessories();
+const homePremium = new HomePremium();
 const router = Router();
 
 // All public (path is in the auth bypass list).
@@ -38,8 +38,7 @@ router.post('/family-packs', pub((p) => marketplace.packs(p)));
 // Backward-compatible alias for older clients and saved integrations.
 router.post('/corporate-packs', pub((p) => marketplace.packs(p)));
 router.post('/operators', pub(() => marketplace.operators()));
-router.post('/home-accessories', pub(() => accessories.homeAccessories(false)));
-router.post('/home-premium-numbers', pub(() => accessories.homePremium(false)));
+router.post('/home-premium-numbers', pub(() => homePremium.list(false)));
 router.post('/trusted-clients', pub(() => marketplace.clients(false)));
 router.post('/faqs', pub(() => marketplace.faqs(false)));
 

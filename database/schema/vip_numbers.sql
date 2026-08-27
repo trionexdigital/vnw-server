@@ -1,0 +1,28 @@
+-- Schema only. This file intentionally contains no seed data.
+CREATE TABLE IF NOT EXISTS `vip_numbers` (
+  `number_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `number_value` varchar(20) NOT NULL,
+  `display_number` varchar(30) NOT NULL,
+  `category_id` int unsigned DEFAULT NULL,
+  `seller_id` int unsigned NOT NULL,
+  `seller_type` enum('ADMIN','DEALER') NOT NULL DEFAULT 'ADMIN',
+  `title_label` varchar(64) DEFAULT 'VIP Number',
+  `badge` enum('NONE','HOT_PICK','PREMIUM','BEST_SELLER','HOT_DEAL','NEW_ARRIVAL','VALUE_PICK') NOT NULL DEFAULT 'NONE',
+  `mrp` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `offer_price` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `discount_pct` int NOT NULL DEFAULT '0',
+  `numerology_sum` int DEFAULT NULL,
+  `operator` varchar(32) DEFAULT NULL,
+  `description` text,
+  `stock` int NOT NULL DEFAULT '1',
+  `status` enum('AVAILABLE','RESERVED','SOLD','PENDING_APPROVAL','REJECTED','INACTIVE') NOT NULL DEFAULT 'AVAILABLE',
+  `rtp_status` enum('RTP','NON_RTP') NOT NULL DEFAULT 'RTP',
+  `rtp_available_at` datetime DEFAULT NULL,
+  `is_featured` tinyint(1) NOT NULL DEFAULT '0',
+  `views` int NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`number_id`), UNIQUE KEY `number_value` (`number_value`),
+  KEY `category_id` (`category_id`), KEY `seller_id` (`seller_id`),
+  KEY `status` (`status`), KEY `is_featured` (`is_featured`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

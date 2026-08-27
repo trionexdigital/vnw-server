@@ -4,7 +4,6 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { Orders } from '../orders/orders';
 import { Prebooks } from '../prebooks/prebooks';
-import { Accessories } from '../accessories/accessories';
 
 // Razorpay is required lazily so the server still boots without the package/keys.
 let RazorpayLib: any = null;
@@ -20,7 +19,6 @@ export class Payments {
     private masterModel: MasterModel;
     private orders: Orders;
     private prebooks: Prebooks;
-    private accessories: Accessories;
 
     constructor() {
         this.dao = new MySqlClient('pixels');
@@ -28,7 +26,6 @@ export class Payments {
         this.masterModel = new MasterModel();
         this.orders = new Orders();
         this.prebooks = new Prebooks();
-        this.accessories = new Accessories();
     }
 
     private gatewayReady(): boolean {
@@ -149,8 +146,7 @@ export class Payments {
             const entity = body?.payload?.payment?.entity || body?.payload?.order?.entity;
             const refundEntity = body?.payload?.refund?.entity;
             if ((event === 'refund.processed' || event === 'refund.failed') && refundEntity) {
-                const handled = await this.accessories.handleRefundWebhook(event, refundEntity);
-                if (!handled) await this.prebooks.handleRefundWebhook(event, refundEntity, body);
+                await this.prebooks.handleRefundWebhook(event, refundEntity, body);
                 resModel.status = 1;
                 resModel.info = 'OK';
                 return resModel;

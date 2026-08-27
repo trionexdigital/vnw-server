@@ -1,0 +1,26 @@
+-- Schema only. This file intentionally contains no seed data.
+CREATE TABLE IF NOT EXISTS `carousel_projects` (
+  `carousel_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(120) NOT NULL DEFAULT 'Untitled carousel',
+  `sort_order` int NOT NULL DEFAULT '0',
+  `is_published` tinyint(1) NOT NULL DEFAULT '0',
+  `draft_revision` int unsigned NOT NULL DEFAULT '1',
+  `draft_desktop` longtext,
+  `draft_mobile` longtext,
+  `draft_desktop_preview_id` int unsigned DEFAULT NULL,
+  `draft_mobile_preview_id` int unsigned DEFAULT NULL,
+  `published_revision` int unsigned DEFAULT NULL,
+  `published_desktop` longtext,
+  `published_mobile` longtext,
+  `published_desktop_preview_id` int unsigned DEFAULT NULL,
+  `published_mobile_preview_id` int unsigned DEFAULT NULL,
+  `transition_style` varchar(24) NOT NULL DEFAULT 'fade',
+  `autoplay_seconds` tinyint unsigned NOT NULL DEFAULT '6',
+  `created_by` int unsigned NOT NULL,
+  `updated_by` int unsigned NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `published_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`carousel_id`), KEY `published_order` (`is_published`,
+  `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

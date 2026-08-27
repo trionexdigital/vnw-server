@@ -33,10 +33,7 @@ const app = express();
 
 // Check mySQL connection
 logger.log("**Checking MySQL connection");
-mysql.checkConnection();
-
-// Schema reconciliation is awaited in startServer below so routes never serve
-// a partially migrated catalog.
+void mysql.checkConnection();
 
 // securing app
 logger.log("**Securing application with HELMET");
@@ -66,20 +63,13 @@ const PORT = process.env.NODE_EXPRESS_PORT;
 logger.log("**Creating http server ");
 const server = http.createServer(app);
 
-async function startServer() {
-  try {
-    // Required migrations and the automatic-category backfill must finish
-    // before any request can observe the catalog.
-    logger.log("**Reconciling MySQL schema (ensureSchema)");
-    await mysql.ensureSchema();
-    startPrebookLifecycle();
-    server.listen(PORT, () =>
-      logger.log("*************  Server is running on " + JSON.stringify(server.address()) + "  *************")
-    );
-  } catch (error) {
-    logger.log("*************  Server startup blocked by schema migration: " + error);
-    process.exit(1);
-  }
+function startServer() {
+  // Database DDL and data are managed outside application startup. See
+  // database/schema for the complete table-wise schema-only SQL files.
+  startPrebookLifecycle();
+  server.listen(PORT, () =>
+    logger.log("*************  Server is running on " + JSON.stringify(server.address()) + "  *************")
+  );
 }
 
 startServer();

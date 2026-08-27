@@ -22,7 +22,6 @@ import sellRouter from './api/sell/sell.routes';
 import employeeRouter from './api/approvals/employee.routes';
 import walletRouter from './api/wallet/wallet.routes';
 import prebooksRouter from './api/prebooks/prebooks.routes';
-import accessoriesRouter from './api/accessories/accessories.routes';
 import { startPurchaseLifecycle } from './api/orders/orders';
 import { startPrebookLifecycle } from './api/prebooks/prebooks';
 
@@ -48,7 +47,6 @@ vnwRouter.use('/sell', sellRouter);
 vnwRouter.use('/employee', employeeRouter);
 vnwRouter.use('/wallet', walletRouter);
 vnwRouter.use('/prebooks', prebooksRouter);
-vnwRouter.use('/accessories', accessoriesRouter);
 vnwRouter.use('/referral', referralRouter);
 vnwRouter.use('/dashboard', dashboardRouter);
 vnwRouter.use('/admin', adminRouter);
