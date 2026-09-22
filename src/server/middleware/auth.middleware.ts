@@ -37,6 +37,7 @@ const BypassAuth = [
     `${BASE}/reviews/by-number`,// public product reviews
     `${BASE}/site`,             // public site config, newsletter, enquiry
     `${BASE}/prebooks/catalog`, // public NON-RTP catalog
+    `${BASE}/private/resolve`, // bearer-link protected private number collection
     `${BASE}/payments/razorpay/webhook`, // verified via signature, not JWT
 ];
 

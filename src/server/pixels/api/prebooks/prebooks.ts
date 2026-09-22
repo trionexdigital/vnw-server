@@ -3,6 +3,7 @@ import { MasterModel } from '../../../models/MasterModel';
 import { pushNotification } from '../notifications/notifications';
 import { creditWallet } from '../wallet/wallet';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
+import { resolvePrivateLinkWithConnection } from '../privateLinks/privateLinks';
 
 let RazorpayLib: any = null;
 try { RazorpayLib = require('razorpay'); } catch { /* configured at runtime */ }
@@ -91,7 +92,7 @@ export class Prebooks {
     const res = this.response();
     try {
       await this.reconcile();
-      const where: string[] = ["n.status='AVAILABLE'", 'n.stock > 0', "n.rtp_status='NON_RTP'", 'n.rtp_available_at > UTC_TIMESTAMP()'];
+      const where: string[] = ["n.status='AVAILABLE'", 'n.stock > 0', "n.rtp_status='NON_RTP'", "n.visibility_type='ONLINE'", 'n.rtp_available_at > UTC_TIMESTAMP()'];
       const params: any[] = [];
       const q = String(payload.q || '').replace(/\D/g, '').slice(0, 10);
       if (q) { where.push('(n.number_value LIKE ? OR n.display_number LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
@@ -116,7 +117,7 @@ export class Prebooks {
       };
       const order = sortMap[String(payload.sort || 'rtp_soon')] || sortMap.rtp_soon;
       const columns = `n.number_id,n.number_value,n.display_number,n.title_label,n.badge,n.mrp,n.offer_price,
-        n.discount_pct,n.numerology_sum,n.operator,n.stock,n.status,n.rtp_status,n.rtp_available_at,n.is_featured`;
+        n.discount_pct,n.numerology_sum,n.operator,n.stock,n.status,n.visibility_type,n.rtp_status,n.rtp_available_at,n.is_featured`;
       const countQ: any = await this.dao.executeQuery(`SELECT COUNT(*) AS total FROM vip_numbers n WHERE ${where.join(' AND ')}`, params);
       const listQ: any = await this.dao.executeQuery(
         `SELECT ${columns} FROM vip_numbers n WHERE ${where.join(' AND ')} ORDER BY ${order}, n.number_id DESC LIMIT ? OFFSET ?`,
@@ -142,13 +143,19 @@ export class Prebooks {
       connection = await this.dao.getConnection();
       await connection.beginTransaction();
       const [numbers]: any = await connection.query(
-        `SELECT number_id,display_number,offer_price,seller_id,seller_type,status,stock,rtp_status,rtp_available_at
+        `SELECT number_id,display_number,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status,rtp_available_at
          FROM vip_numbers WHERE number_id=? FOR UPDATE`, [numberId],
       );
       const number = numbers?.[0];
       if (!number || number.status !== 'AVAILABLE' || Number(number.stock) <= 0) throw new Error('This number is no longer available for pre-booking.');
       if (number.rtp_status !== 'NON_RTP' || !number.rtp_available_at || new Date(number.rtp_available_at + 'Z') <= new Date()) {
         throw new Error('This number is already ready to purchase.');
+      }
+      let privateLinkId: number | null = null;
+      if (number.visibility_type === 'OFFLINE') {
+        const link = await resolvePrivateLinkWithConnection(connection, String(payload.private_token || ''), numberId);
+        if (!link) throw new Error('This Offline number is only available through its active private link.');
+        privateLinkId = Number(link.private_link_id);
       }
       const [users]: any = await connection.query('SELECT full_name,email,phone FROM auth_user WHERE user_id=?', [userId]);
       const user = users?.[0] || {};
@@ -166,9 +173,9 @@ export class Prebooks {
         commission = Number(number.offer_price) * Number(dealers?.[0]?.commission_pct ?? 10) / 100;
       }
       await connection.query(
-        `INSERT INTO order_items (order_id,number_id,seller_id,display_number,price,commission_amount,item_status)
-         VALUES (?,?,?,?,?,?,'PENDING')`,
-        [orderId, numberId, number.seller_id, number.display_number, number.offer_price, commission],
+        `INSERT INTO order_items (order_id,number_id,private_link_id,seller_id,display_number,price,commission_amount,item_status)
+         VALUES (?,?,?,?,?,?,?,'PENDING')`,
+        [orderId,numberId,privateLinkId,number.seller_id,number.display_number,number.offer_price,commission],
       );
       const [prebookInsert]: any = await connection.query(
         `INSERT INTO prebookings (order_id,user_id,number_id,status,rtp_available_at_snapshot,hold_expires_at)

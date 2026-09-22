@@ -143,7 +143,7 @@ export class MarketplaceContent {
       const q: any = await this.dao.executeQuery(
         `SELECT ${NUMBER_COLUMNS}
          FROM vip_numbers n
-         WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.rtp_status = 'RTP'
+         WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status IN ('RTP','RTA')
          ORDER BY n.is_featured DESC, n.views DESC, n.created_at DESC, n.number_id DESC`, [],
       );
       if (q.status !== 1) throw new Error(q.info || 'Unable to load available numbers.');
@@ -165,7 +165,7 @@ export class MarketplaceContent {
     try {
       const q: any = await this.dao.executeQuery(
         `SELECT TRIM(operator) AS operator, COUNT(*) AS count
-         FROM vip_numbers WHERE status = 'AVAILABLE' AND stock > 0 AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
+         FROM vip_numbers WHERE status = 'AVAILABLE' AND stock > 0 AND visibility_type='ONLINE' AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
          GROUP BY TRIM(operator) ORDER BY FIELD(operator,'Airtel','Jio','Vi','BSNL')`, [],
       );
       if (q.status !== 1) throw new Error(q.info || 'Unable to load operators.');

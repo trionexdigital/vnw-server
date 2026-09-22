@@ -3,6 +3,7 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 
 const PUBLIC_KEYS = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','PROMO_TEXT','PROMO_COUPON','SUPPORT_ADDRESS',
+    'GLOBAL_NUMBER_DISCOUNT_PERCENT',
     'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
 const HERO_STATS_TTL_MS = 5 * 60 * 1000;
 
@@ -52,7 +53,7 @@ export class Site {
             const q: any = await this.dao.executeQuery(
                 `SELECT
                     (SELECT COUNT(*) FROM order_items WHERE item_status = 'TRANSFERRED') AS delivered_numbers,
-                    (SELECT COUNT(*) FROM vip_numbers WHERE status = 'AVAILABLE') AS available_numbers,
+                    (SELECT COUNT(*) FROM vip_numbers WHERE status = 'AVAILABLE' AND visibility_type='ONLINE') AS available_numbers,
                     (SELECT COUNT(DISTINCT user_id) FROM orders WHERE status = 'COMPLETED') AS customers_served`,
                 []
             );

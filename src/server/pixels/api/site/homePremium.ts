@@ -4,7 +4,7 @@ import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 const NUMBER_COLUMNS = `n.number_id,n.number_value,n.display_number,n.seller_id,n.seller_type,n.title_label,n.badge,
   n.mrp,n.offer_price,n.discount_pct,n.numerology_sum,n.operator,n.description,n.stock,n.status,
-  n.rtp_status,n.rtp_available_at,n.is_featured,n.views,n.created_at`;
+  n.visibility_type,n.rtp_status,n.rtp_available_at,n.is_featured,n.views,n.created_at`;
 
 export class HomePremium {
   private dao = new MySqlClient('pixels');
@@ -16,7 +16,7 @@ export class HomePremium {
     try {
       const q: any = await this.dao.executeQuery(`SELECT ${NUMBER_COLUMNS},h.homepage_premium_id,h.sort_order,h.is_active AS homepage_active
         FROM homepage_premium_numbers h INNER JOIN vip_numbers n ON n.number_id=h.number_id
-        ${admin ? '' : "WHERE h.is_active=1 AND n.status='AVAILABLE' AND n.stock>0"}
+        ${admin ? '' : "WHERE h.is_active=1 AND n.status='AVAILABLE' AND n.stock>0 AND n.visibility_type='ONLINE'"}
         ORDER BY h.sort_order,h.homepage_premium_id`, []);
       res.status = 1;
       res.info = 'OK';

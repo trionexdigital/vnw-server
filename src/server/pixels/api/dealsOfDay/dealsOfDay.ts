@@ -5,7 +5,7 @@ import { decorateNumberCategories } from '../categories/categoryClassifier';
 
 const NUMBER_COLUMNS = `n.number_id, n.number_value, n.display_number,
     n.seller_id, n.seller_type, n.title_label, n.badge, n.mrp, n.offer_price, n.discount_pct,
-    n.numerology_sum, n.operator, n.description, n.stock, n.status, n.rtp_status, n.rtp_available_at,
+    n.numerology_sum, n.operator, n.description, n.stock, n.status,n.visibility_type,n.rtp_status,n.rtp_available_at,
     n.is_featured, n.views, n.created_at`;
 
 const cleanOptionalText = (value: unknown, maxLength: number): string | null => {
@@ -46,7 +46,7 @@ export class DealsOfDay {
                         ${NUMBER_COLUMNS}
                  FROM deal_of_day_numbers d
                  INNER JOIN vip_numbers n ON n.number_id = d.number_id
-                 WHERE d.is_active = 1 AND n.status = 'AVAILABLE' AND n.stock > 0
+                 WHERE d.is_active = 1 AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
                  ORDER BY d.sort_order ASC, d.deal_id ASC`,
                 [],
             );
@@ -63,7 +63,7 @@ export class DealsOfDay {
                 `SELECT NULL AS deal_id, NULL AS hero_label, NULL AS hero_description,
                         NULL AS sort_order, 1 AS is_active, ${NUMBER_COLUMNS}
                  FROM vip_numbers n
-                 WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.is_featured = 1
+                 WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.is_featured = 1
                  ORDER BY n.views DESC, n.created_at DESC
                  LIMIT 8`,
                 [],
@@ -75,7 +75,7 @@ export class DealsOfDay {
                     `SELECT NULL AS deal_id, NULL AS hero_label, NULL AS hero_description,
                             NULL AS sort_order, 1 AS is_active, ${NUMBER_COLUMNS}
                      FROM vip_numbers n
-                     WHERE n.status = 'AVAILABLE' AND n.stock > 0
+                     WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
                      ORDER BY n.created_at DESC
                      LIMIT 8`,
                     [],

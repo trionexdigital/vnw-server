@@ -1,0 +1,25 @@
+-- Schema only. The linked vip_numbers row is the storefront inventory record.
+CREATE TABLE IF NOT EXISTS `dealer_purchase_numbers` (
+  `dealer_purchase_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `number_id` int unsigned NOT NULL,
+  `external_dealer_id` int unsigned NOT NULL,
+  `purchase_price` decimal(18,2) NOT NULL,
+  `intended_sale_price` decimal(18,2) NOT NULL,
+  `state` enum('INVENTORY','SOLD','DELETED') NOT NULL DEFAULT 'INVENTORY',
+  `actual_sale_price` decimal(18,2) DEFAULT NULL,
+  `sold_at` datetime DEFAULT NULL,
+  `sold_order_item_id` int unsigned DEFAULT NULL,
+  `deleted_reason` varchar(500) DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  `deleted_by` int unsigned DEFAULT NULL,
+  `state_before_delete` enum('INVENTORY','SOLD') DEFAULT NULL,
+  `created_by` int unsigned NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`dealer_purchase_id`),
+  UNIQUE KEY `dealer_purchase_number` (`number_id`),
+  KEY `dealer_purchase_supplier_state` (`external_dealer_id`,`state`),
+  KEY `sold_order_item_id` (`sold_order_item_id`),
+  CONSTRAINT `fk_dealer_purchase_number` FOREIGN KEY (`number_id`) REFERENCES `vip_numbers` (`number_id`),
+  CONSTRAINT `fk_dealer_purchase_supplier` FOREIGN KEY (`external_dealer_id`) REFERENCES `external_dealers` (`external_dealer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

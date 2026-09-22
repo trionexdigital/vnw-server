@@ -5,6 +5,7 @@ import { pushNotification } from '../notifications/notifications';
 import { creditWallet } from '../wallet/wallet';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
 import { Prebooks } from '../prebooks/prebooks';
+import { resolvePrivateLinkWithConnection } from '../privateLinks/privateLinks';
 
 export class Orders {
     private dao: MySqlClient;
@@ -62,7 +63,7 @@ export class Orders {
      * reserves the numbers, and computes totals (optional coupon). The Razorpay
      * order is created separately by the payments module using the returned order_id.
      */
-    async create(payload: { user_id: number, number_id?: number, coupon_code?: string, customer?: any }) {
+    async create(payload: { user_id: number, number_id?: number, coupon_code?: string, customer?: any, private_token?: string }) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         let connection: any;
@@ -73,13 +74,15 @@ export class Orders {
 
             // Resolve the set of numbers being purchased.
             let numberIds: number[] = [];
+            const privateLinkByNumber = new Map<number, number>();
             if (payload.number_id) {
                 numberIds = [Number(payload.number_id)];
             } else {
                 const cartQ: any = await this.dao.executeQuery(
-                    `SELECT ci.number_id FROM cart_items ci JOIN carts c ON c.cart_id = ci.cart_id WHERE c.user_id = ?`, [userId]
+                    `SELECT ci.number_id,ci.private_link_id FROM cart_items ci JOIN carts c ON c.cart_id = ci.cart_id WHERE c.user_id = ?`, [userId]
                 );
                 numberIds = (cartQ.rows || []).map((r: any) => r.number_id);
+                for (const row of (cartQ.rows || [])) if (row.private_link_id) privateLinkByNumber.set(Number(row.number_id), Number(row.private_link_id));
             }
             numberIds = Array.from(new Set(numberIds));
 
@@ -93,13 +96,29 @@ export class Orders {
             if (numberIds.length) {
                 const placeholders = numberIds.map(() => '?').join(',');
                 const result: any = await connection.query(
-                    `SELECT number_id, display_number, offer_price, seller_id, seller_type, status, stock, rtp_status FROM vip_numbers WHERE number_id IN (${placeholders}) FOR UPDATE`, numberIds);
+                    `SELECT number_id,display_number,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status FROM vip_numbers WHERE number_id IN (${placeholders}) FOR UPDATE`, numberIds);
                 nums = result[0] || [];
             }
             if ((nums || []).length !== numberIds.length) throw new Error('One or more selected numbers were not found.');
             for (const n of nums) {
                 if (n.status !== 'AVAILABLE' || Number(n.stock) <= 0) throw new Error(`Number ${n.display_number} is no longer available.`);
-                if (n.rtp_status !== 'RTP') throw new Error(`Number ${n.display_number} must be pre-booked until its RTP date.`);
+                if (n.rtp_status === 'NON_RTP') throw new Error(`Number ${n.display_number} must be pre-booked until its ready-to-port date.`);
+                if (n.visibility_type === 'OFFLINE') {
+                    let linkId = privateLinkByNumber.get(Number(n.number_id)) || 0;
+                    if (payload.number_id) {
+                        const link = await resolvePrivateLinkWithConnection(connection, String(payload.private_token || ''), Number(n.number_id));
+                        linkId = Number(link?.private_link_id || 0);
+                    } else if (linkId) {
+                        const [access]: any = await connection.query(
+                            `SELECT pl.private_link_id FROM number_private_links pl JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id
+                             WHERE pl.private_link_id=? AND pli.number_id=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP()) LIMIT 1`,
+                            [linkId,n.number_id],
+                        );
+                        if (!access?.length) linkId = 0;
+                    }
+                    if (!linkId) throw new Error(`Private access for ${n.display_number} has expired or was revoked.`);
+                    privateLinkByNumber.set(Number(n.number_id), linkId);
+                }
             }
 
             const subtotal = nums.reduce((s: number, n: any) => s + Number(n.offer_price), 0);
@@ -144,11 +163,11 @@ export class Orders {
                     commission = (Number(n.offer_price) * pct) / 100;
                 }
                 await connection.query(
-                    `INSERT INTO order_items (order_id, number_id, seller_id, display_number, price, commission_amount, item_status)
-                     VALUES (?,?,?,?,?,?, 'PENDING')`,
-                    [orderId, n.number_id, n.seller_id, n.display_number, n.offer_price, commission]
+                    `INSERT INTO order_items (order_id,number_id,private_link_id,seller_id,display_number,price,commission_amount,item_status)
+                     VALUES (?,?,?,?,?,?,?, 'PENDING')`,
+                    [orderId,n.number_id,privateLinkByNumber.get(Number(n.number_id)) || null,n.seller_id,n.display_number,n.offer_price,commission]
                 );
-                const [reserved]: any = await connection.query(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ? AND status='AVAILABLE' AND stock>0 AND rtp_status='RTP'`, [n.number_id]);
+                const [reserved]: any = await connection.query(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ? AND status='AVAILABLE' AND stock>0 AND rtp_status IN ('RTP','RTA')`, [n.number_id]);
                 if (reserved.affectedRows !== 1) throw new Error(`Number ${n.display_number} was just reserved by another customer.`);
             }
             await connection.commit();
@@ -179,6 +198,19 @@ export class Orders {
             if (order.payment_status === 'PAID') { await connection.commit(); return order; }
             await connection.query(`UPDATE vip_numbers n INNER JOIN order_items oi ON oi.number_id=n.number_id SET n.status='SOLD',n.stock=0 WHERE oi.order_id=? AND n.status='RESERVED'`, [orderId]);
             await connection.query("UPDATE order_items SET item_status='PAID' WHERE order_id=?", [orderId]);
+            await connection.query(
+                `UPDATE dealer_purchase_numbers dpn
+                 JOIN order_items oi ON oi.number_id=dpn.number_id
+                 SET dpn.state='SOLD',dpn.actual_sale_price=oi.price,dpn.sold_at=UTC_TIMESTAMP(),dpn.sold_order_item_id=oi.order_item_id
+                 WHERE oi.order_id=? AND dpn.state='INVENTORY'`, [orderId],
+            );
+            await connection.query(
+                `INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by)
+                 SELECT dpn.dealer_purchase_id,dpn.external_dealer_id,'SOLD',JSON_OBJECT('order_item_id',oi.order_item_id,'actual_sale_price',oi.price,'source','STORE_ORDER'),0
+                 FROM dealer_purchase_numbers dpn JOIN order_items oi ON oi.number_id=dpn.number_id
+                 WHERE oi.order_id=? AND dpn.sold_order_item_id=oi.order_item_id
+                   AND NOT EXISTS (SELECT 1 FROM dealer_purchase_events e WHERE e.dealer_purchase_id=dpn.dealer_purchase_id AND e.event_type='SOLD' AND JSON_EXTRACT(e.details,'$.order_item_id')=oi.order_item_id)`, [orderId],
+            );
             await connection.query(`UPDATE orders SET status='PAID',payment_status='PAID',razorpay_order_id=?,razorpay_payment_id=?,razorpay_signature=? WHERE order_id=?`,
                 [pay.razorpay_order_id || order.razorpay_order_id,pay.razorpay_payment_id || order.razorpay_payment_id,pay.razorpay_signature || order.razorpay_signature,orderId]);
             await connection.commit();

@@ -127,8 +127,8 @@ export class Sell {
 
     /**
      * Admin approves a sell request → creates a live platform listing for the
-     * number and links it back to the request. `offer_price` is what the platform
-     * lists it for (defaults to the user's asking price), `buy_price` optional.
+     * number and links it back to the request. MRP defaults to the user's asking
+     * price; the store-wide discount determines the catalog selling price.
      */
     async approve(payload: { user_id: number, request_id: number, offer_price?: number, mrp?: number, buy_price?: number, category_id?: unknown, admin_note?: string }) {
         let resModel = this.masterModel.getResponseModel();
@@ -140,8 +140,7 @@ export class Sell {
             const reqRow = r.rows[0];
             if (reqRow.status !== 'PENDING') throw new Error('This request has already been processed.');
 
-            const offer = Number(payload.offer_price) || Number(reqRow.asking_price) || 0;
-            const mrp = Number(payload.mrp) || offer;
+            const mrp = Number(payload.mrp) || Number(reqRow.asking_price) || 0;
             // What the platform pays the seller (credited to their wallet). Defaults to asking price.
             const buyPrice = Number(payload.buy_price) || Number(reqRow.asking_price) || 0;
             // Create the catalog listing owned by the platform (admin seller_id = 1).
@@ -151,18 +150,19 @@ export class Sell {
                 seller_id: 1,
                 seller_type: 'ADMIN',
                 title_label: 'VIP Number',
-                mrp, offer_price: offer,
-                operator: reqRow.operator,
+                mrp,
                 description: reqRow.description,
                 status: 'AVAILABLE',
             });
             if (created.status !== 1) throw new Error(created.info || 'Unable to create listing from this request.');
             const newNumberId = created.data?.number_id || null;
+            const catalog: any = await this.dao.executeQuery(`SELECT offer_price FROM vip_numbers WHERE number_id=?`, [newNumberId]);
+            const discountedPrice = Number(catalog.rows?.[0]?.offer_price) || 0;
 
             await this.dao.executeQuery(
                 `UPDATE sell_requests SET status='APPROVED', admin_id=?, admin_note=?, offer_price=?, buy_price=?, number_id=?, processed_at=NOW()
                  WHERE request_id = ?`,
-                [Number(payload.user_id), payload.admin_note || null, offer, buyPrice, newNumberId, rid]);
+                [Number(payload.user_id), payload.admin_note || null, discountedPrice, buyPrice, newNumberId, rid]);
 
             // Pay the seller into their wallet (platform buys the number). Idempotent per request.
             let credited = false;

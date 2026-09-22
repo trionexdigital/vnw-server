@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS `vip_numbers` (
   `description` text,
   `stock` int NOT NULL DEFAULT '1',
   `status` enum('AVAILABLE','RESERVED','SOLD','PENDING_APPROVAL','REJECTED','INACTIVE') NOT NULL DEFAULT 'AVAILABLE',
-  `rtp_status` enum('RTP','NON_RTP') NOT NULL DEFAULT 'RTP',
+  `visibility_type` enum('ONLINE','OFFLINE') NOT NULL DEFAULT 'ONLINE',
+  `rtp_status` enum('RTP','NON_RTP','RTA') NOT NULL DEFAULT 'RTA',
   `rtp_available_at` datetime DEFAULT NULL,
   `is_featured` tinyint(1) NOT NULL DEFAULT '0',
   `views` int NOT NULL DEFAULT '0',
@@ -24,5 +25,5 @@ CREATE TABLE IF NOT EXISTS `vip_numbers` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`number_id`), UNIQUE KEY `number_value` (`number_value`),
   KEY `category_id` (`category_id`), KEY `seller_id` (`seller_id`),
-  KEY `status` (`status`), KEY `is_featured` (`is_featured`)
+  KEY `status` (`status`), KEY `visibility_type` (`visibility_type`), KEY `is_featured` (`is_featured`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -4,7 +4,7 @@ export class MasterModel {
     // A09: never write secrets/large blobs to logs.
     private redactSensitive(body: any) {
         if (!body || typeof body !== 'object') return body;
-        const SENSITIVE = ['password', 'current_password', 'confirm_password', 'new_password', 'token', 'logo', 'screenshot'];
+        const SENSITIVE = ['password', 'current_password', 'confirm_password', 'new_password', 'token', 'private_token', 'logo', 'screenshot'];
         const clone: any = Array.isArray(body) ? [...body] : { ...body };
         for (const k of Object.keys(clone)) {
             if (SENSITIVE.includes(k)) clone[k] = '***REDACTED***';

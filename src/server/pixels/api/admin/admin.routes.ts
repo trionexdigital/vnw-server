@@ -10,6 +10,8 @@ import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
 import { MarketplaceContent } from '../site/marketplaceContent';
 import { Prebooks } from '../prebooks/prebooks';
 import { HomePremium } from '../site/homePremium';
+import { PrivateLinks } from '../privateLinks/privateLinks';
+import { DealerPurchases } from '../dealerPurchases/dealerPurchases';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
@@ -20,6 +22,8 @@ const dealsOfDay = new DealsOfDay();
 const marketplace = new MarketplaceContent();
 const prebooks = new Prebooks();
 const homePremium = new HomePremium();
+const privateLinks = new PrivateLinks();
+const dealerPurchases = new DealerPurchases();
 const router = Router();
 
 const categoryMutationRetired = async () => {
@@ -56,6 +60,27 @@ router.post('/numbers/save', handle((p) => admin.numberSave(p)));
 router.post('/numbers/delete', handle((p) => admin.numberDelete(p)));
 router.post('/numbers/approve', handle((p) => admin.numberApprove(p)));
 router.post('/numbers/reject', handle((p) => admin.numberReject(p)));
+
+// Private Offline number collections
+router.post('/private-links/list', handle(() => privateLinks.list()));
+router.post('/private-links/create', handle((p) => privateLinks.create(p)));
+router.post('/private-links/update', handle((p) => privateLinks.update(p)));
+router.post('/private-links/rotate', handle((p) => privateLinks.rotate(p)));
+router.post('/private-links/revoke', handle((p) => privateLinks.revoke(p)));
+
+// Numbers purchased from external suppliers
+router.post('/dealer-purchases/dealers/list', handle(() => dealerPurchases.dealers()));
+router.post('/dealer-purchases/dealers/create', handle((p) => dealerPurchases.createDealer(p)));
+router.post('/dealer-purchases/summary', handle((p) => dealerPurchases.summary(p)));
+router.post('/dealer-purchases/list', handle((p) => dealerPurchases.list(p)));
+router.post('/dealer-purchases/create', handle((p) => dealerPurchases.create(p)));
+router.post('/dealer-purchases/mark-sold', handle((p) => dealerPurchases.markSold(p)));
+router.post('/dealer-purchases/reverse-sold', handle((p) => dealerPurchases.reverseSold(p)));
+router.post('/dealer-purchases/delete', handle((p) => dealerPurchases.remove(p)));
+router.post('/dealer-purchases/restore', handle((p) => dealerPurchases.restore(p)));
+router.post('/dealer-purchases/payments/list', handle((p) => dealerPurchases.payments(p)));
+router.post('/dealer-purchases/payments/record', handle((p) => dealerPurchases.recordPayment(p)));
+router.post('/dealer-purchases/payments/void', handle((p) => dealerPurchases.voidPayment(p)));
 
 // Homepage premium number curation
 router.post('/home-premium/list', handle(() => homePremium.list(true)));

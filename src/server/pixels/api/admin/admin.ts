@@ -78,7 +78,7 @@ export class Admin {
     }
 
     // ---------- Numbers ----------
-    async numbersList(payload: any) { return this.numbers.list({ ...payload, status: payload.status || 'ALL' }); }
+    async numbersList(payload: any) { return this.numbers.list({ ...payload, status: payload.status || 'ALL', admin_scope: true }); }
     async numberSave(payload: any) {
         return payload.number_id ? this.numbers.update(payload) : this.numbers.create({ ...payload, seller_id: payload.user_id, seller_type: 'ADMIN', status: payload.status || 'AVAILABLE' });
     }
@@ -391,29 +391,46 @@ export class Admin {
     async settingsGet(_payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const keys = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON',
+            const keys = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT',
                 'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
             const q: any = await this.dao.executeQuery(
                 `SELECT key_id, value FROM env WHERE key_id IN (${keys.map(() => '?').join(',')})`, keys);
             const map: any = {};
             (q.rows || []).forEach((r: any) => map[r.key_id] = r.value);
+            if (map.GLOBAL_NUMBER_DISCOUNT_PERCENT === undefined) map.GLOBAL_NUMBER_DISCOUNT_PERCENT = '0';
             resModel.status = 1; resModel.info = 'OK'; resModel.data = map;
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
     async settingsSave(payload: any) {
         let resModel = this.masterModel.getResponseModel();
+        let connection: any;
         try {
-            const allowed = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON',
+            const allowed = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT',
                 'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
+            const globalDiscount = Number(payload.GLOBAL_NUMBER_DISCOUNT_PERCENT);
+            if (!Number.isInteger(globalDiscount) || globalDiscount < 0 || globalDiscount > 99) {
+                throw new Error('Store discount must be a whole percentage from 0 to 99.');
+            }
+            connection = await this.dao.getConnection();
+            await connection.beginTransaction();
             for (const k of allowed) {
                 if (payload[k] !== undefined) {
-                    await this.dao.executeQuery(
+                    await connection.query(
                         `INSERT INTO env (key_id, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)`, [k, String(payload[k])]);
                 }
             }
+            await connection.query(
+                `UPDATE vip_numbers
+                 SET offer_price=ROUND(mrp * (100 - ?) / 100, 2), discount_pct=?`,
+                [globalDiscount, globalDiscount],
+            );
+            await connection.commit();
             resModel.status = 1; resModel.info = 'Settings saved.';
-        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        } catch (error) {
+            try { await connection?.rollback(); } catch { }
+            resModel.status = -33; resModel.info = 'catch : ' + error;
+        } finally { connection?.release(); }
         return resModel;
     }
 }

@@ -29,7 +29,7 @@ export class Categories {
                 `SELECT vnc.category_slug AS slug, COUNT(DISTINCT vnc.number_id) AS number_count
                  FROM vip_number_categories vnc
                  INNER JOIN vip_numbers n ON n.number_id = vnc.number_id
-                 WHERE n.status = 'AVAILABLE' AND vnc.classifier_version = ?
+                 WHERE n.status = 'AVAILABLE' AND n.visibility_type='ONLINE' AND vnc.classifier_version = ?
                  GROUP BY vnc.category_slug`, [CATEGORY_CLASSIFIER_VERSION]
             );
             if (q.status !== 1) throw new Error(q.info || 'Unable to load category counts.');

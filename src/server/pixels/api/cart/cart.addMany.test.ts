@@ -12,7 +12,7 @@ describe('Cart.addMany', () => {
       query: async (sql: string, params: any[]) => {
         if (sql.includes('FROM vip_numbers')) return [[
           { number_id: 1, display_number: '9000 000 001', status: 'AVAILABLE', stock: 1, rtp_status: 'RTP' },
-          { number_id: 2, display_number: '9000 000 002', status: 'AVAILABLE', stock: 1, rtp_status: 'RTP' },
+          { number_id: 2, display_number: '9000 000 002', status: 'AVAILABLE', stock: 1, rtp_status: 'RTA' },
         ]];
         if (sql.includes('FROM carts')) return [[{ cart_id: 7 }]];
         if (sql.startsWith('INSERT IGNORE INTO cart_items')) { inserted.push(Number(params[1])); return [{}]; }

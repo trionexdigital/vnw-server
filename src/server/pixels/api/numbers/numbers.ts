@@ -22,11 +22,19 @@ import {
 import { Prebooks, istDateToUtc } from '../prebooks/prebooks';
 import { pushNotification } from '../notifications/notifications';
 import { rankSimilarNumbers } from './similarNumbers';
+import { hashPrivateToken } from '../privateLinks/privateLinks';
+import { discountedPrice, readGlobalDiscount } from './globalPricing';
 
 const SELECT_COLS = `n.number_id, n.number_value, n.display_number,
     n.seller_id, n.seller_type, n.title_label, n.badge, n.mrp, n.offer_price, n.discount_pct,
-    n.numerology_sum, n.operator, n.description, n.stock, n.status, n.rtp_status, n.rtp_available_at,
+    n.numerology_sum, n.operator, n.description, n.stock, n.status, n.visibility_type, n.rtp_status, n.rtp_available_at,
     n.is_featured, n.views, n.created_at`;
+
+const decorateCatalogNumber = (row: any) => ({
+    ...decorateNumberCategories(row),
+    activation_type: row.rtp_status,
+    is_premium: Boolean(Number(row.is_featured)),
+});
 
 interface ListingResult {
     items: any[];
@@ -59,6 +67,8 @@ export class Numbers {
         await this.prebooks.reconcile();
         const where: string[] = [];
         const params: any[] = [];
+
+        if (!payload.admin_scope) where.push("n.visibility_type = 'ONLINE'");
 
         // Public browsing only shows AVAILABLE unless an explicit status is requested (admin).
         const status = payload.status ? String(payload.status).toUpperCase() : 'AVAILABLE';
@@ -102,8 +112,13 @@ export class Numbers {
         if (payload.seller_id) { where.push('n.seller_id = ?'); params.push(Number(payload.seller_id)); }
         if (payload.rtp_status) {
             const rtpStatus = String(payload.rtp_status).toUpperCase();
-            if (!['RTP', 'NON_RTP'].includes(rtpStatus)) throw new Error('rtp_status must be RTP or NON_RTP.');
+            if (!['RTP', 'NON_RTP', 'RTA'].includes(rtpStatus)) throw new Error('rtp_status must be RTP, NON_RTP or RTA.');
             where.push('n.rtp_status = ?'); params.push(rtpStatus);
+        }
+        if (payload.admin_scope && payload.visibility_type) {
+            const visibility = String(payload.visibility_type).toUpperCase();
+            if (!['ONLINE','OFFLINE'].includes(visibility)) throw new Error('visibility_type must be ONLINE or OFFLINE.');
+            where.push('n.visibility_type = ?'); params.push(visibility);
         }
         if (payload.rtp_from) { where.push('n.rtp_available_at >= ?'); params.push(istDateToUtc(payload.rtp_from)); }
         if (payload.rtp_to) {
@@ -144,10 +159,22 @@ export class Numbers {
         );
         if (rowsQ.status !== 1) throw new Error(rowsQ.info || 'Unable to load numbers.');
 
+        const privateLinksByNumber = new Map<number, number[]>();
+        if (payload.admin_scope && (rowsQ.rows || []).length) {
+            const ids = rowsQ.rows.map((row: any) => Number(row.number_id));
+            const assignments: any = await this.dao.executeQuery(
+                `SELECT number_id,private_link_id FROM number_private_link_items WHERE number_id IN (${ids.map(() => '?').join(',')})`, ids,
+            );
+            for (const row of (assignments.rows || [])) {
+                const current = privateLinksByNumber.get(Number(row.number_id)) || [];
+                current.push(Number(row.private_link_id)); privateLinksByNumber.set(Number(row.number_id), current);
+            }
+        }
+
         return {
             items: (rowsQ.rows || []).map((row: any) => ({
-                ...decorateNumberCategories(row),
-                is_premium: Boolean(Number(row.is_featured)),
+                ...decorateCatalogNumber(row),
+                ...(payload.admin_scope ? { private_link_ids: privateLinksByNumber.get(Number(row.number_id)) || [] } : {}),
             })),
             total,
             page,
@@ -161,7 +188,7 @@ export class Numbers {
         try {
             const q: any = await this.dao.executeQuery(
                 `SELECT TRIM(operator) AS operator, COUNT(*) AS count FROM vip_numbers
-                 WHERE status = 'AVAILABLE' AND stock > 0 AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
+                 WHERE status = 'AVAILABLE' AND stock > 0 AND visibility_type='ONLINE' AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
                  GROUP BY TRIM(operator) ORDER BY FIELD(operator,'Airtel','Jio','Vi','BSNL')`, [],
             );
             if (q.status !== 1) throw new Error(q.info || 'Unable to load operators.');
@@ -301,7 +328,7 @@ export class Numbers {
     }
 
     /** Public, deterministic recommendations for a single catalog number. */
-    async similar(payload: { number_id: number; page?: number; limit?: number }) {
+    async similar(payload: { number_id: number; page?: number; limit?: number; private_token?: string }) {
         const startMS = new Date().getTime();
         const resModel = this.masterModel.getResponseModel();
         try {
@@ -318,6 +345,14 @@ export class Numbers {
             if (sourceQ.status !== 1) throw new Error(sourceQ.info || 'Unable to load source number.');
             if (!sourceQ.rows?.length) throw new Error('Number not found.');
             const source = decorateNumberCategories(sourceQ.rows[0]);
+            if (source.visibility_type === 'OFFLINE') {
+                const access: any = await this.dao.executeQuery(
+                    `SELECT pl.private_link_id FROM number_private_links pl JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id
+                     WHERE pli.number_id=? AND pl.token_hash=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP()) LIMIT 1`,
+                    [id, hashPrivateToken(String(payload.private_token || ''))],
+                );
+                if (!access.rows?.length) throw new Error('Number not found.');
+            }
             const sourceValue = normalizeIndianNumber(source.number_value ?? source.display_number);
             const categorySlug = source.primary_category.slug;
 
@@ -325,7 +360,7 @@ export class Numbers {
             // front while still filling the bounded pool with popular inventory.
             const candidatesQ: any = await this.dao.executeQuery(
                 `SELECT ${SELECT_COLS} FROM vip_numbers n
-                 WHERE n.number_id <> ? AND n.status = 'AVAILABLE' AND n.stock > 0
+                 WHERE n.number_id <> ? AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
                  ORDER BY CASE WHEN
                     EXISTS (SELECT 1 FROM vip_number_categories vnc
                         WHERE vnc.number_id = n.number_id
@@ -578,19 +613,27 @@ export class Numbers {
     }
 
     /** Single number detail (increments views). */
-    async detail(payload: { number_id: number }) {
+    async detail(payload: { number_id: number; private_token?: string }) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         try {
             await this.prebooks.reconcile();
             const id = Number(payload.number_id);
             if (!id) throw new Error('number_id is required.');
-            await this.dao.executeQuery(`UPDATE vip_numbers SET views = views + 1 WHERE number_id = ?`, [id]);
             const q: any = await this.dao.executeQuery(
                 `SELECT ${SELECT_COLS}, u.full_name AS seller_name FROM vip_numbers n
                  LEFT JOIN auth_user u ON u.user_id = n.seller_id WHERE n.number_id = ?`, [id]
             );
             if (q.fetchedRows === 0) throw new Error('Number not found.');
+            if (q.rows[0].visibility_type === 'OFFLINE') {
+                const access: any = await this.dao.executeQuery(
+                    `SELECT pl.private_link_id FROM number_private_links pl JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id
+                     WHERE pli.number_id=? AND pl.token_hash=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP()) LIMIT 1`,
+                    [id, hashPrivateToken(String(payload.private_token || ''))],
+                );
+                if (!access.rows?.length) throw new Error('Number not found.');
+            }
+            await this.dao.executeQuery(`UPDATE vip_numbers SET views = views + 1 WHERE number_id = ?`, [id]);
 
             // Attach approved reviews + average rating.
             const rev: any = await this.dao.executeQuery(
@@ -599,8 +642,7 @@ export class Numbers {
                  WHERE r.number_id = ? AND r.status = 'APPROVED' ORDER BY r.created_at DESC LIMIT 20`, [id]
             );
             const data = {
-                ...decorateNumberCategories(q.rows[0]),
-                is_premium: Boolean(Number(q.rows[0].is_featured)),
+                ...decorateCatalogNumber(q.rows[0]),
             };
             data.reviews = rev.rows || [];
             data.avg_rating = data.reviews.length
@@ -632,30 +674,40 @@ export class Numbers {
                 throw new Error('Display number must match the submitted mobile number.');
             }
             const mrp = Number(payload.mrp) || 0;
-            const offer = Number(payload.offer_price) || mrp;
-            const discount = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
-            const rtpStatus = String(payload.rtp_status || 'RTP').toUpperCase();
-            if (!['RTP', 'NON_RTP'].includes(rtpStatus)) throw new Error('RTP Status must be RTP or NON-RTP.');
+            if (mrp <= 0) throw new Error('MRP must be greater than zero.');
+            const rtpStatus = String(payload.rtp_status || 'RTA').toUpperCase();
+            if (!['RTP', 'NON_RTP', 'RTA'].includes(rtpStatus)) throw new Error('Status must be RTP, NON-RTP or RTA.');
             const rtpAvailableAt = rtpStatus === 'NON_RTP' ? istDateToUtc(payload.rtp_available_date) : null;
             if (rtpAvailableAt && new Date(rtpAvailableAt.replace(' ', 'T') + 'Z') <= new Date()) throw new Error('NON-RTP availability date must be in the future.');
+            const visibility = String(payload.visibility_type || 'ONLINE').toUpperCase();
+            if (!['ONLINE','OFFLINE'].includes(visibility)) throw new Error('Visibility must be ONLINE or OFFLINE.');
+            const privateLinkIds = Array.from(new Set((payload.private_link_ids || []).map(Number).filter((id: number) => id > 0))) as number[];
+            if (visibility === 'OFFLINE' && privateLinkIds.length === 0) throw new Error('Offline numbers require at least one private collection.');
 
             connection = await this.dao.getConnection();
             let insertId = 0;
             let classification: ReturnType<typeof classifyNumber>;
             await connection.beginTransaction();
             try {
+                const discount = await readGlobalDiscount(connection);
+                const offer = discountedPrice(mrp, discount);
                 const [result]: any = await connection.query(
                 `INSERT INTO vip_numbers (number_value, display_number, seller_id, seller_type,
-                 title_label, badge, mrp, offer_price, discount_pct, numerology_sum, operator, description, stock, status, rtp_status, rtp_available_at, is_featured)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                 title_label, badge, mrp, offer_price, discount_pct, numerology_sum, operator, description, stock, status, visibility_type, rtp_status, rtp_available_at, is_featured)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 [number_value, display_number, payload.seller_id, payload.seller_type || 'ADMIN',
                  payload.title_label || 'VIP Number', (payload.badge || 'NONE').toUpperCase(), mrp, offer, discount,
-                 payload.numerology_sum || null, payload.operator || null, payload.description || null,
-                 Number(payload.stock) || 1, payload.status || 'AVAILABLE', rtpStatus, rtpAvailableAt, payload.is_featured ? 1 : 0]
+                 payload.numerology_sum || null, null, payload.description || null,
+                 Number(payload.stock) || 1, payload.status || 'AVAILABLE', visibility, rtpStatus, rtpAvailableAt, payload.is_featured ? 1 : 0]
                 );
                 insertId = Number(result?.insertId) || 0;
                 if (!insertId) throw new Error('Unable to create listing.');
                 classification = await syncNumberCategories(connection, insertId, number_value);
+                if (privateLinkIds.length) {
+                    const [links]: any = await connection.query(`SELECT private_link_id FROM number_private_links WHERE private_link_id IN (${privateLinkIds.map(() => '?').join(',')}) AND revoked_at IS NULL`, privateLinkIds);
+                    if ((links || []).length !== privateLinkIds.length) throw new Error('One or more private collections are unavailable.');
+                    for (const linkId of privateLinkIds) await connection.query('INSERT INTO number_private_link_items (private_link_id,number_id) VALUES (?,?)', [linkId,insertId]);
+                }
                 await connection.commit();
             } catch (error) {
                 await connection.rollback();
@@ -706,7 +758,7 @@ export class Numbers {
                 const ownerScope = payload.owner_id ? ' AND seller_id = ?' : '';
                 const ownerParams = payload.owner_id ? [id, Number(payload.owner_id)] : [id];
                 const [rows]: any = await connection.query(
-                    `SELECT number_value, display_number, mrp, offer_price, status, rtp_status, rtp_available_at
+                    `SELECT number_value, display_number, mrp, offer_price, status, visibility_type, rtp_status, rtp_available_at
                      FROM vip_numbers WHERE number_id = ?${ownerScope} FOR UPDATE`, ownerParams);
                 if (!Array.isArray(rows) || rows.length === 0) throw new Error('Number not found.');
                 const current = rows[0];
@@ -737,8 +789,8 @@ export class Numbers {
                     params.push(displayNumber);
                 }
 
-                const allowed = ['title_label', 'badge', 'mrp', 'offer_price',
-                    'numerology_sum', 'operator', 'description', 'stock', 'status', 'is_featured'];
+                const allowed = ['title_label', 'badge',
+                    'numerology_sum', 'description', 'stock', 'status', 'is_featured'];
                 for (const key of allowed) {
                     if (payload[key] === undefined) continue;
                     fields.push(`${key} = ?`);
@@ -747,9 +799,24 @@ export class Numbers {
                         : key === 'badge' ? String(payload[key]).toUpperCase() : payload[key]);
                 }
 
+                if (payload.mrp !== undefined) {
+                    const mrp = Number(payload.mrp);
+                    if (!Number.isFinite(mrp) || mrp <= 0) throw new Error('MRP must be greater than zero.');
+                    const discount = await readGlobalDiscount(connection);
+                    fields.push('mrp = ?', 'offer_price = ?', 'discount_pct = ?');
+                    params.push(mrp, discountedPrice(mrp, discount), discount);
+                }
+
+                if (payload.visibility_type !== undefined) {
+                    const visibility = String(payload.visibility_type).toUpperCase();
+                    if (!['ONLINE','OFFLINE'].includes(visibility)) throw new Error('Visibility must be ONLINE or OFFLINE.');
+                    if (current.status === 'RESERVED' && visibility !== current.visibility_type) throw new Error('Visibility cannot change while this number is reserved.');
+                    fields.push('visibility_type = ?'); params.push(visibility);
+                }
+
                 if (payload.rtp_status !== undefined || payload.rtp_available_date !== undefined) {
-                    const rtpStatus = String(payload.rtp_status ?? current.rtp_status ?? 'RTP').toUpperCase();
-                    if (!['RTP', 'NON_RTP'].includes(rtpStatus)) throw new Error('RTP Status must be RTP or NON-RTP.');
+                    const rtpStatus = String(payload.rtp_status ?? current.rtp_status ?? 'RTA').toUpperCase();
+                    if (!['RTP', 'NON_RTP', 'RTA'].includes(rtpStatus)) throw new Error('Status must be RTP, NON-RTP or RTA.');
                     if (current.status === 'RESERVED' && rtpStatus !== current.rtp_status) throw new Error('RTP status cannot change while this number is reserved by an order.');
                     const rtpAvailableAt = rtpStatus === 'NON_RTP' ? istDateToUtc(payload.rtp_available_date) : null;
                     if (rtpAvailableAt && new Date(rtpAvailableAt.replace(' ', 'T') + 'Z') <= new Date()) throw new Error('NON-RTP availability date must be in the future.');
@@ -779,13 +846,6 @@ export class Numbers {
                     }
                 }
 
-                if (payload.mrp !== undefined || payload.offer_price !== undefined) {
-                    const mrp = payload.mrp !== undefined ? Number(payload.mrp) : Number(current.mrp);
-                    const offer = payload.offer_price !== undefined ? Number(payload.offer_price) : Number(current.offer_price);
-                    fields.push('discount_pct = ?');
-                    params.push(mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0);
-                }
-
                 const categoryOnlyCompatibilityCall = fields.length === 0 && payload.category_id !== undefined;
                 if (fields.length === 0 && !categoryOnlyCompatibilityCall) throw new Error('Nothing to update.');
                 if (fields.length > 0) {
@@ -795,6 +855,22 @@ export class Numbers {
                         updateParams,
                     );
                     if (payload.rtp_status === 'NON_RTP') await connection.query(`DELETE FROM cart_items WHERE number_id=?`, [id]);
+                }
+
+                if (Array.isArray(payload.private_link_ids)) {
+                    const linkIds = Array.from(new Set(payload.private_link_ids.map(Number).filter((linkId: number) => linkId > 0))) as number[];
+                    if (linkIds.length) {
+                        const [links]: any = await connection.query(`SELECT private_link_id FROM number_private_links WHERE private_link_id IN (${linkIds.map(() => '?').join(',')}) AND revoked_at IS NULL`, linkIds);
+                        if ((links || []).length !== linkIds.length) throw new Error('One or more private collections are unavailable.');
+                    }
+                    await connection.query('DELETE FROM number_private_link_items WHERE number_id=?', [id]);
+                    for (const linkId of linkIds) await connection.query('INSERT INTO number_private_link_items (private_link_id,number_id) VALUES (?,?)', [linkId,id]);
+                }
+                const finalVisibility = String(payload.visibility_type || current.visibility_type);
+                if (finalVisibility === 'ONLINE') await connection.query('DELETE FROM number_private_link_items WHERE number_id=?', [id]);
+                if (finalVisibility === 'OFFLINE') {
+                    const [assigned]: any = await connection.query('SELECT COUNT(*) AS count FROM number_private_link_items WHERE number_id=?', [id]);
+                    if (Number(assigned?.[0]?.count || 0) === 0) throw new Error('Offline numbers require at least one private collection.');
                 }
 
                 classification = numberValue !== String(current.number_value)

@@ -3,6 +3,7 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
 import { Prebooks } from '../prebooks/prebooks';
+import { resolvePrivateLinkWithConnection } from '../privateLinks/privateLinks';
 
 export class Cart {
     private dao: MySqlClient;
@@ -30,10 +31,13 @@ export class Cart {
         try {
             const cartId = await this.getCartId(payload.user_id);
             const q: any = await this.dao.executeQuery(
-                `SELECT ci.cart_item_id, n.number_id, n.number_value, n.display_number, n.title_label, n.badge, n.mrp, n.offer_price,
-                        n.discount_pct, n.numerology_sum, n.operator, n.status, n.rtp_status, n.rtp_available_at
+                `SELECT ci.cart_item_id,ci.private_link_id,n.number_id, n.number_value, n.display_number, n.title_label, n.badge, n.mrp, n.offer_price,
+                        n.discount_pct, n.numerology_sum, n.operator, n.status,n.visibility_type,n.rtp_status,n.rtp_available_at
                  FROM cart_items ci JOIN vip_numbers n ON n.number_id = ci.number_id
-                 WHERE ci.cart_id = ? ORDER BY ci.added_at DESC`, [cartId]
+                 LEFT JOIN number_private_links pl ON pl.private_link_id=ci.private_link_id
+                 LEFT JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id AND pli.number_id=n.number_id
+                 WHERE ci.cart_id = ? AND (n.visibility_type='ONLINE' OR (pli.number_id IS NOT NULL AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
+                 ORDER BY ci.added_at DESC`, [cartId]
             );
             const numberItems = (q.rows || []).map((row: any) => ({
                 ...decorateNumberCategories(row), item_type: 'NUMBER', item_id: Number(row.number_id), quantity: 1,
@@ -54,7 +58,7 @@ export class Cart {
         return resModel;
     }
 
-    async add(payload: { user_id: number, number_id: number }) {
+    async add(payload: { user_id: number, number_id: number, private_token?: string }) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         try {
@@ -62,11 +66,23 @@ export class Cart {
             if (!payload.number_id) throw new Error('number_id is required.');
             const cartId = await this.getCartId(payload.user_id);
             // ensure the number exists & is available
-            const chk: any = await this.dao.executeQuery(`SELECT status,rtp_status FROM vip_numbers WHERE number_id = ?`, [payload.number_id]);
+            const chk: any = await this.dao.executeQuery(`SELECT status,rtp_status,visibility_type FROM vip_numbers WHERE number_id = ?`, [payload.number_id]);
             if (chk.fetchedRows === 0) throw new Error('Number not found.');
             if (chk.rows[0].status !== 'AVAILABLE') throw new Error('This number is no longer available.');
-            if (chk.rows[0].rtp_status !== 'RTP') throw new Error('NON-RTP numbers must be pre-booked instead of added to cart.');
-            await this.dao.executeQuery(`INSERT IGNORE INTO cart_items (cart_id, number_id) VALUES (?, ?)`, [cartId, payload.number_id]);
+            if (chk.rows[0].rtp_status === 'NON_RTP') throw new Error('NON-RTP numbers must be pre-booked until their ready-to-port date.');
+            let privateLinkId: number | null = null;
+            if (chk.rows[0].visibility_type === 'OFFLINE') {
+                const connection = await this.dao.getConnection();
+                try {
+                    const link = await resolvePrivateLinkWithConnection(connection, String(payload.private_token || ''), Number(payload.number_id));
+                    if (!link) throw new Error('This Offline number is only available through its active private link.');
+                    privateLinkId = Number(link.private_link_id);
+                } finally { connection.release(); }
+            }
+            await this.dao.executeQuery(
+                `INSERT INTO cart_items (cart_id,number_id,private_link_id) VALUES (?,?,?)
+                 ON DUPLICATE KEY UPDATE private_link_id=VALUES(private_link_id)`, [cartId,payload.number_id,privateLinkId],
+            );
             resModel.status = 1;
             resModel.info = 'Added to cart.';
             resModel.data = await (await this.list(payload)).data;
@@ -96,12 +112,13 @@ export class Cart {
             connection = await this.dao.getConnection();
             await connection.beginTransaction();
             const [numbers]: any = await connection.query(
-                `SELECT number_id, display_number, status, stock, rtp_status FROM vip_numbers
+                `SELECT number_id, display_number, status, stock, rtp_status,visibility_type FROM vip_numbers
                  WHERE number_id IN (${uniqueIds.map(() => '?').join(',')}) FOR UPDATE`, uniqueIds,
             );
             if ((numbers || []).length !== uniqueIds.length) throw new Error('One or more pack numbers no longer exist.');
-            const unavailable = (numbers || []).find((number: any) => number.status !== 'AVAILABLE' || Number(number.stock) <= 0 || number.rtp_status !== 'RTP');
+            const unavailable = (numbers || []).find((number: any) => number.status !== 'AVAILABLE' || Number(number.stock) <= 0 || number.rtp_status === 'NON_RTP');
             if (unavailable) throw new Error(`${unavailable.display_number} is no longer available. Refresh the pack and try again.`);
+            if ((numbers || []).some((number: any) => number.visibility_type && number.visibility_type !== 'ONLINE')) throw new Error('Private Offline numbers cannot be added through a public family pack.');
 
             const [carts]: any = await connection.query('SELECT cart_id FROM carts WHERE user_id = ? FOR UPDATE', [payload.user_id]);
             let cartId = Number(carts?.[0]?.cart_id) || 0;
