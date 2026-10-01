@@ -102,7 +102,7 @@ export class DealerPurchases {
             const where = ['dpn.state=?']; const params: any[] = [state];
             if (Number(payload.external_dealer_id)) { where.push('dpn.external_dealer_id=?'); params.push(Number(payload.external_dealer_id)); }
             if (String(payload.q || '').trim()) { where.push('(n.number_value LIKE ? OR n.display_number LIKE ?)'); const q = `%${String(payload.q).replace(/\s+/g,'')}%`; params.push(q,q); }
-            const page = Math.max(1, Number(payload.page) || 1); const limit = Math.min(100, Math.max(1, Number(payload.limit) || 10)); const offset = (page - 1) * limit;
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1)); const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 10))); const offset = (page - 1) * limit;
             const sortColumns: Record<string,string> = { number:'n.number_value', dealer:'d.name', purchase_price:'dpn.purchase_price', intended_sale_price:'dpn.intended_sale_price', sold_at:'dpn.sold_at', deleted_at:'dpn.deleted_at', created_at:'dpn.created_at' };
             const sort = sortColumns[String(payload.sort)] || 'dpn.created_at'; const direction = String(payload.direction).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
             const count: any = await this.dao.executeQuery(
@@ -113,7 +113,7 @@ export class DealerPurchases {
                         (dpn.actual_sale_price-dpn.purchase_price) AS profit
                  FROM dealer_purchase_numbers dpn JOIN vip_numbers n ON n.number_id=dpn.number_id
                  JOIN external_dealers d ON d.external_dealer_id=dpn.external_dealer_id
-                 WHERE ${where.join(' AND ')} ORDER BY ${sort} ${direction} LIMIT ? OFFSET ?`, [...params,limit,offset],
+                 WHERE ${where.join(' AND ')} ORDER BY ${sort} ${direction}, dpn.dealer_purchase_id DESC LIMIT ? OFFSET ?`, [...params,limit,offset],
             );
             if (count.status !== 1 || rows.status !== 1) throw new Error(count.info || rows.info);
             const total = Number(count.rows?.[0]?.total || 0);
@@ -145,17 +145,11 @@ export class DealerPurchases {
             const purchase = Number(payload.purchase_price); const intended = Number(payload.intended_sale_price);
             if (!Number.isFinite(purchase) || purchase < 0) throw new Error('Purchase price must be zero or greater.');
             if (!Number.isFinite(intended) || intended <= 0) throw new Error('Intended sale price must be greater than zero.');
-            const linkIds = Array.from(new Set((payload.private_link_ids || []).map(Number).filter((id: number) => id > 0))) as number[];
-            if (visibility === 'OFFLINE' && !linkIds.length) throw new Error('Assign Offline numbers to at least one private collection.');
             connection = await this.dao.getConnection(); await connection.beginTransaction();
             const globalDiscount = await readGlobalDiscount(connection);
             const catalogPrice = discountedPrice(intended, globalDiscount);
             const [dealers]: any = await connection.query('SELECT external_dealer_id FROM external_dealers WHERE external_dealer_id=? AND is_active=1 FOR UPDATE', [dealerId]);
             if (!dealers?.length) throw new Error('Dealer not found or inactive.');
-            if (linkIds.length) {
-                const [links]: any = await connection.query(`SELECT private_link_id FROM number_private_links WHERE private_link_id IN (${linkIds.map(()=>'?').join(',')}) AND revoked_at IS NULL`, linkIds);
-                if ((links || []).length !== linkIds.length) throw new Error('One or more private collections are unavailable.');
-            }
             const [existing]: any = await connection.query(`SELECT number_value FROM vip_numbers WHERE number_value IN (${numbers.map(()=>'?').join(',')}) FOR UPDATE`, numbers);
             if (existing?.length) throw new Error(`Already listed: ${existing.map((n:any)=>n.number_value).join(', ')}`);
             const created: number[] = [];
@@ -172,7 +166,6 @@ export class DealerPurchases {
                     [numberId,dealerId,purchase,intended,Number(payload.user_id)],
                 );
                 const purchaseId = Number(purchaseInsert.insertId);
-                for (const linkId of linkIds) await connection.query('INSERT INTO number_private_link_items (private_link_id,number_id) VALUES (?,?)', [linkId,numberId]);
                 await connection.query(`INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by) VALUES (?,?,'CREATED',?,?)`,
                     [purchaseId,dealerId,JSON.stringify({ visibility_type: visibility, rtp_status: rtpStatus, purchase_price: purchase, intended_sale_price: intended }),Number(payload.user_id)]);
                 created.push(purchaseId);
@@ -273,8 +266,13 @@ export class DealerPurchases {
     async payments(payload:any){
         const response=this.response(); const params:any[]=[]; let where='';
         if(Number(payload.external_dealer_id)){where='WHERE p.external_dealer_id=?';params.push(Number(payload.external_dealer_id));}
-        const q:any=await this.dao.executeQuery(`SELECT p.*,d.name AS dealer_name FROM dealer_purchase_payments p JOIN external_dealers d ON d.external_dealer_id=p.external_dealer_id ${where} ORDER BY p.paid_at DESC,p.dealer_payment_id DESC LIMIT 500`,params);
-        if(q.status!==1)return this.fail(response,q.info); response.status=1;response.info='OK';response.data=q.rows||[];return response;
+        const page=Math.max(1,Math.floor(Number(payload.page)||1));
+        const limit=Math.min(1000,Math.max(1,Math.floor(Number(payload.limit)||20)));
+        const offset=(page-1)*limit;
+        const count:any=await this.dao.executeQuery(`SELECT COUNT(*) AS total FROM dealer_purchase_payments p JOIN external_dealers d ON d.external_dealer_id=p.external_dealer_id ${where}`,params);
+        if(count.status!==1)return this.fail(response,count.info);
+        const q:any=await this.dao.executeQuery(`SELECT p.*,d.name AS dealer_name FROM dealer_purchase_payments p JOIN external_dealers d ON d.external_dealer_id=p.external_dealer_id ${where} ORDER BY p.paid_at DESC,p.dealer_payment_id DESC LIMIT ? OFFSET ?`,[...params,limit,offset]);
+        if(q.status!==1)return this.fail(response,q.info); response.status=1;response.info='OK';response.data={items:q.rows||[],total:Number(count.rows?.[0]?.total||0),page,limit};return response;
     }
 
     async recordPayment(payload:any){

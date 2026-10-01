@@ -11,6 +11,7 @@ logger.log("## Common Middleware Configuration : Start");
 
 // A05: cap request body size to mitigate memory-exhaustion DoS. 15mb comfortably
 // covers base64 screenshots/avatars (~11mb) without allowing huge payloads.
+router.use('/vipnumberworld/payments/cashfree/webhook', parser.json({ limit: '256kb', verify: (req, _res, buffer) => { (req as any).rawBody = buffer.toString('utf8'); } }));
 router.use(parser.urlencoded({ extended: true, limit: '15mb' }));
 router.use(parser.json({ limit: '15mb' }));
 router.use(compression());

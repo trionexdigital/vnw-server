@@ -35,16 +35,20 @@ const BypassAuth = [
     `${BASE}/carousel/asset`,   // published carousel binary media
     `${BASE}/carousel/preview`, // published carousel static previews
     `${BASE}/reviews/by-number`,// public product reviews
+    `${BASE}/reviews/screenshots`,// public screenshot review carousel
     `${BASE}/site`,             // public site config, newsletter, enquiry
     `${BASE}/prebooks/catalog`, // public NON-RTP catalog
     `${BASE}/private/resolve`, // bearer-link protected private number collection
-    `${BASE}/payments/razorpay/webhook`, // verified via signature, not JWT
 ];
 
 // Browser <img> requests cannot attach the rotating API authorization header.
 // Keep this list restricted to read-only binary resources whose handlers accept
 // only an integer id and never expose private account data.
-const PublicBinaryPaths: string[] = [];
+const PublicBinaryPaths: RegExp[] = [
+    /^\/vipnumberworld\/site\/trusted-clients\/\d+\/logo$/,
+    /^\/vipnumberworld\/carousel\/(asset|preview)\/\d+$/,
+    /^\/vipnumberworld\/reviews\/screenshots\/\d+\/image$/,
+];
 
 //setting response for all
 router.use(async (req: Request, res: Response, next: NextFunction) => {
@@ -52,6 +56,15 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
     let token: string = '';
     let model = masterModel.getResponseModel();
     let path: string = req.path;
+    // Cashfree has no browser authorization header. The route requires a valid raw-body HMAC.
+    if (req.method === 'POST' && req.path === `${BASE}/payments/cashfree/webhook`) { next(); return; }
+    // Public binary reads require neither a rotating browser header nor a master-key lookup.
+    // Run this before loading auth configuration so image delivery stays independent of login.
+    if (req.method === 'GET' && PublicBinaryPaths.some((pattern) => pattern.test(req.path))) {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        next();
+        return;
+    }
     let jwtKeyValue: any = await mySqlMaster.getEnvKey('MASTER_KEY');
     let jwtKey: string = jwtKeyValue ? (jwtKeyValue + '').trim() : '';
     let tokenExceptionPaths = [...BypassAuth];
@@ -65,10 +78,6 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
         token = req.headers['token'] + ''; // Express headers are auto converted to lowercase
         //Skip on Status
         if (req.path === '/status' || req.path === '/vipnumberworld/status') {
-            next();
-            return;
-        }
-        if (PublicBinaryPaths.some((prefix) => req.path.startsWith(prefix))) {
             next();
             return;
         }

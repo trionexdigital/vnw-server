@@ -97,7 +97,7 @@ test('numbers/similar returns stable pagination from a bounded candidate pool', 
     assert.equal(result.data.items.length, 1);
     assert.match(calls[1].sql, /n\.status = 'AVAILABLE' AND n\.stock > 0/);
     assert.match(calls[1].sql, /LIMIT 600/);
-    assert.deepEqual(calls[1].params.slice(0, 3), [1, result.data.source.primary_category.slug, 2]);
+    assert.deepEqual(calls[1].params.slice(0, 1 + result.data.source.categories.length), [1, ...result.data.source.categories.map((category: any) => category.slug)]);
 });
 
 test('numbers/similar rejects missing and unknown source IDs', async () => {

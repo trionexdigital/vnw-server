@@ -239,6 +239,11 @@ export class MarketplaceContent {
       if (!clientId) throw new Error('client_id is required.');
       if (!file || Array.isArray(file) || !Buffer.isBuffer(file.data)) throw new Error('Choose one logo image.');
       if (!CLIENT_MIMES.includes(String(file.mimetype))) throw new Error('Logo must be PNG, JPEG, or WebP.');
+      const bytes: Buffer = file.data;
+      const isPng = bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+      const isJpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+      const isWebp = bytes.subarray(0, 4).toString() === 'RIFF' && bytes.subarray(8, 12).toString() === 'WEBP';
+      if (file.truncated || !(file.mimetype === 'image/png' && isPng || file.mimetype === 'image/jpeg' && isJpeg || file.mimetype === 'image/webp' && isWebp)) throw new Error('Choose a valid PNG, JPEG or WebP image.');
       if (file.data.length > 2 * 1024 * 1024) throw new Error('Logo must be 2 MB or smaller.');
       const sha = createHash('sha256').update(file.data).digest('hex');
       const q: any = await this.dao.executeQuery(

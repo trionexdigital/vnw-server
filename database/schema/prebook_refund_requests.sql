@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS `prebook_refund_requests` (
   `customer_note` varchar(1000) DEFAULT NULL,
   `admin_note` varchar(1000) DEFAULT NULL,
   `reviewed_by` int unsigned DEFAULT NULL,
-  `razorpay_refund_id` varchar(64) DEFAULT NULL,
+  `refund_attempt` int unsigned NOT NULL DEFAULT '0',
+  `gateway_refund_id` varchar(64) DEFAULT NULL,
   `gateway_status` varchar(32) DEFAULT NULL,
   `gateway_payload` longtext,
   `requested_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -18,6 +19,6 @@ CREATE TABLE IF NOT EXISTS `prebook_refund_requests` (
   `processed_at` datetime DEFAULT NULL,
   PRIMARY KEY (`refund_request_id`), KEY `prebook_refund_history` (`prebook_id`,
   `status`),
-  UNIQUE KEY `razorpay_refund_unique` (`razorpay_refund_id`), KEY `refund_queue` (`status`,
+  UNIQUE KEY `gateway_refund_unique` (`gateway_refund_id`), KEY `refund_queue` (`status`,
   `requested_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

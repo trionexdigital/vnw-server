@@ -105,6 +105,40 @@ test('deterministic AI fallback understands common English and Hinglish constrai
     assert.match(parsed.explanation, /786/);
 });
 
+test('AI search preserves a selected child and combines it with price and digit filters', async () => {
+    const numbers = new Numbers();
+    let listing: any;
+    (numbers as any).openAiFilters = async () => ({ filters: { category: 'customer-care-numbers', sort: 'popular' }, explanation: 'Mirror pattern' });
+    (numbers as any).list = async (payload: any) => { listing = payload; return { status: 1, info: 'OK', data: { items: [], total: 0 } }; };
+    const response: any = await numbers.aiSearch({
+        query: 'Mirror Ulta-Pulta',
+        category: 'customer-care-numbers',
+        subcategory_id: 104,
+        price_min: 1500,
+        price_max: 3000,
+        search: { anywhere: '786' },
+        page: 2,
+    });
+    assert.equal(response.status, 1);
+    assert.equal(listing.category, 'customer-care-numbers');
+    assert.equal(listing.subcategory_id, 104);
+    assert.equal(listing.price_min, 1500);
+    assert.equal(listing.price_max, 3000);
+    assert.equal(listing.search.anywhere, '786');
+    assert.equal(listing.page, 2);
+});
+
+test('AI text infers a unique child but leaves shared child names unselected', async () => {
+    const numbers = new Numbers();
+    const listings: any[] = [];
+    (numbers as any).openAiFilters = async () => null;
+    (numbers as any).list = async (payload: any) => { listings.push(payload); return { status: 1, info: 'OK', data: { items: [], total: 0 } }; };
+    await numbers.aiSearch({ query: 'show 3 Couples' });
+    await numbers.aiSearch({ query: 'Ulta-Pulta' });
+    assert.deepEqual([listings[0].category, listings[0].subcategory_id], ['doublling-aabbcc', 52]);
+    assert.equal(listings[1].subcategory_id, undefined);
+});
+
 test('numbers/list combines category, price and structured predicates with AND', async () => {
     const numbers = new Numbers();
     (numbers as any).prebooks = { reconcile: async () => undefined };
@@ -118,7 +152,7 @@ test('numbers/list combines category, price and structured predicates with AND',
     };
 
     const result: any = await numbers.list({
-        category: 'mirror-numbers',
+        category: 'customer-care-numbers',
         price_min: 1501,
         price_max: 3000,
         search: { starts_with: '98', must_contain: ['786'] },
@@ -128,7 +162,7 @@ test('numbers/list combines category, price and structured predicates with AND',
     assert.match(calls[0].sql, /offer_price >= \?/);
     assert.match(calls[0].sql, /offer_price <= \?/);
     assert.match(calls[0].sql, /LIKE \?[\s\S]*AND[\s\S]*LIKE \?/);
-    assert.ok(calls[0].params.includes('mirror-numbers'));
+    assert.ok(calls[0].params.includes('customer-care-numbers'));
     assert.ok(calls[0].params.includes(1501));
     assert.ok(calls[0].params.includes('98%'));
 });
@@ -160,6 +194,20 @@ test('closest matches relax one transparent condition and cap each group at six'
     assert.equal(result.data.alternatives[0].relaxed_key, 'exact_mask');
     assert.match(result.data.alternatives[0].label, /exact position mask/i);
     assert.equal(result.data.alternatives[0].items.length, 6);
+});
+
+test('closest matches relax a child before its parent without sending a child without a category', async () => {
+    const numbers = new Numbers();
+    const attempted: any[] = [];
+    (numbers as any).queryListing = async (payload: any) => {
+        attempted.push(payload);
+        return { items: [], total: 0, page: 1, limit: 6, pages: 0 };
+    };
+    await (numbers as any).findAlternatives({ category: 'customer-care-numbers', subcategory_id: 104, search: {} });
+    assert.equal(attempted[0].category, 'customer-care-numbers');
+    assert.equal(attempted[0].subcategory_id, undefined);
+    assert.equal(attempted[1].category, undefined);
+    assert.equal(attempted[1].subcategory_id, undefined);
 });
 
 test('alternatives are absent when exact results exist', async () => {

@@ -1,0 +1,388 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Orders = void 0;
+exports.startPurchaseLifecycle = startPurchaseLifecycle;
+const database_1 = require("../../../gen_db/database");
+const Logger_1 = require("../../../pixels-utility/Logger");
+const MasterModel_1 = require("../../../models/MasterModel");
+const notifications_1 = require("../notifications/notifications");
+const wallet_1 = require("../wallet/wallet");
+const categoryClassifier_1 = require("../categories/categoryClassifier");
+const prebooks_1 = require("../prebooks/prebooks");
+const privateLinks_1 = require("../privateLinks/privateLinks");
+class Orders {
+    constructor() {
+        this.dao = new database_1.MySqlClient('pixels');
+        this.logger = new Logger_1.Logger();
+        this.masterModel = new MasterModel_1.MasterModel();
+        this.prebooks = new prebooks_1.Prebooks();
+    }
+    genOrderNo() {
+        return 'VNW' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 900 + 100);
+    }
+    /** Release abandoned regular checkout reservations. Safe to call opportunistically. */
+    reconcilePurchases() {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
+            const expired = yield this.dao.executeQuery("SELECT order_id FROM orders WHERE order_type='PURCHASE' AND payment_status='UNPAID' AND status='PENDING' AND payment_expires_at IS NOT NULL AND payment_expires_at<=UTC_TIMESTAMP() LIMIT 100", []);
+            for (const row of (expired.rows || [])) {
+                let connection;
+                try {
+                    connection = yield this.dao.getConnection();
+                    yield connection.beginTransaction();
+                    const [orders] = yield connection.query("SELECT payment_status,status FROM orders WHERE order_id=? FOR UPDATE", [row.order_id]);
+                    if (((_a = orders === null || orders === void 0 ? void 0 : orders[0]) === null || _a === void 0 ? void 0 : _a.payment_status) !== 'UNPAID' || ((_b = orders === null || orders === void 0 ? void 0 : orders[0]) === null || _b === void 0 ? void 0 : _b.status) !== 'PENDING') {
+                        yield connection.commit();
+                        continue;
+                    }
+                    const [numbers] = yield connection.query('SELECT number_id FROM order_items WHERE order_id=?', [row.order_id]);
+                    for (const item of (numbers || []))
+                        yield connection.query("UPDATE vip_numbers SET status='AVAILABLE' WHERE number_id=? AND status='RESERVED'", [item.number_id]);
+                    yield connection.query("UPDATE orders SET status='CANCELLED',payment_status='FAILED' WHERE order_id=? AND payment_status='UNPAID'", [row.order_id]);
+                    yield connection.commit();
+                }
+                catch (_c) {
+                    try {
+                        yield (connection === null || connection === void 0 ? void 0 : connection.rollback());
+                    }
+                    catch (_d) { }
+                }
+                finally {
+                    connection === null || connection === void 0 ? void 0 : connection.release();
+                }
+            }
+        });
+    }
+    failPurchase(orderId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let connection;
+            try {
+                connection = yield this.dao.getConnection();
+                yield connection.beginTransaction();
+                const [orders] = yield connection.query("SELECT payment_status,status,order_type FROM orders WHERE order_id=? FOR UPDATE", [orderId]);
+                const order = orders === null || orders === void 0 ? void 0 : orders[0];
+                if (!order || order.order_type !== 'PURCHASE' || order.payment_status === 'PAID') {
+                    yield connection.commit();
+                    return;
+                }
+                const [numbers] = yield connection.query('SELECT number_id FROM order_items WHERE order_id=?', [orderId]);
+                for (const item of (numbers || []))
+                    yield connection.query("UPDATE vip_numbers SET status='AVAILABLE' WHERE number_id=? AND status='RESERVED'", [item.number_id]);
+                yield connection.query("UPDATE orders SET status='CANCELLED',payment_status='FAILED' WHERE order_id=?", [orderId]);
+                yield connection.commit();
+            }
+            catch (error) {
+                try {
+                    yield (connection === null || connection === void 0 ? void 0 : connection.rollback());
+                }
+                catch (_a) { }
+                throw error;
+            }
+            finally {
+                connection === null || connection === void 0 ? void 0 : connection.release();
+            }
+        });
+    }
+    /**
+     * Creates a PENDING order from the user's cart (or a single buy-now number_id),
+     * reserves the numbers, and computes totals (optional coupon). The Razorpay
+     * order is created separately by the payments module using the returned order_id.
+     */
+    create(payload) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
+            let startMS = new Date().getTime();
+            let resModel = this.masterModel.getResponseModel();
+            let connection;
+            try {
+                yield this.prebooks.reconcile();
+                yield this.reconcilePurchases();
+                const userId = payload.user_id;
+                // Resolve the set of numbers being purchased.
+                let numberIds = [];
+                const privateLinkByNumber = new Map();
+                if (payload.number_id) {
+                    numberIds = [Number(payload.number_id)];
+                }
+                else {
+                    const cartQ = yield this.dao.executeQuery(`SELECT ci.number_id,ci.private_link_id FROM cart_items ci JOIN carts c ON c.cart_id = ci.cart_id WHERE c.user_id = ?`, [userId]);
+                    numberIds = (cartQ.rows || []).map((r) => r.number_id);
+                    for (const row of (cartQ.rows || []))
+                        if (row.private_link_id)
+                            privateLinkByNumber.set(Number(row.number_id), Number(row.private_link_id));
+                }
+                numberIds = Array.from(new Set(numberIds));
+                if (numberIds.length === 0)
+                    throw new Error('No numbers to order.');
+                connection = yield this.dao.getConnection();
+                yield connection.beginTransaction();
+                // Lock before validating so purchase and pre-book checkout cannot
+                // reserve the same number concurrently.
+                let nums = [];
+                if (numberIds.length) {
+                    const placeholders = numberIds.map(() => '?').join(',');
+                    const result = yield connection.query(`SELECT number_id,display_number,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status FROM vip_numbers WHERE number_id IN (${placeholders}) FOR UPDATE`, numberIds);
+                    nums = result[0] || [];
+                }
+                if ((nums || []).length !== numberIds.length)
+                    throw new Error('One or more selected numbers were not found.');
+                for (const n of nums) {
+                    if (n.status !== 'AVAILABLE' || Number(n.stock) <= 0)
+                        throw new Error(`Number ${n.display_number} is no longer available.`);
+                    if (n.rtp_status === 'NON_RTP')
+                        throw new Error(`Number ${n.display_number} must be pre-booked until its ready-to-port date.`);
+                    if (n.visibility_type === 'OFFLINE') {
+                        let linkId = privateLinkByNumber.get(Number(n.number_id)) || 0;
+                        if (payload.number_id) {
+                            const link = yield (0, privateLinks_1.resolvePrivateLinkWithConnection)(connection, String(payload.private_token || ''), Number(n.number_id));
+                            linkId = Number((link === null || link === void 0 ? void 0 : link.private_link_id) || 0);
+                        }
+                        else if (linkId) {
+                            const [access] = yield connection.query(`SELECT pl.private_link_id FROM number_private_links pl JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id
+                             WHERE pl.private_link_id=? AND pli.number_id=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP()) LIMIT 1`, [linkId, n.number_id]);
+                            if (!(access === null || access === void 0 ? void 0 : access.length))
+                                linkId = 0;
+                        }
+                        if (!linkId)
+                            throw new Error(`Private access for ${n.display_number} has expired or was revoked.`);
+                        privateLinkByNumber.set(Number(n.number_id), linkId);
+                    }
+                }
+                const subtotal = nums.reduce((s, n) => s + Number(n.offer_price), 0);
+                // Optional coupon.
+                let discount = 0;
+                let appliedCoupon = null;
+                if (payload.coupon_code) {
+                    const [coupons] = yield connection.query(`SELECT * FROM coupons WHERE code = ? AND is_active = 1`, [String(payload.coupon_code).toUpperCase()]);
+                    const c = coupons === null || coupons === void 0 ? void 0 : coupons[0];
+                    if (c && subtotal >= Number(c.min_order) && (!c.expires_at || new Date(c.expires_at) >= new Date())) {
+                        discount = c.type === 'PERCENT' ? (subtotal * Number(c.value)) / 100 : Number(c.value);
+                        if (c.max_discount)
+                            discount = Math.min(discount, Number(c.max_discount));
+                        discount = Math.min(discount, subtotal);
+                        appliedCoupon = c.code;
+                    }
+                }
+                const total = Math.max(0, subtotal - discount);
+                // Customer snapshot.
+                const [users] = yield connection.query(`SELECT full_name, email, phone FROM auth_user WHERE user_id = ?`, [userId]);
+                const u = (users === null || users === void 0 ? void 0 : users[0]) || {};
+                const cust = payload.customer || {};
+                const orderNo = this.genOrderNo();
+                const [ordIns] = yield connection.query(`INSERT INTO orders (order_no,user_id,subtotal,discount,total,status,payment_status,order_type,payment_expires_at,coupon_code,
+                    customer_name,customer_email,customer_phone)
+                 VALUES (?,?,?,?,?,'PENDING','UNPAID','PURCHASE',DATE_ADD(UTC_TIMESTAMP(),INTERVAL 15 MINUTE),?,?,?,?)`, [orderNo, userId, subtotal, discount, total, appliedCoupon, cust.name || u.full_name, cust.email || u.email, cust.phone || u.phone]);
+                if (ordIns.insertId === 0)
+                    throw new Error('Unable to create order.');
+                const orderId = ordIns.insertId;
+                // Order items (+ dealer commission snapshot) and reserve numbers.
+                for (const n of nums) {
+                    let commission = 0;
+                    if (n.seller_type === 'DEALER') {
+                        const [dealers] = yield connection.query(`SELECT commission_pct FROM dealer_profiles WHERE dealer_id = ?`, [n.seller_id]);
+                        const pct = Number((_b = (_a = dealers === null || dealers === void 0 ? void 0 : dealers[0]) === null || _a === void 0 ? void 0 : _a.commission_pct) !== null && _b !== void 0 ? _b : 10);
+                        commission = (Number(n.offer_price) * pct) / 100;
+                    }
+                    yield connection.query(`INSERT INTO order_items (order_id,number_id,private_link_id,seller_id,display_number,price,commission_amount,item_status)
+                     VALUES (?,?,?,?,?,?,?, 'PENDING')`, [orderId, n.number_id, privateLinkByNumber.get(Number(n.number_id)) || null, n.seller_id, n.display_number, n.offer_price, commission]);
+                    const [reserved] = yield connection.query(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ? AND status='AVAILABLE' AND stock>0 AND rtp_status IN ('RTP','RTA')`, [n.number_id]);
+                    if (reserved.affectedRows !== 1)
+                        throw new Error(`Number ${n.display_number} was just reserved by another customer.`);
+                }
+                yield connection.commit();
+                resModel.status = 1;
+                resModel.info = 'OK';
+                resModel.data = { order_id: orderId, order_no: orderNo, subtotal, discount, total };
+            }
+            catch (error) {
+                if (connection) {
+                    try {
+                        yield connection.rollback();
+                    }
+                    catch (_c) { }
+                }
+                resModel.status = -33;
+                resModel.info = 'catch : ' + error;
+                this.logger.error(JSON.stringify(resModel));
+            }
+            finally {
+                if (connection)
+                    connection.release();
+                try {
+                    resModel.tat = (new Date().getTime() - startMS) / 1000;
+                }
+                catch (e) { }
+            }
+            return resModel;
+        });
+    }
+    /** Finalizes a paid order: marks order/items PAID, numbers SOLD, clears cart, pays referral, notifies. */
+    finalizePaid(orderId, pay) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
+            let connection;
+            let order;
+            try {
+                connection = yield this.dao.getConnection();
+                yield connection.beginTransaction();
+                const [orders] = yield connection.query('SELECT * FROM orders WHERE order_id=? FOR UPDATE', [orderId]);
+                order = orders === null || orders === void 0 ? void 0 : orders[0];
+                if (!order)
+                    throw new Error('Order not found.');
+                if (order.payment_status === 'PAID') {
+                    yield connection.commit();
+                    return order;
+                }
+                yield connection.query(`UPDATE vip_numbers n INNER JOIN order_items oi ON oi.number_id=n.number_id SET n.status='SOLD',n.stock=0 WHERE oi.order_id=? AND n.status='RESERVED'`, [orderId]);
+                yield connection.query("UPDATE order_items SET item_status='PAID' WHERE order_id=?", [orderId]);
+                yield connection.query(`UPDATE dealer_purchase_numbers dpn
+                 JOIN order_items oi ON oi.number_id=dpn.number_id
+                 SET dpn.state='SOLD',dpn.actual_sale_price=oi.price,dpn.sold_at=UTC_TIMESTAMP(),dpn.sold_order_item_id=oi.order_item_id
+                 WHERE oi.order_id=? AND dpn.state='INVENTORY'`, [orderId]);
+                yield connection.query(`INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by)
+                 SELECT dpn.dealer_purchase_id,dpn.external_dealer_id,'SOLD',JSON_OBJECT('order_item_id',oi.order_item_id,'actual_sale_price',oi.price,'source','STORE_ORDER'),0
+                 FROM dealer_purchase_numbers dpn JOIN order_items oi ON oi.number_id=dpn.number_id
+                 WHERE oi.order_id=? AND dpn.sold_order_item_id=oi.order_item_id
+                   AND NOT EXISTS (SELECT 1 FROM dealer_purchase_events e WHERE e.dealer_purchase_id=dpn.dealer_purchase_id AND e.event_type='SOLD' AND JSON_EXTRACT(e.details,'$.order_item_id')=oi.order_item_id)`, [orderId]);
+                yield connection.query(`UPDATE orders SET status='PAID',payment_status='PAID',razorpay_order_id=?,razorpay_payment_id=?,razorpay_signature=? WHERE order_id=?`, [pay.razorpay_order_id || order.razorpay_order_id, pay.razorpay_payment_id || order.razorpay_payment_id, pay.razorpay_signature || order.razorpay_signature, orderId]);
+                yield connection.commit();
+                order = Object.assign(Object.assign({}, order), { status: 'PAID', payment_status: 'PAID' });
+            }
+            catch (error) {
+                try {
+                    yield (connection === null || connection === void 0 ? void 0 : connection.rollback());
+                }
+                catch (_c) { }
+                throw error;
+            }
+            finally {
+                connection === null || connection === void 0 ? void 0 : connection.release();
+            }
+            // Mark each number SOLD and credit dealer earnings to their wallet.
+            const itemsQ = yield this.dao.executeQuery(`SELECT oi.order_item_id, oi.number_id, oi.seller_id, oi.display_number, oi.price, oi.commission_amount, u.role AS seller_role
+             FROM order_items oi LEFT JOIN auth_user u ON u.user_id = oi.seller_id WHERE oi.order_id = ?`, [orderId]);
+            for (const it of (itemsQ.rows || [])) {
+                // A dealer who listed the number earns (sale price − commission). Idempotent per order_item.
+                if ((it.seller_role || '').toUpperCase() === 'DEALER') {
+                    const net = Number((Number(it.price) - Number(it.commission_amount || 0)).toFixed(2));
+                    if (net > 0) {
+                        const credited = yield (0, wallet_1.creditWallet)(it.seller_id, net, 'SALE', 'order_item', it.order_item_id, `Sale of ${it.display_number} (order ${order.order_no})`);
+                        if (credited)
+                            yield (0, notifications_1.pushNotification)({
+                                user_id: it.seller_id, type: 'wallet',
+                                title: 'Number sold 🎉',
+                                message: `${it.display_number} sold. ₹${net} credited to your wallet.`,
+                            });
+                    }
+                }
+            }
+            // Clear the buyer's cart of purchased numbers.
+            yield this.dao.executeQuery(`DELETE ci FROM cart_items ci JOIN carts c ON c.cart_id = ci.cart_id
+             WHERE c.user_id = ? AND ci.number_id IN (SELECT number_id FROM order_items WHERE order_id = ?)`, [order.user_id, orderId]);
+            // Referral reward: 2% of order total to the referrer (one-time per order).
+            const refQ = yield this.dao.executeQuery(`SELECT referred_by FROM auth_user WHERE user_id = ?`, [order.user_id]);
+            const referrer = (_b = (_a = refQ.rows) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.referred_by;
+            if (referrer) {
+                const reward = Number((Number(order.total) * 0.02).toFixed(2));
+                yield this.dao.executeQuery(`INSERT INTO referral_earnings (user_id, source_user_id, type, amount, order_id) VALUES (?,?, 'PURCHASE', ?, ?)`, [referrer, order.user_id, reward, orderId]);
+            }
+            yield (0, notifications_1.pushNotification)({
+                user_id: order.user_id, type: 'order',
+                title: 'Payment successful 🎉',
+                message: `Your order ${order.order_no} is confirmed. Our team will begin the number transfer shortly.`,
+            });
+            return order;
+        });
+    }
+    my(payload) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let startMS = new Date().getTime();
+            let resModel = this.masterModel.getResponseModel();
+            try {
+                const q = yield this.dao.executeQuery(`SELECT o.*, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id=o.order_id) AS item_count
+                 FROM orders o WHERE o.user_id = ? ORDER BY o.created_at DESC`, [payload.user_id]);
+                resModel.status = 1;
+                resModel.info = 'OK';
+                resModel.data = q.rows || [];
+            }
+            catch (error) {
+                resModel.status = -33;
+                resModel.info = 'catch : ' + error;
+                this.logger.error(JSON.stringify(resModel));
+            }
+            finally {
+                try {
+                    resModel.tat = (new Date().getTime() - startMS) / 1000;
+                }
+                catch (e) { }
+            }
+            return resModel;
+        });
+    }
+    detail(payload) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let startMS = new Date().getTime();
+            let resModel = this.masterModel.getResponseModel();
+            try {
+                const params = [Number(payload.order_id)];
+                let scope = '';
+                if (!payload.is_admin) {
+                    scope = ' AND user_id = ?';
+                    params.push(payload.user_id);
+                }
+                const oQ = yield this.dao.executeQuery(`SELECT * FROM orders WHERE order_id = ?${scope}`, params);
+                if (oQ.fetchedRows === 0)
+                    throw new Error('Order not found.');
+                const itemsQ = yield this.dao.executeQuery(`SELECT oi.*, COALESCE(n.number_value, oi.display_number) AS number_value,
+                        n.numerology_sum, n.operator, n.status, n.rtp_status, n.rtp_available_at
+                 FROM order_items oi LEFT JOIN vip_numbers n ON n.number_id = oi.number_id
+                 WHERE oi.order_id = ?`, [Number(payload.order_id)]);
+                const data = oQ.rows[0];
+                data.items = (itemsQ.rows || []).map((row) => {
+                    try {
+                        return Object.assign(Object.assign({}, (0, categoryClassifier_1.decorateNumberCategories)(row)), { item_type: 'NUMBER', item_id: Number(row.number_id), quantity: 1, unit_price: Number(row.price), line_total: Number(row.price) });
+                    }
+                    catch (_a) {
+                        return Object.assign(Object.assign({}, (0, categoryClassifier_1.decorateNumberCategories)(row, ['unique-numbers'])), { item_type: 'NUMBER', item_id: Number(row.number_id), quantity: 1, unit_price: Number(row.price), line_total: Number(row.price) });
+                    }
+                });
+                resModel.status = 1;
+                resModel.info = 'OK';
+                resModel.data = data;
+            }
+            catch (error) {
+                resModel.status = -33;
+                resModel.info = 'catch : ' + error;
+                this.logger.error(JSON.stringify(resModel));
+            }
+            finally {
+                try {
+                    resModel.tat = (new Date().getTime() - startMS) / 1000;
+                }
+                catch (e) { }
+            }
+            return resModel;
+        });
+    }
+}
+exports.Orders = Orders;
+let purchaseLifecycleTimer;
+function startPurchaseLifecycle() {
+    var _a;
+    if (purchaseLifecycleTimer)
+        return;
+    const service = new Orders();
+    service.reconcilePurchases().catch(() => undefined);
+    purchaseLifecycleTimer = setInterval(() => service.reconcilePurchases().catch(() => undefined), 60000);
+    (_a = purchaseLifecycleTimer.unref) === null || _a === void 0 ? void 0 : _a.call(purchaseLifecycleTimer);
+}
+//# sourceMappingURL=orders.js.map

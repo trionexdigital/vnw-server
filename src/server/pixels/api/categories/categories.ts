@@ -29,17 +29,32 @@ export class Categories {
                 `SELECT vnc.category_slug AS slug, COUNT(DISTINCT vnc.number_id) AS number_count
                  FROM vip_number_categories vnc
                  INNER JOIN vip_numbers n ON n.number_id = vnc.number_id
-                 WHERE n.status = 'AVAILABLE' AND n.visibility_type='ONLINE' AND vnc.classifier_version = ?
+                 WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND vnc.classifier_version = ?
                  GROUP BY vnc.category_slug`, [CATEGORY_CLASSIFIER_VERSION]
             );
             if (q.status !== 1) throw new Error(q.info || 'Unable to load category counts.');
             const counts = new Map<string, number>();
             for (const row of (q.rows || [])) counts.set(String(row.slug), Number(row.number_count) || 0);
 
+            const subs: any = await this.dao.executeQuery(
+                `SELECT vns.category_id, vns.subcategory_id, COUNT(DISTINCT vns.number_id) AS number_count
+                 FROM vip_number_subcategories vns
+                 INNER JOIN vip_numbers n ON n.number_id = vns.number_id
+                 WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type = 'ONLINE' AND vns.classifier_version = ?
+                 GROUP BY vns.category_id, vns.subcategory_id`, [CATEGORY_CLASSIFIER_VERSION],
+            );
+            if (subs.status !== 1) throw new Error(subs.info || 'Unable to load subcategory counts.');
+            const subCounts = new Map<string, number>();
+            for (const row of (subs.rows || [])) subCounts.set(`${row.category_id}:${row.subcategory_id}`, Number(row.number_count) || 0);
+
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = CATEGORY_CATALOG.map((category) => ({
                 ...categoryToApiModel(category),
+                subcategories: category.subcategories.map(subcategory => ({
+                    ...subcategory,
+                    number_count: subCounts.get(`${category.id}:${subcategory.id}`) || 0,
+                })),
                 number_count: counts.get(category.slug) || 0,
                 is_active: true,
                 classifier_version: CATEGORY_CLASSIFIER_VERSION,
@@ -65,7 +80,7 @@ export class Categories {
             resModel.data = {
                 canonical_number: classification.canonicalNumber,
                 categories: classification.categories.map(categoryMatchToApiModel),
-                primary_category: categoryMatchToApiModel(classification.primaryCategory),
+                primary_category: classification.primaryCategory ? categoryMatchToApiModel(classification.primaryCategory) : null,
                 classifier_version: classification.classifierVersion,
             };
         } catch (error) {

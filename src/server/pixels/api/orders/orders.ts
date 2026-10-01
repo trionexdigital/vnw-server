@@ -1,3 +1,7 @@
+import { PaymentHoldError, utcDate } from '../payments/cashfree';
+import { loadBilling } from './billing';
+import { assertCheckoutSchema, PaymentHistory, visibleOrder } from '../payments/paymentHistory';
+import { cashfreeMode } from '../payments/cashfree';
 import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
@@ -5,7 +9,7 @@ import { pushNotification } from '../notifications/notifications';
 import { creditWallet } from '../wallet/wallet';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
 import { Prebooks } from '../prebooks/prebooks';
-import { resolvePrivateLinkWithConnection } from '../privateLinks/privateLinks';
+import { resolvePrivateLinkWithConnection, OFFLINE_CATALOG_NAME } from '../privateLinks/privateLinks';
 
 export class Orders {
     private dao: MySqlClient;
@@ -37,6 +41,7 @@ export class Orders {
                 const [numbers]: any = await connection.query('SELECT number_id FROM order_items WHERE order_id=?', [row.order_id]);
                 for (const item of (numbers || [])) await connection.query("UPDATE vip_numbers SET status='AVAILABLE' WHERE number_id=? AND status='RESERVED'", [item.number_id]);
                 await connection.query("UPDATE orders SET status='CANCELLED',payment_status='FAILED' WHERE order_id=? AND payment_status='UNPAID'", [row.order_id]);
+                await new PaymentHistory(this.dao).event({ order_id: row.order_id }, 'HOLD_EXPIRED', 'FAILED', {}, 'SERVER', connection, `expired:${row.order_id}`);
                 await connection.commit();
             } catch { try { await connection?.rollback(); } catch {} }
             finally { connection?.release(); }
@@ -49,10 +54,11 @@ export class Orders {
             connection = await this.dao.getConnection(); await connection.beginTransaction();
             const [orders]: any = await connection.query("SELECT payment_status,status,order_type FROM orders WHERE order_id=? FOR UPDATE", [orderId]);
             const order = orders?.[0];
-            if (!order || order.order_type !== 'PURCHASE' || order.payment_status === 'PAID') { await connection.commit(); return; }
+            if (!order || order.order_type !== 'PURCHASE' || ['PAID', 'REFUNDED'].includes(order.payment_status) || order.status !== 'PENDING') { await connection.commit(); return; }
             const [numbers]: any = await connection.query('SELECT number_id FROM order_items WHERE order_id=?', [orderId]);
             for (const item of (numbers || [])) await connection.query("UPDATE vip_numbers SET status='AVAILABLE' WHERE number_id=? AND status='RESERVED'", [item.number_id]);
             await connection.query("UPDATE orders SET status='CANCELLED',payment_status='FAILED' WHERE order_id=?", [orderId]);
+            await new PaymentHistory(this.dao).event({ order_id: orderId }, 'HOLD_RELEASED', 'FAILED', {}, 'SERVER', connection, `released:${orderId}`);
             await connection.commit();
         } catch (error) { try { await connection?.rollback(); } catch {} throw error; }
         finally { connection?.release(); }
@@ -60,16 +66,20 @@ export class Orders {
 
     /**
      * Creates a PENDING order from the user's cart (or a single buy-now number_id),
-     * reserves the numbers, and computes totals (optional coupon). The Razorpay
+     * reserves the numbers, and computes totals (optional coupon). The Cashfree
      * order is created separately by the payments module using the returned order_id.
      */
-    async create(payload: { user_id: number, number_id?: number, coupon_code?: string, customer?: any, private_token?: string }) {
+    async quote(payload: any) { return this.create(payload, true); }
+
+    async create(payload: { user_id: number, number_id?: number, coupon_code?: string, customer?: any, private_token?: string }, quoteOnly = false) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         let connection: any;
         try {
-            await this.prebooks.reconcile();
-            await this.reconcilePurchases();
+            if (!quoteOnly) {
+                connection = await this.dao.getConnection(); await assertCheckoutSchema(connection);
+                await this.prebooks.reconcile(); await this.reconcilePurchases();
+            }
             const userId = payload.user_id;
 
             // Resolve the set of numbers being purchased.
@@ -87,7 +97,7 @@ export class Orders {
             numberIds = Array.from(new Set(numberIds));
 
             if (numberIds.length === 0) throw new Error('No numbers to order.');
-            connection = await this.dao.getConnection();
+            connection = connection || await this.dao.getConnection();
             await connection.beginTransaction();
 
             // Lock before validating so purchase and pre-book checkout cannot
@@ -96,7 +106,7 @@ export class Orders {
             if (numberIds.length) {
                 const placeholders = numberIds.map(() => '?').join(',');
                 const result: any = await connection.query(
-                    `SELECT number_id,display_number,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status FROM vip_numbers WHERE number_id IN (${placeholders}) FOR UPDATE`, numberIds);
+                    `SELECT number_id,display_number,mrp,title_label,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status FROM vip_numbers WHERE number_id IN (${placeholders}) FOR UPDATE`, numberIds);
                 nums = result[0] || [];
             }
             if ((nums || []).length !== numberIds.length) throw new Error('One or more selected numbers were not found.');
@@ -110,9 +120,9 @@ export class Orders {
                         linkId = Number(link?.private_link_id || 0);
                     } else if (linkId) {
                         const [access]: any = await connection.query(
-                            `SELECT pl.private_link_id FROM number_private_links pl JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id
-                             WHERE pl.private_link_id=? AND pli.number_id=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP()) LIMIT 1`,
-                            [linkId,n.number_id],
+                            `SELECT private_link_id FROM number_private_links
+                             WHERE private_link_id=? AND name=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>UTC_TIMESTAMP()) LIMIT 1`,
+                            [linkId,OFFLINE_CATALOG_NAME],
                         );
                         if (!access?.length) linkId = 0;
                     }
@@ -121,23 +131,14 @@ export class Orders {
                 }
             }
 
-            const subtotal = nums.reduce((s: number, n: any) => s + Number(n.offer_price), 0);
-
-            // Optional coupon.
-            let discount = 0; let appliedCoupon: string | null = null;
-            if (payload.coupon_code) {
-                const [coupons]: any = await connection.query(
-                    `SELECT * FROM coupons WHERE code = ? AND is_active = 1`, [String(payload.coupon_code).toUpperCase()]
-                );
-                const c = coupons?.[0];
-                if (c && subtotal >= Number(c.min_order) && (!c.expires_at || new Date(c.expires_at) >= new Date())) {
-                    discount = c.type === 'PERCENT' ? (subtotal * Number(c.value)) / 100 : Number(c.value);
-                    if (c.max_discount) discount = Math.min(discount, Number(c.max_discount));
-                    discount = Math.min(discount, subtotal);
-                    appliedCoupon = c.code;
-                }
+            const billing = await loadBilling(connection, nums, payload.coupon_code);
+            const { subtotal, discount, total, coupon_code: appliedCoupon } = billing;
+            if (quoteOnly) {
+                await connection.commit();
+                resModel.status = 1; resModel.info = 'OK';
+                resModel.data = { ...billing, items: nums.map(n => ({ number_id: n.number_id, display_number: n.display_number, mrp: n.mrp, offer_price: n.offer_price, title_label: n.title_label, rtp_status: n.rtp_status })) };
+                return resModel;
             }
-            const total = Math.max(0, subtotal - discount);
 
             // Customer snapshot.
             const [users]: any = await connection.query(`SELECT full_name, email, phone FROM auth_user WHERE user_id = ?`, [userId]);
@@ -147,9 +148,9 @@ export class Orders {
             const orderNo = this.genOrderNo();
             const [ordIns]: any = await connection.query(
                 `INSERT INTO orders (order_no,user_id,subtotal,discount,total,status,payment_status,order_type,payment_expires_at,coupon_code,
-                    customer_name,customer_email,customer_phone)
-                 VALUES (?,?,?,?,?,'PENDING','UNPAID','PURCHASE',DATE_ADD(UTC_TIMESTAMP(),INTERVAL 15 MINUTE),?,?,?,?)`,
-                [orderNo,userId,subtotal,discount,total,appliedCoupon,cust.name||u.full_name,cust.email||u.email,cust.phone||u.phone]
+                    customer_name,customer_email,customer_phone,mrp_total,offer_savings,taxable_amount,gst_percent,gst_amount)
+                 VALUES (?,?,?,?,?,'PENDING','UNPAID','PURCHASE',DATE_ADD(UTC_TIMESTAMP(),INTERVAL 20 MINUTE),?,?,?,?,?,?,?,?,?)`,
+                [orderNo,userId,subtotal,discount,total,appliedCoupon,cust.name||u.full_name,cust.email||u.email,cust.phone||u.phone,billing.mrp_total,billing.offer_savings,billing.taxable_amount,billing.gst_percent,billing.gst_amount]
             );
             if (ordIns.insertId === 0) throw new Error('Unable to create order.');
             const orderId = ordIns.insertId;
@@ -170,11 +171,13 @@ export class Orders {
                 const [reserved]: any = await connection.query(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ? AND status='AVAILABLE' AND stock>0 AND rtp_status IN ('RTP','RTA')`, [n.number_id]);
                 if (reserved.affectedRows !== 1) throw new Error(`Number ${n.display_number} was just reserved by another customer.`);
             }
+            await connection.query("UPDATE orders SET payment_provider='CASHFREE',gateway_environment=? WHERE order_id=?", [cashfreeMode(), orderId]);
+            await new PaymentHistory(this.dao).event({ order_id: orderId, user_id: userId, environment: cashfreeMode() }, 'CHECKOUT_CREATED', 'UNPAID', billing, 'CHECKOUT', connection, `checkout:${orderId}`);
             await connection.commit();
 
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = { order_id: orderId, order_no: orderNo, subtotal, discount, total };
+            resModel.data = { order_id: orderId, order_no: orderNo, ...billing };
         } catch (error) {
             if (connection) { try { await connection.rollback(); } catch {} }
             resModel.status = -33;
@@ -188,14 +191,18 @@ export class Orders {
     }
 
     /** Finalizes a paid order: marks order/items PAID, numbers SOLD, clears cart, pays referral, notifies. */
-    async finalizePaid(orderId: number, pay: { razorpay_order_id?: string, razorpay_payment_id?: string, razorpay_signature?: string }) {
+    async finalizePaid(orderId: number, pay: { gateway_order_id?: string, gateway_payment_id?: string, paid_at?: Date }) {
         let connection: any; let order: any;
         try {
             connection = await this.dao.getConnection(); await connection.beginTransaction();
             const [orders]: any = await connection.query('SELECT * FROM orders WHERE order_id=? FOR UPDATE', [orderId]);
             order = orders?.[0];
             if (!order) throw new Error('Order not found.');
-            if (order.payment_status === 'PAID') { await connection.commit(); return order; }
+            if (['PAID', 'REFUNDED'].includes(order.payment_status)) { await connection.commit(); return order; }
+            if (order.status !== 'PENDING' || !Number.isFinite(utcDate(pay.paid_at).getTime()) || (order.payment_expires_at && utcDate(pay.paid_at).getTime() > utcDate(order.payment_expires_at).getTime()))
+                throw new PaymentHoldError('Payment hold expired or cancelled.');
+            const [inventory]: any = await connection.query('SELECT n.status FROM vip_numbers n JOIN order_items oi ON oi.number_id=n.number_id WHERE oi.order_id=? FOR UPDATE', [orderId]);
+            if (!inventory.length || inventory.some((item: any) => item.status !== 'RESERVED')) throw new PaymentHoldError('Reserved inventory is no longer available.');
             await connection.query(`UPDATE vip_numbers n INNER JOIN order_items oi ON oi.number_id=n.number_id SET n.status='SOLD',n.stock=0 WHERE oi.order_id=? AND n.status='RESERVED'`, [orderId]);
             await connection.query("UPDATE order_items SET item_status='PAID' WHERE order_id=?", [orderId]);
             await connection.query(
@@ -211,8 +218,9 @@ export class Orders {
                  WHERE oi.order_id=? AND dpn.sold_order_item_id=oi.order_item_id
                    AND NOT EXISTS (SELECT 1 FROM dealer_purchase_events e WHERE e.dealer_purchase_id=dpn.dealer_purchase_id AND e.event_type='SOLD' AND JSON_EXTRACT(e.details,'$.order_item_id')=oi.order_item_id)`, [orderId],
             );
-            await connection.query(`UPDATE orders SET status='PAID',payment_status='PAID',razorpay_order_id=?,razorpay_payment_id=?,razorpay_signature=? WHERE order_id=?`,
-                [pay.razorpay_order_id || order.razorpay_order_id,pay.razorpay_payment_id || order.razorpay_payment_id,pay.razorpay_signature || order.razorpay_signature,orderId]);
+            await connection.query(`UPDATE orders SET status='PAID',payment_status='PAID',gateway_order_id=?,gateway_payment_id=? WHERE order_id=?`,
+                [pay.gateway_order_id || order.gateway_order_id,pay.gateway_payment_id || order.gateway_payment_id,orderId]);
+            await new PaymentHistory(this.dao).event({ ...order, gateway_payment_id: pay.gateway_payment_id }, 'ORDER_PAID', 'PAID', { paid_at: pay.paid_at, total: order.total }, 'SERVER', connection, `paid:${orderId}`);
             await connection.commit();
             order = { ...order, status: 'PAID', payment_status: 'PAID' };
         } catch (error) { try { await connection?.rollback(); } catch {} throw error; }
@@ -275,7 +283,7 @@ export class Orders {
             );
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = q.rows || [];
+            resModel.data = (q.rows || []).map(visibleOrder);
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;
@@ -301,7 +309,7 @@ export class Orders {
                  FROM order_items oi LEFT JOIN vip_numbers n ON n.number_id = oi.number_id
                  WHERE oi.order_id = ?`, [Number(payload.order_id)]
             );
-            const data = oQ.rows[0];
+            const data = visibleOrder(oQ.rows[0]);
             data.items = (itemsQ.rows || []).map((row: any) => {
                 try { return { ...decorateNumberCategories(row), item_type: 'NUMBER', item_id: Number(row.number_id), quantity: 1, unit_price: Number(row.price), line_total: Number(row.price) }; }
                 catch { return { ...decorateNumberCategories(row, ['unique-numbers']), item_type: 'NUMBER', item_id: Number(row.number_id), quantity: 1, unit_price: Number(row.price), line_total: Number(row.price) }; }

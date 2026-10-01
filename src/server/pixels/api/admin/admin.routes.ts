@@ -12,6 +12,11 @@ import { Prebooks } from '../prebooks/prebooks';
 import { HomePremium } from '../site/homePremium';
 import { PrivateLinks } from '../privateLinks/privateLinks';
 import { DealerPurchases } from '../dealerPurchases/dealerPurchases';
+import { ReviewScreenshots } from '../reviews/reviewScreenshots';
+import { NumberImport } from './numberImport';
+import { notifyAdminActivity } from '../notifications/adminActivity';
+import { PaymentAnalysis } from '../payments/paymentAnalysis';
+import { Payments } from '../payments/payments';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
@@ -24,7 +29,19 @@ const prebooks = new Prebooks();
 const homePremium = new HomePremium();
 const privateLinks = new PrivateLinks();
 const dealerPurchases = new DealerPurchases();
+const reviewScreenshots = new ReviewScreenshots();
 const router = Router();
+const numberImport = new NumberImport();
+
+// All successful admin mutations, including uploads, share the same activity feed.
+router.use((req, res, next) => {
+    const sendJson = res.json.bind(res);
+    res.json = ((body: any) => {
+        void notifyAdminActivity(req.path, req.body || {}, body);
+        return sendJson(body);
+    }) as typeof res.json;
+    next();
+});
 
 const categoryMutationRetired = async () => {
     const response = masterModel.getResponseModel();
@@ -53,6 +70,9 @@ const handle = (fn: (p: any) => Promise<any>) => async (req: Request, res: Respo
 };
 
 router.post('/dashboard', handle((p) => admin.dashboard(p)));
+router.post('/payments/overview', handle((p) => new PaymentAnalysis().overview(p)));
+router.post('/payments/detail', handle((p) => new PaymentAnalysis().detail(p)));
+router.post('/payments/reconcile', handle((p) => new Payments().adminReconcile(p)));
 
 // Numbers
 router.post('/numbers/list', handle((p) => admin.numbersList(p)));
@@ -60,9 +80,18 @@ router.post('/numbers/save', handle((p) => admin.numberSave(p)));
 router.post('/numbers/delete', handle((p) => admin.numberDelete(p)));
 router.post('/numbers/approve', handle((p) => admin.numberApprove(p)));
 router.post('/numbers/reject', handle((p) => admin.numberReject(p)));
+router.post('/numbers/analyze', async (req, res) => {
+    let response = masterModel.getResponseModel();
+    try { const payload = req.body || {}; payload.user_id = await gtUtil.requireAdmin(req); response = await numberImport.analyze(payload, (req as any).files?.file); }
+    catch (error: any) { response.status = -9; response.info = error.message; }
+    res.json(response);
+});
+router.post('/numbers/import/commit', handle((p) => numberImport.commit(p)));
+router.post('/numbers/import/template', handle(async () => ({ ...masterModel.getResponseModel(), status: 1, info: 'OK', data: numberImport.template() })));
+router.post('/numbers/export', handle(async (p) => ({ ...masterModel.getResponseModel(), status: 1, info: 'OK', data: await numberImport.export(p, (input) => admin.numbersList(input)) })));
 
 // Private Offline number collections
-router.post('/private-links/list', handle(() => privateLinks.list()));
+router.post('/private-links/list', handle((p) => privateLinks.list(p)));
 router.post('/private-links/create', handle((p) => privateLinks.create(p)));
 router.post('/private-links/update', handle((p) => privateLinks.update(p)));
 router.post('/private-links/rotate', handle((p) => privateLinks.rotate(p)));
@@ -148,9 +177,19 @@ router.post('/payouts/update', handle((p) => admin.payoutUpdate(p)));
 // Reviews
 router.post('/reviews/list', handle((p) => admin.reviewsList(p)));
 router.post('/reviews/moderate', handle((p) => admin.reviewModerate(p)));
+router.post('/review-screenshots/list', handle(() => reviewScreenshots.list(true)));
+router.post('/review-screenshots/save', handle((p) => reviewScreenshots.save(p)));
+router.post('/review-screenshots/reorder', handle((p) => reviewScreenshots.reorder(p)));
+router.post('/review-screenshots/delete', handle((p) => reviewScreenshots.remove(p)));
+router.post('/review-screenshots/upload', async (req: Request, res: Response) => {
+    let response = masterModel.getResponseModel();
+    try { const payload = req.body || {}; payload.user_id = await gtUtil.requireAdmin(req); response = await reviewScreenshots.upload(payload, (req as any).files?.file); }
+    catch (error) { response.status = -9; response.info = 'catch: ' + error; }
+    res.status(gtUtil.Constants.HTTP_OK).json(response);
+});
 
 // Testimonials
-router.post('/testimonials/list', handle((p) => admin.testimonials.list({ all: true })));
+router.post('/testimonials/list', handle((p) => admin.testimonials.list({ ...p, all: true })));
 router.post('/testimonials/save', handle((p) => admin.testimonials.save(p)));
 router.post('/testimonials/delete', handle((p) => admin.testimonials.remove(p)));
 

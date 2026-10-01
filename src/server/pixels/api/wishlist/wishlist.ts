@@ -2,7 +2,7 @@ import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
-import { resolvePrivateLinkWithConnection } from '../privateLinks/privateLinks';
+import { resolvePrivateLinkWithConnection, OFFLINE_CATALOG_NAME } from '../privateLinks/privateLinks';
 
 export class Wishlist {
     private dao: MySqlClient;
@@ -24,9 +24,8 @@ export class Wishlist {
                         n.discount_pct,n.numerology_sum,n.operator,n.status,n.stock,n.visibility_type,n.rtp_status,n.rtp_available_at
                  FROM wishlist w JOIN vip_numbers n ON n.number_id = w.number_id
                  LEFT JOIN number_private_links pl ON pl.private_link_id=w.private_link_id
-                 LEFT JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id AND pli.number_id=n.number_id
-                 WHERE w.user_id = ? AND (n.visibility_type='ONLINE' OR (pli.number_id IS NOT NULL AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
-                 ORDER BY w.created_at DESC`, [payload.user_id]
+                 WHERE w.user_id = ? AND (n.visibility_type='ONLINE' OR (pl.name=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
+                 ORDER BY w.created_at DESC`, [payload.user_id, OFFLINE_CATALOG_NAME]
             );
             const items = (q.rows || []).map((row: any) => decorateNumberCategories(row));
             resModel.status = 1;

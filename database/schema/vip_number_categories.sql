@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS `vip_number_categories` (
   `matched_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`number_id`,
   `category_slug`),
-  UNIQUE KEY `number_category_exclusive` (`number_id`),
   KEY `category_lookup` (`category_slug`,
   `number_id`),
   KEY `classifier_version` (`classifier_version`),

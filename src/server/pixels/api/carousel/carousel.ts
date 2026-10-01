@@ -10,7 +10,7 @@ const MAX_SOURCE_BYTES = 12 * 1024 * 1024;
 const MAX_PREVIEW_BYTES = 3 * 1024 * 1024;
 const MAX_UPLOAD_LAYERS = 10;
 const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
-const ALLOWED_PURPOSE = ['source', 'sticker', 'preview-desktop', 'preview-mobile'];
+const ALLOWED_PURPOSE = ['preview-desktop', 'preview-mobile'];
 const ALLOWED_TRANSITIONS = ['fade', 'slide', 'zoom', 'flip'];
 
 type Device = 'desktop' | 'mobile';
@@ -372,7 +372,8 @@ export class CarouselStudio {
             const carouselId = Number(payload.carousel_id);
             if (!carouselId) throw new Error('A valid carousel project is required.');
             await this.project(carouselId);
-            const purpose = ALLOWED_PURPOSE.includes(String(payload.purpose)) ? String(payload.purpose) : 'source';
+            const purpose = String(payload.purpose);
+            if (!ALLOWED_PURPOSE.includes(purpose)) throw new Error('A carousel accepts one desktop image and one mobile image only.');
             if (!file || Array.isArray(file) || !Buffer.isBuffer(file.data)) throw new Error('Choose one image to upload.');
             const mime = String(file.mimetype || '').toLowerCase();
             if (!ALLOWED_MIME.includes(mime) || !isImageMagic(file.data, mime)) {

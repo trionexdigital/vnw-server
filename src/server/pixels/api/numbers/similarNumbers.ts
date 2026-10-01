@@ -56,7 +56,8 @@ export function scoreSimilarNumber(sourceRow: any, candidateRow: any): SimilarNu
     const suffixLength = commonSuffix(sourceNumber, candidateNumber);
     const positionalMatches = matchingPositions(sourceNumber, candidateNumber);
     const frequencyOverlap = digitFrequencyOverlap(sourceNumber, candidateNumber);
-    const categoryMatch = source.primary_category.slug === candidate.primary_category.slug;
+    const sourceCategories = new Set((source.categories as Array<{ slug: string }>).map((category) => category.slug));
+    const categoryMatch = (candidate.categories as Array<{ slug: string }>).some((category) => sourceCategories.has(category.slug));
     const numerologyMatch = Number(source.numerology_sum) > 0
         && Number(source.numerology_sum) === Number(candidate.numerology_sum);
     const closeness = priceCloseness(Number(source.offer_price) || 0, Number(candidate.offer_price) || 0);

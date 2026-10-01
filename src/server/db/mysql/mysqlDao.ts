@@ -5,6 +5,7 @@ import * as mysql from "mysql2";
 import dotenv from "dotenv";
 import * as util from "util";
 import {
+  CATEGORY_CATALOG,
   CATEGORY_CLASSIFIER_VERSION,
   classifyNumber,
   syncNumberCategories,
@@ -60,135 +61,59 @@ logger.log('** DB Connection Pool: Starting: ' + JSON.stringify({ ...dbConnectio
 export const connPool = mysql.createPool(dbConnectionInfo);
 logger.log('** DB Connection Pool: Success');
 
-/** Database schemas are managed explicitly in database/schema; startup never mutates stored data. */
-interface NumberToClassify {
-  number_id: number;
-  number_value: string;
-}
-
-const CATEGORY_BACKFILL_BATCH_SIZE = 200;
-
-async function scanNumbersForCategoryMigration(
-  pool: any,
-  onlyMissingCurrentVersion: boolean,
-  visit: (rows: NumberToClassify[]) => Promise<void>,
-): Promise<number> {
-  let lastNumberId = 0;
-  let visited = 0;
-  while (true) {
-    const missingSql = onlyMissingCurrentVersion
-      ? `AND (
-           CHAR_LENGTH(n.number_value) <> 10 OR n.number_value REGEXP '[^0-9]' OR
-           (SELECT COUNT(*) FROM vip_number_categories all_vnc WHERE all_vnc.number_id = n.number_id) <> 1 OR
-           NOT EXISTS (
-             SELECT 1 FROM vip_number_categories vnc
-             WHERE vnc.number_id = n.number_id AND vnc.classifier_version = ?
-           )
-         )`
-      : '';
-    const params = onlyMissingCurrentVersion
-      ? [lastNumberId, CATEGORY_CLASSIFIER_VERSION]
-      : [lastNumberId];
-    const [rows]: any = await pool.query(
-      `SELECT n.number_id, n.number_value
-       FROM vip_numbers n
-       WHERE n.number_id > ? ${missingSql}
-       ORDER BY n.number_id ASC
-       LIMIT ${CATEGORY_BACKFILL_BATCH_SIZE}`,
-      params,
-    );
-    const batch = (Array.isArray(rows) ? rows : []) as NumberToClassify[];
-    if (!batch.length) break;
-    await visit(batch);
-    visited += batch.length;
-    lastNumberId = Number(batch[batch.length - 1].number_id);
-  }
-  return visited;
-}
-
-/**
- * Build/rebuild the versioned automatic category index. Exported so deployment
- * checks can invoke the same idempotent migration without starting HTTP.
- */
-export async function reconcileAutomaticNumberCategories(pool: any = connPool.promise()): Promise<void> {
-  await pool.query(
-    "CREATE TABLE IF NOT EXISTS `schema_migrations` (" +
-    "`migration_key` varchar(128) NOT NULL," +
-    "`classifier_version` smallint unsigned DEFAULT NULL," +
-    "`details` text," +
-    "`applied_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-    "PRIMARY KEY (`migration_key`)" +
-    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+/** Explicit deployment backfill; never invoked during server startup. */
+export async function reconcileAutomaticNumberCategories(pool: any = connPool.promise()): Promise<number> {
+  const [exclusive]: any = await pool.query(
+    `SELECT INDEX_NAME FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vip_number_categories'
+       AND COLUMN_NAME = 'number_id' AND NON_UNIQUE = 0 AND INDEX_NAME <> 'PRIMARY'`,
   );
-  await pool.query(
-    "CREATE TABLE IF NOT EXISTS `vip_number_categories` (" +
-    "`number_id` int unsigned NOT NULL," +
-    "`category_slug` varchar(64) NOT NULL," +
-    "`classifier_version` smallint unsigned NOT NULL," +
-    "`matched_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-    "PRIMARY KEY (`number_id`,`category_slug`)," +
-    "KEY `category_lookup` (`category_slug`,`number_id`)," +
-    "KEY `classifier_version` (`classifier_version`)," +
-    "CONSTRAINT `fk_vip_number_categories_number` FOREIGN KEY (`number_id`) " +
-    "REFERENCES `vip_numbers` (`number_id`) ON DELETE CASCADE" +
-    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  if (exclusive.length) throw new Error('Run the internal-category SQLyog migration first: the exclusive category index is still present.');
+  const [subTable]: any = await pool.query(
+    `SELECT TABLE_NAME FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vip_number_subcategories'`,
   );
+  if (!subTable.length) throw new Error('Run the internal-category SQLyog migration first: vip_number_subcategories is missing.');
 
-  const migrationKey = `automatic-number-categories-v${CATEGORY_CLASSIFIER_VERSION}`;
-  const [migrationRows]: any = await pool.query(
-    'SELECT migration_key FROM schema_migrations WHERE migration_key = ? LIMIT 1',
-    [migrationKey],
-  );
-  const firstRunForVersion = !Array.isArray(migrationRows) || migrationRows.length === 0;
-
-  // Always preflight the complete inventory before changing anything. This
-  // catches invalid legacy rows and differently formatted duplicates even
-  // during a rolling deployment with older writers still present.
+  // Validate the complete inventory before rewriting any derived membership.
+  const seen = new Map<string, number>();
   const invalidIds: number[] = [];
-  const idsByCanonicalNumber = new Map<string, number[]>();
-  await scanNumbersForCategoryMigration(pool, false, async (rows) => {
+  const duplicateIds: number[] = [];
+  let preflightId = 0;
+  while (true) {
+    const [rows]: any = await pool.query(
+      `SELECT number_id, number_value FROM vip_numbers WHERE number_id > ? ORDER BY number_id LIMIT 100`,
+      [preflightId],
+    );
+    if (!rows.length) break;
     for (const row of rows) {
       try {
         const canonical = classifyNumber(row.number_value).canonicalNumber;
-        const ids = idsByCanonicalNumber.get(canonical) || [];
-        ids.push(Number(row.number_id));
-        idsByCanonicalNumber.set(canonical, ids);
-      }
-      catch { invalidIds.push(Number(row.number_id)); }
+        const priorId = seen.get(canonical);
+        if (priorId !== undefined) duplicateIds.push(priorId, Number(row.number_id));
+        else seen.set(canonical, Number(row.number_id));
+      } catch { invalidIds.push(Number(row.number_id)); }
     }
-  });
-  const duplicateIds = [...idsByCanonicalNumber.values()]
-    .filter((ids) => ids.length > 1)
-    .flat()
-    .sort((left, right) => left - right);
+    preflightId = Number(rows[rows.length - 1].number_id);
+  }
   if (invalidIds.length || duplicateIds.length) {
-    const describeIds = (ids: number[]) => {
-      const shown = ids.slice(0, 100).join(', ');
-      return shown + (ids.length > 100 ? ` (+${ids.length - 100} more)` : '');
-    };
-    const issues = [
-      ...(invalidIds.length ? [`invalid vip_numbers IDs: ${describeIds(invalidIds)}`] : []),
-      ...(duplicateIds.length ? [`duplicate canonical vip_numbers IDs: ${describeIds(duplicateIds)}`] : []),
-    ];
-    throw new Error(`Automatic category migration blocked by ${issues.join('; ')}`);
+    throw new Error(`Category backfill blocked: invalid vip_numbers IDs: ${invalidIds.join(', ') || 'none'}; duplicate canonical vip_numbers IDs: ${[...new Set(duplicateIds)].join(', ') || 'none'}`);
   }
 
-  let canonicalized = 0;
-  const migrated = await scanNumbersForCategoryMigration(pool, !firstRunForVersion, async (rows) => {
+  let lastId = 0;
+  let count = 0;
+  while (true) {
+    const [rows]: any = await pool.query(
+      `SELECT number_id, number_value FROM vip_numbers WHERE number_id > ? ORDER BY number_id LIMIT 100`,
+      [lastId],
+    );
+    if (!rows.length) break;
+    // Validate a complete batch before changing its existing memberships.
+    for (const row of rows) classifyNumber(row.number_value);
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
-      for (const row of rows) {
-        const classification = classifyNumber(row.number_value);
-        if (classification.canonicalNumber !== String(row.number_value)) {
-          await connection.query(
-            'UPDATE vip_numbers SET number_value = ? WHERE number_id = ?',
-            [classification.canonicalNumber, Number(row.number_id)],
-          );
-          canonicalized += 1;
-        }
-        await syncNumberCategories(connection, Number(row.number_id), classification.canonicalNumber);
-      }
+      for (const row of rows) await syncNumberCategories(connection, Number(row.number_id), row.number_value);
       await connection.commit();
     } catch (error) {
       await connection.rollback();
@@ -196,62 +121,34 @@ export async function reconcileAutomaticNumberCategories(pool: any = connPool.pr
     } finally {
       connection.release();
     }
-  });
-
-  // An exclusive classifier must leave one and only one current mapping for
-  // every inventory record. Fail before adding the database constraint so a
-  // concurrent v1 writer cannot be hidden by a partially successful rollout.
-  const [invalidMappingRows]: any = await pool.query(
-    `SELECT n.number_id,
-            COUNT(vnc.number_id) AS mapping_count,
-            COALESCE(SUM(vnc.classifier_version = ?), 0) AS current_mapping_count
-     FROM vip_numbers n
-     LEFT JOIN vip_number_categories vnc ON vnc.number_id = n.number_id
-     GROUP BY n.number_id
-     HAVING mapping_count <> 1 OR current_mapping_count <> 1
-     ORDER BY n.number_id ASC
-     LIMIT 100`,
+    count += rows.length;
+    lastId = Number(rows[rows.length - 1].number_id);
+  }
+  const [[staleParents]]: any = await pool.query(
+    'SELECT COUNT(*) AS total FROM vip_number_categories WHERE classifier_version <> ?',
     [CATEGORY_CLASSIFIER_VERSION],
   );
-  if (Array.isArray(invalidMappingRows) && invalidMappingRows.length > 0) {
-    const ids = invalidMappingRows.map((row: any) => Number(row.number_id)).join(', ');
-    throw new Error(`Automatic category migration did not produce exactly one v${CATEGORY_CLASSIFIER_VERSION} mapping for vip_numbers IDs: ${ids}. Drain older server processes and retry.`);
+  const [[staleChildren]]: any = await pool.query(
+    'SELECT COUNT(*) AS total FROM vip_number_subcategories WHERE classifier_version <> ?',
+    [CATEGORY_CLASSIFIER_VERSION],
+  );
+  const taxonomySql = CATEGORY_CATALOG.map(() => 'SELECT ? AS category_id, ? AS slug').join(' UNION ALL ');
+  const taxonomyParams = CATEGORY_CATALOG.flatMap(category => [category.id, category.slug]);
+  const [[orphanChildren]]: any = await pool.query(
+    `SELECT COUNT(*) AS total FROM vip_number_subcategories child
+     LEFT JOIN (${taxonomySql}) taxonomy ON taxonomy.category_id = child.category_id
+     LEFT JOIN vip_number_categories parent
+       ON parent.number_id = child.number_id AND parent.category_slug = taxonomy.slug
+      AND parent.classifier_version = ?
+     WHERE child.classifier_version = ? AND (taxonomy.category_id IS NULL OR parent.number_id IS NULL)`,
+    [...taxonomyParams, CATEGORY_CLASSIFIER_VERSION, CATEGORY_CLASSIFIER_VERSION],
+  );
+  if (Number(staleParents.total) || Number(staleChildren.total) || Number(orphanChildren.total)) {
+    throw new Error(`Category backfill verification failed: stale parents ${staleParents.total}, stale children ${staleChildren.total}, children without parents ${orphanChildren.total}.`);
   }
-
-  const [uniqueIndexRows]: any = await pool.query(
-    `SELECT s.INDEX_NAME
-     FROM information_schema.STATISTICS s
-     WHERE s.TABLE_SCHEMA = DATABASE() AND s.TABLE_NAME = 'vip_number_categories'
-       AND s.NON_UNIQUE = 0
-     GROUP BY s.INDEX_NAME
-     HAVING COUNT(*) = 1
-        AND MAX(CASE WHEN s.COLUMN_NAME = 'number_id' THEN 1 ELSE 0 END) = 1`,
-  );
-  if (!Array.isArray(uniqueIndexRows) || uniqueIndexRows.length === 0) {
-    await pool.query(
-      'ALTER TABLE vip_number_categories ADD UNIQUE KEY number_category_exclusive (number_id)',
-    );
-  }
-
-  // Historical category CRUD requests can no longer be replayed. REJECTED is
-  // the current approval enum's safe terminal state.
-  const retirementNote = 'Category Master retired; categories are now detected automatically.';
-  await pool.query(
-    `UPDATE approval_requests
-     SET status = 'REJECTED', review_note = ?, result = ?, reviewed_at = NOW()
-     WHERE status = 'PENDING' AND action_key IN ('categories.save', 'categories.delete')`,
-    [retirementNote, JSON.stringify({ retired: true, classifier_version: CATEGORY_CLASSIFIER_VERSION })],
-  );
-
-  await pool.query(
-    `INSERT INTO schema_migrations (migration_key, classifier_version, details)
-     VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE classifier_version = VALUES(classifier_version), details = VALUES(details)`,
-    [migrationKey, CATEGORY_CLASSIFIER_VERSION, JSON.stringify({ migrated_numbers: migrated, canonicalized_numbers: canonicalized })],
-  );
-  logger.log(`** automatic-category migration v${CATEGORY_CLASSIFIER_VERSION}: classified ${migrated}, canonicalized ${canonicalized} number(s).`);
+  logger.log(`** internal-category classifier v${CATEGORY_CLASSIFIER_VERSION}: rebuilt ${count} number(s).`);
+  return count;
 }
-
 
 export class MySqlMaster {
 

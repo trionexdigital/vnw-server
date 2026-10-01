@@ -8,7 +8,9 @@ import {
     categoryMatchToApiModel,
     classifyNumber,
     decorateNumberCategories,
+    inferCategorySelectionFromText,
     isCategorySlug,
+    getSubcategoryForCategory,
     normalizeIndianNumber,
     syncNumberCategories,
 } from '../categories/categoryClassifier';
@@ -22,7 +24,7 @@ import {
 import { Prebooks, istDateToUtc } from '../prebooks/prebooks';
 import { pushNotification } from '../notifications/notifications';
 import { rankSimilarNumbers } from './similarNumbers';
-import { hashPrivateToken } from '../privateLinks/privateLinks';
+import { hashPrivateToken, OFFLINE_CATALOG_NAME } from '../privateLinks/privateLinks';
 import { discountedPrice, readGlobalDiscount } from './globalPricing';
 
 const SELECT_COLS = `n.number_id, n.number_value, n.display_number,
@@ -68,13 +70,14 @@ export class Numbers {
         const where: string[] = [];
         const params: any[] = [];
 
-        if (!payload.admin_scope) where.push("n.visibility_type = 'ONLINE'");
+        if (!payload.admin_scope) where.push("n.visibility_type = 'ONLINE'", 'n.stock > 0');
 
         // Public browsing only shows AVAILABLE unless an explicit status is requested (admin).
         const status = payload.status ? String(payload.status).toUpperCase() : 'AVAILABLE';
         if (status !== 'ALL') { where.push('n.status = ?'); params.push(status); }
 
-        if (payload.category !== undefined && payload.category !== null && payload.category !== '') {
+        const hasSubcategory = payload.subcategory_id !== undefined && payload.subcategory_id !== null && payload.subcategory_id !== '';
+        if (!hasSubcategory && payload.category !== undefined && payload.category !== null && payload.category !== '') {
             const category = String(payload.category).trim();
             if (!isCategorySlug(category)) throw new Error(`Unknown category slug: ${category}`);
             where.push(`EXISTS (
@@ -83,6 +86,19 @@ export class Numbers {
                   AND vnc.category_slug = ? AND vnc.classifier_version = ?
             )`);
             params.push(category, CATEGORY_CLASSIFIER_VERSION);
+        }
+        if (hasSubcategory) {
+            const category = String(payload.category || '').trim();
+            const subcategoryId = Number(payload.subcategory_id);
+            if (!isCategorySlug(category) || !Number.isSafeInteger(subcategoryId) || !getSubcategoryForCategory(category, subcategoryId)) {
+                throw new Error('Select a valid subcategory within its category.');
+            }
+            where.push(`EXISTS (
+                SELECT 1 FROM vip_number_subcategories vns
+                WHERE vns.number_id = n.number_id AND vns.category_id = ?
+                  AND vns.subcategory_id = ? AND vns.classifier_version = ?
+            )`);
+            params.push(CATEGORY_CATALOG.find(item => item.slug === category)!.id, subcategoryId, CATEGORY_CLASSIFIER_VERSION);
         }
         if (payload.q) {
             const q = '%' + String(payload.q).replace(/\s+/g, '') + '%';
@@ -132,17 +148,17 @@ export class Numbers {
         params.push(...compiled.params);
         const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
 
-        let orderBy = 'n.created_at DESC';
+        let orderBy = 'n.created_at DESC, n.number_id DESC';
         switch (payload.sort) {
-            case 'price_asc': orderBy = 'n.offer_price ASC'; break;
-            case 'price_desc': orderBy = 'n.offer_price DESC'; break;
-            case 'popular': orderBy = 'n.views DESC'; break;
-            case 'discount': orderBy = 'n.discount_pct DESC'; break;
-            default: orderBy = 'n.created_at DESC';
+            case 'price_asc': orderBy = 'n.offer_price ASC, n.number_id DESC'; break;
+            case 'price_desc': orderBy = 'n.offer_price DESC, n.number_id DESC'; break;
+            case 'popular': orderBy = 'n.views DESC, n.number_id DESC'; break;
+            case 'discount': orderBy = 'n.discount_pct DESC, n.number_id DESC'; break;
+            default: orderBy = 'n.created_at DESC, n.number_id DESC';
         }
 
-        const page = Math.max(1, Number(payload.page) || 1);
-        const limit = Math.min(60, Math.max(1, Number(payload.limit) || 12));
+        const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+        const limit = Math.min(payload.admin_scope ? 1000 : 60, Math.max(1, Math.floor(Number(payload.limit) || 12)));
         const offset = (page - 1) * limit;
 
         const countQ: any = await this.dao.executeQuery(
@@ -159,22 +175,9 @@ export class Numbers {
         );
         if (rowsQ.status !== 1) throw new Error(rowsQ.info || 'Unable to load numbers.');
 
-        const privateLinksByNumber = new Map<number, number[]>();
-        if (payload.admin_scope && (rowsQ.rows || []).length) {
-            const ids = rowsQ.rows.map((row: any) => Number(row.number_id));
-            const assignments: any = await this.dao.executeQuery(
-                `SELECT number_id,private_link_id FROM number_private_link_items WHERE number_id IN (${ids.map(() => '?').join(',')})`, ids,
-            );
-            for (const row of (assignments.rows || [])) {
-                const current = privateLinksByNumber.get(Number(row.number_id)) || [];
-                current.push(Number(row.private_link_id)); privateLinksByNumber.set(Number(row.number_id), current);
-            }
-        }
-
         return {
             items: (rowsQ.rows || []).map((row: any) => ({
                 ...decorateCatalogNumber(row),
-                ...(payload.admin_scope ? { private_link_ids: privateLinksByNumber.get(Number(row.number_id)) || [] } : {}),
             })),
             total,
             page,
@@ -256,10 +259,16 @@ export class Numbers {
                 payload: this.withoutSearchKeys(payload, [], ['price_min', 'price_max']),
             },
             {
+                active: payload.subcategory_id !== undefined && payload.subcategory_id !== null && payload.subcategory_id !== '',
+                key: 'subcategory_id',
+                label: 'Other numbers in this category',
+                payload: this.withoutSearchKeys(payload, [], ['subcategory_id']),
+            },
+            {
                 active: Boolean(payload.category),
                 key: 'category',
                 label: 'Closest matches from other categories',
-                payload: this.withoutSearchKeys(payload, [], ['category']),
+                payload: this.withoutSearchKeys(payload, [], ['category', 'subcategory_id']),
             },
         ].filter((plan) => plan.active).slice(0, 6);
 
@@ -347,14 +356,14 @@ export class Numbers {
             const source = decorateNumberCategories(sourceQ.rows[0]);
             if (source.visibility_type === 'OFFLINE') {
                 const access: any = await this.dao.executeQuery(
-                    `SELECT pl.private_link_id FROM number_private_links pl JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id
-                     WHERE pli.number_id=? AND pl.token_hash=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP()) LIMIT 1`,
-                    [id, hashPrivateToken(String(payload.private_token || ''))],
+                    `SELECT private_link_id FROM number_private_links
+                     WHERE name=? AND token_hash=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>UTC_TIMESTAMP()) LIMIT 1`,
+                    [OFFLINE_CATALOG_NAME, hashPrivateToken(String(payload.private_token || ''))],
                 );
                 if (!access.rows?.length) throw new Error('Number not found.');
             }
             const sourceValue = normalizeIndianNumber(source.number_value ?? source.display_number);
-            const categorySlug = source.primary_category.slug;
+            const categorySlugs = source.categories.map((category: any) => category.slug);
 
             // The priority expression brings pattern-adjacent candidates to the
             // front while still filling the bounded pool with popular inventory.
@@ -364,7 +373,8 @@ export class Numbers {
                  ORDER BY CASE WHEN
                     EXISTS (SELECT 1 FROM vip_number_categories vnc
                         WHERE vnc.number_id = n.number_id
-                          AND vnc.category_slug = ? AND vnc.classifier_version = ?)
+                          AND vnc.category_slug IN (${categorySlugs.length ? categorySlugs.map(() => '?').join(',') : "''"})
+                          AND vnc.classifier_version = ?)
                     OR n.numerology_sum = ?
                     OR LEFT(n.number_value, 2) = ?
                     OR RIGHT(n.number_value, 2) = ?
@@ -373,7 +383,7 @@ export class Numbers {
                  LIMIT 600`,
                 [
                     id,
-                    categorySlug,
+                    ...categorySlugs,
                     CATEGORY_CLASSIFIER_VERSION,
                     Number(source.numerology_sum) || 0,
                     sourceValue.slice(0, 2),
@@ -506,16 +516,14 @@ export class Numbers {
             explanation.push(`under ₹${filters.price_max.toLocaleString('en-IN')}`);
         }
 
-        const category = [...CATEGORY_CATALOG]
-            .sort((left, right) => left.priority - right.priority)
-            .find((candidate) => {
-                const phrases = [candidate.slug.replace(/-/g, ' '), candidate.name, ...candidate.aliases]
-                    .map((phrase) => phrase.toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ').trim());
-                return phrases.some((phrase) => phrase && text.includes(phrase));
-            });
-        if (category) {
-            filters.category = category.slug;
+        const taxonomy = inferCategorySelectionFromText(query);
+        Object.assign(filters, taxonomy);
+        if (taxonomy.category) {
+            const category = CATEGORY_CATALOG.find(candidate => candidate.slug === taxonomy.category)!;
             explanation.push(`${category.name} category`);
+            if (taxonomy.subcategory_id) {
+                explanation.push(`${getSubcategoryForCategory(category.slug, taxonomy.subcategory_id)?.name} subcategory`);
+            }
         }
 
         if (/(jio|airtel|vi|vodafone|idea|bsnl)/.test(text)) {
@@ -574,13 +582,19 @@ export class Numbers {
             if (query.length > 500) throw new Error('query must be 500 characters or fewer.');
             const ai = await this.openAiFilters(query);
             const parsed = ai || this.localAiFilters(query);
+            const inferred = inferCategorySelectionFromText(query, payload.category ? String(payload.category) : undefined);
+            const category = payload.category || inferred.category || parsed.filters.category;
+            const subcategoryId = payload.subcategory_id !== undefined && payload.subcategory_id !== null && payload.subcategory_id !== ''
+                ? payload.subcategory_id : inferred.subcategory_id;
             const result: any = await this.list({
                 ...parsed.filters,
-                ...(payload.category ? { category: payload.category } : {}),
+                ...(category ? { category } : {}),
+                ...(subcategoryId !== undefined ? { subcategory_id: subcategoryId } : {}),
                 ...(payload.price_min !== undefined && payload.price_min !== '' ? { price_min: payload.price_min } : {}),
                 ...(payload.price_max !== undefined && payload.price_max !== '' ? { price_max: payload.price_max } : {}),
                 ...(payload.numerology ? { numerology: payload.numerology } : {}),
                 ...(payload.badge ? { badge: payload.badge } : {}),
+                ...(payload.is_premium ? { is_premium: payload.is_premium } : {}),
                 ...(payload.operator ? { operator: payload.operator } : {}),
                 ...(payload.sort ? { sort: payload.sort } : {}),
                 status: 'AVAILABLE',
@@ -599,7 +613,7 @@ export class Numbers {
                     query,
                     explanation: parsed.explanation,
                     mode: ai ? 'openai' : 'local',
-                    filters: parsed.filters,
+                    filters: { ...parsed.filters, ...(category ? { category } : {}), ...(subcategoryId !== undefined ? { subcategory_id: subcategoryId } : {}) },
                 },
             };
         } catch (error) {
@@ -627,9 +641,9 @@ export class Numbers {
             if (q.fetchedRows === 0) throw new Error('Number not found.');
             if (q.rows[0].visibility_type === 'OFFLINE') {
                 const access: any = await this.dao.executeQuery(
-                    `SELECT pl.private_link_id FROM number_private_links pl JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id
-                     WHERE pli.number_id=? AND pl.token_hash=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP()) LIMIT 1`,
-                    [id, hashPrivateToken(String(payload.private_token || ''))],
+                    `SELECT private_link_id FROM number_private_links
+                     WHERE name=? AND token_hash=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>UTC_TIMESTAMP()) LIMIT 1`,
+                    [OFFLINE_CATALOG_NAME, hashPrivateToken(String(payload.private_token || ''))],
                 );
                 if (!access.rows?.length) throw new Error('Number not found.');
             }
@@ -681,8 +695,6 @@ export class Numbers {
             if (rtpAvailableAt && new Date(rtpAvailableAt.replace(' ', 'T') + 'Z') <= new Date()) throw new Error('NON-RTP availability date must be in the future.');
             const visibility = String(payload.visibility_type || 'ONLINE').toUpperCase();
             if (!['ONLINE','OFFLINE'].includes(visibility)) throw new Error('Visibility must be ONLINE or OFFLINE.');
-            const privateLinkIds = Array.from(new Set((payload.private_link_ids || []).map(Number).filter((id: number) => id > 0))) as number[];
-            if (visibility === 'OFFLINE' && privateLinkIds.length === 0) throw new Error('Offline numbers require at least one private collection.');
 
             connection = await this.dao.getConnection();
             let insertId = 0;
@@ -697,17 +709,12 @@ export class Numbers {
                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 [number_value, display_number, payload.seller_id, payload.seller_type || 'ADMIN',
                  payload.title_label || 'VIP Number', (payload.badge || 'NONE').toUpperCase(), mrp, offer, discount,
-                 payload.numerology_sum || null, null, payload.description || null,
+                 ([...number_value].reduce((sum, digit) => sum + Number(digit), 0) - 1) % 9 + 1, null, payload.description || null,
                  Number(payload.stock) || 1, payload.status || 'AVAILABLE', visibility, rtpStatus, rtpAvailableAt, payload.is_featured ? 1 : 0]
                 );
                 insertId = Number(result?.insertId) || 0;
                 if (!insertId) throw new Error('Unable to create listing.');
                 classification = await syncNumberCategories(connection, insertId, number_value);
-                if (privateLinkIds.length) {
-                    const [links]: any = await connection.query(`SELECT private_link_id FROM number_private_links WHERE private_link_id IN (${privateLinkIds.map(() => '?').join(',')}) AND revoked_at IS NULL`, privateLinkIds);
-                    if ((links || []).length !== privateLinkIds.length) throw new Error('One or more private collections are unavailable.');
-                    for (const linkId of privateLinkIds) await connection.query('INSERT INTO number_private_link_items (private_link_id,number_id) VALUES (?,?)', [linkId,insertId]);
-                }
                 await connection.commit();
             } catch (error) {
                 await connection.rollback();
@@ -723,9 +730,9 @@ export class Numbers {
             resModel.data = {
                 number_id: insertId,
                 categories: classification!.categories.map(categoryMatchToApiModel),
-                primary_category: categoryMatchToApiModel(classification!.primaryCategory),
-                category_name: classification!.primaryCategory.name,
-                category_slug: classification!.primaryCategory.slug,
+                primary_category: classification!.primaryCategory ? categoryMatchToApiModel(classification!.primaryCategory) : null,
+                category_name: classification!.primaryCategory?.name || null,
+                category_slug: classification!.primaryCategory?.slug || null,
                 classifier_version: classification!.classifierVersion,
                 ...(deprecationWarning ? { deprecation_warning: deprecationWarning } : {}),
             };
@@ -790,13 +797,17 @@ export class Numbers {
                 }
 
                 const allowed = ['title_label', 'badge',
-                    'numerology_sum', 'description', 'stock', 'status', 'is_featured'];
+                    'description', 'stock', 'status', 'is_featured'];
                 for (const key of allowed) {
                     if (payload[key] === undefined) continue;
                     fields.push(`${key} = ?`);
                     params.push(key === 'is_featured'
                         ? (payload[key] ? 1 : 0)
                         : key === 'badge' ? String(payload[key]).toUpperCase() : payload[key]);
+                }
+                if (numberValue !== String(current.number_value)) {
+                    fields.push('numerology_sum = ?');
+                    params.push(([...numberValue].reduce((sum, digit) => sum + Number(digit), 0) - 1) % 9 + 1);
                 }
 
                 if (payload.mrp !== undefined) {
@@ -857,21 +868,6 @@ export class Numbers {
                     if (payload.rtp_status === 'NON_RTP') await connection.query(`DELETE FROM cart_items WHERE number_id=?`, [id]);
                 }
 
-                if (Array.isArray(payload.private_link_ids)) {
-                    const linkIds = Array.from(new Set(payload.private_link_ids.map(Number).filter((linkId: number) => linkId > 0))) as number[];
-                    if (linkIds.length) {
-                        const [links]: any = await connection.query(`SELECT private_link_id FROM number_private_links WHERE private_link_id IN (${linkIds.map(() => '?').join(',')}) AND revoked_at IS NULL`, linkIds);
-                        if ((links || []).length !== linkIds.length) throw new Error('One or more private collections are unavailable.');
-                    }
-                    await connection.query('DELETE FROM number_private_link_items WHERE number_id=?', [id]);
-                    for (const linkId of linkIds) await connection.query('INSERT INTO number_private_link_items (private_link_id,number_id) VALUES (?,?)', [linkId,id]);
-                }
-                const finalVisibility = String(payload.visibility_type || current.visibility_type);
-                if (finalVisibility === 'ONLINE') await connection.query('DELETE FROM number_private_link_items WHERE number_id=?', [id]);
-                if (finalVisibility === 'OFFLINE') {
-                    const [assigned]: any = await connection.query('SELECT COUNT(*) AS count FROM number_private_link_items WHERE number_id=?', [id]);
-                    if (Number(assigned?.[0]?.count || 0) === 0) throw new Error('Offline numbers require at least one private collection.');
-                }
 
                 classification = numberValue !== String(current.number_value)
                     ? await syncNumberCategories(connection, id, numberValue)
@@ -894,9 +890,9 @@ export class Numbers {
             resModel.data = {
                 number_id: id,
                 categories: classification!.categories.map(categoryMatchToApiModel),
-                primary_category: categoryMatchToApiModel(classification!.primaryCategory),
-                category_name: classification!.primaryCategory.name,
-                category_slug: classification!.primaryCategory.slug,
+                primary_category: classification!.primaryCategory ? categoryMatchToApiModel(classification!.primaryCategory) : null,
+                category_name: classification!.primaryCategory?.name || null,
+                category_slug: classification!.primaryCategory?.slug || null,
                 classifier_version: classification!.classifierVersion,
                 ...(deprecationWarning ? { deprecation_warning: deprecationWarning } : {}),
             };

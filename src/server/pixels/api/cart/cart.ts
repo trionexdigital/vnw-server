@@ -3,7 +3,7 @@ import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
 import { Prebooks } from '../prebooks/prebooks';
-import { resolvePrivateLinkWithConnection } from '../privateLinks/privateLinks';
+import { resolvePrivateLinkWithConnection, OFFLINE_CATALOG_NAME } from '../privateLinks/privateLinks';
 
 export class Cart {
     private dao: MySqlClient;
@@ -35,9 +35,8 @@ export class Cart {
                         n.discount_pct, n.numerology_sum, n.operator, n.status,n.visibility_type,n.rtp_status,n.rtp_available_at
                  FROM cart_items ci JOIN vip_numbers n ON n.number_id = ci.number_id
                  LEFT JOIN number_private_links pl ON pl.private_link_id=ci.private_link_id
-                 LEFT JOIN number_private_link_items pli ON pli.private_link_id=pl.private_link_id AND pli.number_id=n.number_id
-                 WHERE ci.cart_id = ? AND (n.visibility_type='ONLINE' OR (pli.number_id IS NOT NULL AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
-                 ORDER BY ci.added_at DESC`, [cartId]
+                 WHERE ci.cart_id = ? AND (n.visibility_type='ONLINE' OR (pl.name=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
+                 ORDER BY ci.added_at DESC`, [cartId, OFFLINE_CATALOG_NAME]
             );
             const numberItems = (q.rows || []).map((row: any) => ({
                 ...decorateNumberCategories(row), item_type: 'NUMBER', item_id: Number(row.number_id), quantity: 1,

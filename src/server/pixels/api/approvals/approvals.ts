@@ -57,13 +57,19 @@ export class Approvals {
     }
 
     /** Employee views their own submissions. */
-    async mine(payload: { user_id: number }) {
+    async mine(payload: { user_id: number, page?: number, limit?: number }) {
         let resModel = this.masterModel.getResponseModel();
         try {
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+            const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+            const offset = (page - 1) * limit;
+            const count: any = await this.dao.executeQuery(
+                `SELECT COUNT(*) AS total FROM approval_requests WHERE requested_by = ?`, [Number(payload.user_id)]);
             const q: any = await this.dao.executeQuery(
                 `SELECT approval_id, action_key, summary, status, review_note, created_at, reviewed_at
-                 FROM approval_requests WHERE requested_by = ? ORDER BY created_at DESC LIMIT 200`, [Number(payload.user_id)]);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+                 FROM approval_requests WHERE requested_by = ? ORDER BY created_at DESC, approval_id DESC LIMIT ? OFFSET ?`,
+                [Number(payload.user_id), limit, offset]);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = { items: q.rows || [], total: Number(count.rows?.[0]?.total || 0), page, limit };
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -73,14 +79,19 @@ export class Approvals {
     async list(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+            const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+            const offset = (page - 1) * limit;
             const where: string[] = []; const params: any[] = [];
             if (payload.status) { where.push('a.status = ?'); params.push(String(payload.status).toUpperCase()); }
             const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+            const count: any = await this.dao.executeQuery(
+                `SELECT COUNT(*) AS total FROM approval_requests a ${whereSql}`, params);
             const q: any = await this.dao.executeQuery(
                 `SELECT a.*, u.full_name AS requested_by_name, u.email AS requested_by_email
                  FROM approval_requests a LEFT JOIN auth_user u ON u.user_id = a.requested_by
-                 ${whereSql} ORDER BY a.created_at DESC LIMIT 300`, params);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+                 ${whereSql} ORDER BY a.created_at DESC, a.approval_id DESC LIMIT ? OFFSET ?`, [...params, limit, offset]);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = { items: q.rows || [], total: Number(count.rows?.[0]?.total || 0), page, limit };
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }

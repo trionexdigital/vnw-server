@@ -11,6 +11,8 @@ import { Rbac } from '../rbac/rbac';
 import { hashPassword } from '../../../pixels-utility/password';
 import { reverseWithdrawal } from '../wallet/wallet';
 import { decorateNumberCategories } from '../categories/categoryClassifier';
+import { validateImportRow } from './numberImport';
+import { PaymentHistory, visibleOrder } from '../payments/paymentHistory';
 
 export class Admin {
     private dao: MySqlClient;
@@ -27,6 +29,15 @@ export class Admin {
         this.dao = new MySqlClient('pixels');
         this.logger = new Logger();
         this.masterModel = new MasterModel();
+    }
+
+    private async queryPage(payload: any, countSql: string, rowsSql: string, params: any[] = []) {
+        const page = Math.max(1, Math.floor(Number(payload?.page) || 1));
+        const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload?.limit) || 20)));
+        const count: any = await this.dao.executeQuery(countSql, params);
+        const total = Number(count.rows?.[0]?.total || 0);
+        const rows: any = await this.dao.executeQuery(`${rowsSql} LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit]);
+        return { items: rows.rows || [], total, page, limit, pages: Math.ceil(total / limit) };
     }
 
     // ---------- Dashboard ----------
@@ -80,6 +91,8 @@ export class Admin {
     // ---------- Numbers ----------
     async numbersList(payload: any) { return this.numbers.list({ ...payload, status: payload.status || 'ALL', admin_scope: true }); }
     async numberSave(payload: any) {
+        const validation = validateImportRow({ ...payload, number: payload.number_value ?? payload.display_number, row: 1 });
+        if (validation.reasons.length) return { ...this.masterModel.getResponseModel(), status: -33, info: validation.reasons.join(' ') };
         return payload.number_id ? this.numbers.update(payload) : this.numbers.create({ ...payload, seller_id: payload.user_id, seller_type: 'ADMIN', status: payload.status || 'AVAILABLE' });
     }
     async numberDelete(payload: any) { return this.numbers.remove({ number_id: payload.number_id }); }
@@ -104,23 +117,45 @@ export class Admin {
             if (payload.status) { where.push('o.status = ?'); params.push(String(payload.status).toUpperCase()); }
             if (payload.q) { where.push('o.order_no LIKE ?'); params.push('%' + payload.q + '%'); }
             const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+            const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+            const count: any = await this.dao.executeQuery(
+                `SELECT COUNT(*) AS total FROM orders o ${whereSql}`, params);
+            const total = Number(count.rows?.[0]?.total || 0);
             const q: any = await this.dao.executeQuery(
-                `SELECT o.*, u.full_name FROM orders o LEFT JOIN auth_user u ON u.user_id = o.user_id ${whereSql} ORDER BY o.created_at DESC LIMIT 200`, params);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+                `SELECT o.*, u.full_name FROM orders o LEFT JOIN auth_user u ON u.user_id = o.user_id ${whereSql} ORDER BY o.created_at DESC, o.order_id DESC LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit]);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = { items: (q.rows || []).map(visibleOrder), total, page, limit, pages: Math.ceil(total / limit) };
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
     async orderDetail(payload: any) { return this.orders.detail({ user_id: 0, order_id: payload.order_id, is_admin: true }); }
-    async orderUpdateStatus(payload: { order_id: number, status: string }) {
+    async orderUpdateStatus(payload: { order_id: number, status: string, user_id?: number }) {
         let resModel = this.masterModel.getResponseModel();
+        let connection: any;
         try {
             const status = String(payload.status).toUpperCase();
-            await this.dao.executeQuery(`UPDATE orders SET status = ? WHERE order_id = ?`, [status, Number(payload.order_id)]);
-            if (status === 'COMPLETED') await this.dao.executeQuery(`UPDATE order_items SET item_status='TRANSFERRED' WHERE order_id = ?`, [Number(payload.order_id)]);
-            const o: any = await this.dao.executeQuery(`SELECT user_id, order_no FROM orders WHERE order_id = ?`, [Number(payload.order_id)]);
-            if (o.rows?.[0]) await pushNotification({ user_id: o.rows[0].user_id, type: 'order', title: 'Order update', message: `Your order ${o.rows[0].order_no} is now ${status}.` });
+            if (!['PENDING','PAID','PROCESSING','COMPLETED','CANCELLED','REFUNDED'].includes(status)) throw new Error('Choose a valid order status.');
+            connection = await this.dao.getConnection(); await connection.beginTransaction();
+            const [rows]: any = await connection.query('SELECT * FROM orders WHERE order_id=? FOR UPDATE', [Number(payload.order_id)]);
+            const order = rows?.[0]; if (!order) throw new Error('Order not found.');
+            if (order.order_type === 'PREBOOK') throw new Error('Manage pre-book fulfilment and refunds in Pre-books & Refunds.');
+            if (status === 'REFUNDED' && order.payment_status !== 'REFUNDED') throw new Error('A verified gateway refund is required before an order can be marked refunded.');
+            if (['PAID','PROCESSING','COMPLETED'].includes(status) && order.payment_status !== 'PAID') throw new Error('A verified successful payment is required.');
+            if (['PENDING','CANCELLED'].includes(status) && ['PAID','REFUNDED'].includes(order.payment_status)) throw new Error('Paid orders require a gateway refund; their payment state cannot be reset.');
+            if (order.status === 'CANCELLED' && status === 'PENDING') throw new Error('Cancelled reservations cannot be reopened.');
+            await connection.query('UPDATE orders SET status=? WHERE order_id=?', [status, order.order_id]);
+            if (status === 'COMPLETED') await connection.query("UPDATE order_items SET item_status='TRANSFERRED' WHERE order_id=?", [order.order_id]);
+            if (status === 'CANCELLED') {
+                await connection.query("UPDATE vip_numbers n JOIN order_items i ON i.number_id=n.number_id SET n.status='AVAILABLE' WHERE i.order_id=? AND n.status='RESERVED'", [order.order_id]);
+                await connection.query("UPDATE orders SET payment_status='FAILED' WHERE order_id=? AND payment_status='UNPAID'", [order.order_id]);
+                await connection.query("UPDATE order_items SET item_status='CANCELLED' WHERE order_id=?", [order.order_id]);
+            }
+            await new PaymentHistory(this.dao).event({ ...order, user_id: payload.user_id }, 'ORDER_STATUS_UPDATED', status, { previous_status: order.status }, 'ADMIN', connection);
+            await connection.commit();
+            await pushNotification({ user_id: order.user_id, type: 'order', title: 'Order update', message: `Your order ${order.order_no} is now ${status}.` });
             resModel.status = 1; resModel.info = 'OK';
-        } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
+        } catch (error) { try { await connection?.rollback(); } catch {} resModel.status = -33; resModel.info = 'catch : ' + error; }
+        finally { connection?.release(); }
         return resModel;
     }
 
@@ -132,9 +167,13 @@ export class Admin {
             if (payload.role) { where.push('role = ?'); params.push(String(payload.role).toUpperCase()); }
             if (payload.q) { where.push('(full_name LIKE ? OR email LIKE ? OR phone LIKE ?)'); params.push('%' + payload.q + '%', '%' + payload.q + '%', '%' + payload.q + '%'); }
             const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+            const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+            const count: any = await this.dao.executeQuery(`SELECT COUNT(*) AS total FROM auth_user ${whereSql}`, params);
+            const total = Number(count.rows?.[0]?.total || 0);
             const q: any = await this.dao.executeQuery(
-                `SELECT user_id, full_name, email, phone, role, status, referral_code, created_at FROM auth_user ${whereSql} ORDER BY created_at DESC LIMIT 300`, params);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+                `SELECT user_id, full_name, email, phone, role, status, referral_code, created_at FROM auth_user ${whereSql} ORDER BY created_at DESC, user_id DESC LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit]);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = { items: q.rows || [], total, page, limit, pages: Math.ceil(total / limit) };
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -161,14 +200,14 @@ export class Admin {
     }
 
     // ---------- Dealers ----------
-    async dealersList(_payload: any) {
+    async dealersList(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const q: any = await this.dao.executeQuery(
+            resModel.data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM dealer_profiles`,
                 `SELECT d.*, u.full_name, u.email, u.phone,
                         (SELECT COUNT(*) FROM vip_numbers n WHERE n.seller_id = d.dealer_id) AS listings
-                 FROM dealer_profiles d LEFT JOIN auth_user u ON u.user_id = d.dealer_id ORDER BY d.created_at DESC`, []);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+                 FROM dealer_profiles d LEFT JOIN auth_user u ON u.user_id = d.dealer_id ORDER BY d.created_at DESC, d.dealer_id DESC`);
+            resModel.status = 1; resModel.info = 'OK';
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -268,12 +307,12 @@ export class Admin {
     }
 
     // ---------- Payouts ----------
-    async payoutsList(_payload: any) {
+    async payoutsList(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const q: any = await this.dao.executeQuery(
-                `SELECT p.*, u.full_name, u.email FROM dealer_payouts p LEFT JOIN auth_user u ON u.user_id = p.dealer_id ORDER BY p.requested_at DESC`, []);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+            resModel.data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM dealer_payouts`,
+                `SELECT p.*, u.full_name, u.email FROM dealer_payouts p LEFT JOIN auth_user u ON u.user_id = p.dealer_id ORDER BY p.requested_at DESC, p.payout_id DESC`);
+            resModel.status = 1; resModel.info = 'OK';
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -306,11 +345,11 @@ export class Admin {
         try {
             const where = payload.status ? 'WHERE r.status = ?' : '';
             const params = payload.status ? [String(payload.status).toUpperCase()] : [];
-            const q: any = await this.dao.executeQuery(
+            resModel.data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM reviews r ${where}`,
                 `SELECT r.*, u.full_name, n.display_number FROM reviews r
                  LEFT JOIN auth_user u ON u.user_id = r.user_id
-                 LEFT JOIN vip_numbers n ON n.number_id = r.number_id ${where} ORDER BY r.created_at DESC LIMIT 200`, params);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+                 LEFT JOIN vip_numbers n ON n.number_id = r.number_id ${where} ORDER BY r.created_at DESC, r.review_id DESC`, params);
+            resModel.status = 1; resModel.info = 'OK';
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -326,21 +365,21 @@ export class Admin {
     }
 
     // ---------- Contact messages ----------
-    async messagesList(_payload: any) {
+    async messagesList(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const q: any = await this.dao.executeQuery(`SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 200`, []);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+            resModel.data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM contact_messages`, `SELECT * FROM contact_messages ORDER BY created_at DESC, message_id DESC`);
+            resModel.status = 1; resModel.info = 'OK';
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
 
     // ---------- Coupons ----------
-    async couponsList(_payload: any) {
+    async couponsList(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const q: any = await this.dao.executeQuery(`SELECT * FROM coupons ORDER BY coupon_id DESC`, []);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+            resModel.data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM coupons`, `SELECT * FROM coupons ORDER BY coupon_id DESC`);
+            resModel.status = 1; resModel.info = 'OK';
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -378,11 +417,18 @@ export class Admin {
     }
 
     // ---------- Newsletter subscribers ----------
-    async newsletterList(_payload: any) {
+    async newsletterList(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const q: any = await this.dao.executeQuery(`SELECT * FROM newsletter_subscribers ORDER BY created_at DESC LIMIT 1000`, []);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+            if (payload?.export_all) {
+                const rows: any = await this.dao.executeQuery(`SELECT * FROM newsletter_subscribers ORDER BY created_at DESC, id DESC`, []);
+                resModel.data = rows.rows || [];
+            } else {
+                const data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM newsletter_subscribers`, `SELECT * FROM newsletter_subscribers ORDER BY created_at DESC, id DESC`);
+                const sourceRows: any = await this.dao.executeQuery(`SELECT source, COUNT(*) AS total FROM newsletter_subscribers GROUP BY source`, []);
+                resModel.data = { ...data, by_source: Object.fromEntries((sourceRows.rows || []).map((row: any) => [row.source, Number(row.total)])) };
+            }
+            resModel.status = 1; resModel.info = 'OK';
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }
@@ -391,12 +437,13 @@ export class Admin {
     async settingsGet(_payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const keys = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT',
+            const keys = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT','GST_PERCENT',
                 'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
             const q: any = await this.dao.executeQuery(
                 `SELECT key_id, value FROM env WHERE key_id IN (${keys.map(() => '?').join(',')})`, keys);
             const map: any = {};
             (q.rows || []).forEach((r: any) => map[r.key_id] = r.value);
+            if (map.GST_PERCENT === undefined) map.GST_PERCENT = '0';
             if (map.GLOBAL_NUMBER_DISCOUNT_PERCENT === undefined) map.GLOBAL_NUMBER_DISCOUNT_PERCENT = '0';
             resModel.status = 1; resModel.info = 'OK'; resModel.data = map;
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
@@ -406,8 +453,9 @@ export class Admin {
         let resModel = this.masterModel.getResponseModel();
         let connection: any;
         try {
-            const allowed = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT',
+            const allowed = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT','GST_PERCENT',
                 'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
+            if (payload.GST_PERCENT !== undefined && (!/^\d{1,3}(\.\d{1,2})?$/.test(String(payload.GST_PERCENT)) || Number(payload.GST_PERCENT) > 100)) throw new Error('GST must be a percentage from 0 to 100 with at most two decimals.');
             const globalDiscount = Number(payload.GLOBAL_NUMBER_DISCOUNT_PERCENT);
             if (!Number.isInteger(globalDiscount) || globalDiscount < 0 || globalDiscount > 99) {
                 throw new Error('Store discount must be a whole percentage from 0 to 99.');

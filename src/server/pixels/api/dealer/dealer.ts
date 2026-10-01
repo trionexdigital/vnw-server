@@ -64,8 +64,8 @@ export class Dealer {
         return resModel;
     }
 
-    async listings(payload: { user_id: number }) {
-        return this.numbers.list({ seller_id: payload.user_id, status: 'ALL', limit: 60, sort: 'newest' });
+    async listings(payload: { user_id: number, page?: number, limit?: number }) {
+        return this.numbers.list({ seller_id: payload.user_id, status: 'ALL', page: payload.page, limit: payload.limit || 20, sort: 'newest' });
     }
 
     /** Dealer creates a listing → enters PENDING_APPROVAL for admin review. */
@@ -88,24 +88,30 @@ export class Dealer {
         return this.numbers.remove({ number_id: payload.number_id, owner_id: payload.user_id });
     }
 
-    async sales(payload: { user_id: number }) {
+    async sales(payload: { user_id: number, page?: number, limit?: number }) {
         let startMS = new Date().getTime();
         let resModel = this.masterModel.getResponseModel();
         try {
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+            const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+            const offset = (page - 1) * limit;
+            const count: any = await this.dao.executeQuery(
+                `SELECT COUNT(*) AS total FROM order_items oi JOIN orders o ON o.order_id = oi.order_id WHERE oi.seller_id = ?`, [payload.user_id]);
             const q: any = await this.dao.executeQuery(
                 `SELECT oi.order_item_id, oi.display_number, oi.price, oi.commission_amount, oi.item_status,
                         COALESCE(n.number_value, oi.display_number) AS number_value,
                         o.order_no, o.created_at, o.payment_status
                  FROM order_items oi JOIN orders o ON o.order_id = oi.order_id
                  LEFT JOIN vip_numbers n ON n.number_id = oi.number_id
-                 WHERE oi.seller_id = ? ORDER BY o.created_at DESC`, [payload.user_id]
+                 WHERE oi.seller_id = ? ORDER BY o.created_at DESC, oi.order_item_id DESC LIMIT ? OFFSET ?`, [payload.user_id, limit, offset]
             );
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = (q.rows || []).map((row: any) => {
+            const items = (q.rows || []).map((row: any) => {
                 try { return decorateNumberCategories(row); }
                 catch { return decorateNumberCategories(row, ['unique-numbers']); }
             });
+            resModel.data = { items, total: Number(count.rows?.[0]?.total || 0), page, limit };
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;
@@ -154,12 +160,17 @@ export class Dealer {
         return this.wallet.withdraw(payload);
     }
 
-    async payouts(payload: { user_id: number }) {
+    async payouts(payload: { user_id: number, page?: number, limit?: number }) {
         let resModel = this.masterModel.getResponseModel();
         try {
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+            const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+            const offset = (page - 1) * limit;
+            const count: any = await this.dao.executeQuery(
+                `SELECT COUNT(*) AS total FROM dealer_payouts WHERE dealer_id = ?`, [payload.user_id]);
             const q: any = await this.dao.executeQuery(
-                `SELECT * FROM dealer_payouts WHERE dealer_id = ? ORDER BY requested_at DESC`, [payload.user_id]);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = q.rows || [];
+                `SELECT * FROM dealer_payouts WHERE dealer_id = ? ORDER BY requested_at DESC, payout_id DESC LIMIT ? OFFSET ?`, [payload.user_id, limit, offset]);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = { items: q.rows || [], total: Number(count.rows?.[0]?.total || 0), page, limit };
         } catch (error) {
             resModel.status = -33; resModel.info = 'catch : ' + error;
         }

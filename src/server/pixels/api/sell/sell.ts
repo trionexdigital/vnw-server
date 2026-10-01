@@ -115,12 +115,16 @@ export class Sell {
             if (payload.status) { where.push('s.status = ?'); params.push(String(payload.status).toUpperCase()); }
             if (payload.q) { where.push('(s.display_number LIKE ? OR s.number_value LIKE ?)'); params.push('%' + payload.q + '%', '%' + payload.q + '%'); }
             const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+            const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+            const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+            const count: any = await this.dao.executeQuery(`SELECT COUNT(*) AS total FROM sell_requests s ${whereSql}`, params);
+            const total = Number(count.rows?.[0]?.total || 0);
             const q: any = await this.dao.executeQuery(
                 `SELECT ${SELL_REQUEST_COLUMNS}, u.full_name, u.email, u.phone AS user_phone
                  FROM sell_requests s
                  LEFT JOIN auth_user u ON u.user_id = s.user_id
-                 ${whereSql} ORDER BY s.created_at DESC LIMIT 300`, params);
-            resModel.status = 1; resModel.info = 'OK'; resModel.data = (q.rows || []).map(decorateSellRequest);
+                 ${whereSql} ORDER BY s.created_at DESC, s.request_id DESC LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit]);
+            resModel.status = 1; resModel.info = 'OK'; resModel.data = { items: (q.rows || []).map(decorateSellRequest), total, page, limit, pages: Math.ceil(total / limit) };
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
     }

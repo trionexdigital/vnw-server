@@ -15,12 +15,13 @@
         "build": "tsc --build",
         "clean-build": "tsc --clean --onSuccess tsc --build",
         "clean": "tsc --build --clean",
-        "test:categories": "tsc --build && node --test dist/server/pixels/api/categories/categoryClassifier.test.js dist/server/pixels/api/numbers/numbers.automaticCategories.test.js dist/server/pixels/api/numbers/numbers.search.test.js dist/server/db/mysql/automaticCategoryMigration.test.js",
+        "test:categories": "tsc --build && node --test dist/server/pixels/api/categories/categoryClassifier.test.js dist/server/pixels/api/categories/categories.internalTaxonomy.test.js dist/server/pixels/api/numbers/numbers.automaticCategories.test.js dist/server/pixels/api/numbers/numbers.search.test.js dist/server/db/mysql/automaticCategoryMigration.test.js",
         "test:search": "tsc --build && node --test dist/server/pixels/api/numbers/numbers.search.test.js",
         "test:similar": "tsc --build && node --test dist/server/pixels/api/numbers/similarNumbers.test.js",
         "test:deals": "tsc --build && node --test dist/server/pixels/api/dealsOfDay/dealsOfDay.test.js",
         "test:marketplace": "tsc --build && node --test dist/server/pixels/api/site/marketplaceContent.test.js dist/server/pixels/api/cart/cart.addMany.test.js",
         "test:prebooks": "tsc --build && node --test dist/server/pixels/api/prebooks/prebooks.test.js",
+        "test:payments": "tsc --build && node --test dist/server/pixels/api/payments/cashfree.test.js dist/server/pixels/api/payments/paymentHistory.test.js dist/server/pixels/api/prebooks/prebooks.test.js dist/server/pixels/api/orders/billing.test.js",
         "test:inventory": "tsc --build && node --test dist/server/pixels/api/privateLinks/privateLinks.test.js dist/server/pixels/api/dealerPurchases/dealerPurchases.test.js"
     },
     "dependencies": {
@@ -58,7 +59,6 @@
         "mysql2": "^3.14.3",
         "node-https": "^0.1.3",
         "pm2": "^5.2.0",
-        "razorpay": "^2.9.6",
         "redis": "^4.3.0",
         "request": "^2.88.2",
         "request-promise": "^4.2.6",

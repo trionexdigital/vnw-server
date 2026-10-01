@@ -404,7 +404,8 @@ export class PixelsAuth {
 
             query = `UPDATE ${tableName} SET logo = ? WHERE user_id = ?`;
             queryModel = await this.mysqlDAO.executeQuery(query, [logo, user_id]);
-            if (queryModel.affectedRows === 0) throw new Error('Unable to update image.')
+            if (queryModel.status !== 1 || queryModel.affectedRows === 0) throw new Error('Unable to update image.');
+            await pushNotification({ user_id, title: 'Profile image updated', message: 'Your profile image was uploaded successfully.', type: 'profile' });
 
             query = `SELECT ${this.SAFE_USER_COLS} FROM ${tableName} WHERE user_id = ?`;
             queryModel = await this.mysqlDAO.executeQuery(query, [user_id]);

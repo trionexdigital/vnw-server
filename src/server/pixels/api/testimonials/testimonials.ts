@@ -18,12 +18,19 @@ export class Testimonials {
         let resModel = this.masterModel.getResponseModel();
         try {
             const where = payload?.all ? '' : 'WHERE is_active = 1';
+            const page = Math.max(1, Math.floor(Number(payload?.page) || 1));
+            const limit = Math.min(payload?.all ? 1000 : 50, Math.max(1, Math.floor(Number(payload?.limit) || 20)));
+            const offset = (page - 1) * limit;
+            const count: any = payload?.all ? await this.dao.executeQuery('SELECT COUNT(*) AS total FROM testimonials', []) : null;
             const q: any = await this.dao.executeQuery(
-                `SELECT * FROM testimonials ${where} ORDER BY sort_order ASC, testimonial_id DESC`, []
+                `SELECT * FROM testimonials ${where} ORDER BY sort_order ASC, testimonial_id DESC ${payload?.all ? 'LIMIT ? OFFSET ?' : ''}`,
+                payload?.all ? [limit, offset] : []
             );
             resModel.status = 1;
             resModel.info = 'OK';
-            resModel.data = q.rows || [];
+            resModel.data = payload?.all
+                ? { items: q.rows || [], total: Number(count.rows?.[0]?.total || 0), page, limit }
+                : q.rows || [];
         } catch (error) {
             resModel.status = -33;
             resModel.info = 'catch : ' + error;

@@ -24,6 +24,7 @@ const handle = (fn: (p: any) => Promise<any>) => async (req: Request, res: Respo
     }
 };
 
+router.post('/quote', handle((p) => orders.quote(p)));
 router.post('/create', handle((p) => orders.create(p)));
 router.post('/my', handle((p) => orders.my(p)));
 router.post('/detail', handle((p) => orders.detail(p)));

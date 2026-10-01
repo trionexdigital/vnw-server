@@ -2,15 +2,15 @@ import { MySqlClient } from '../../../gen_db/database';
 import { MasterModel } from '../../../models/MasterModel';
 import { pushNotification } from '../notifications/notifications';
 import { creditWallet } from '../wallet/wallet';
-import { decorateNumberCategories } from '../categories/categoryClassifier';
+import { CATEGORY_CLASSIFIER_VERSION, decorateNumberCategories, getCategoryBySlug, getSubcategoryForCategory } from '../categories/categoryClassifier';
 import { resolvePrivateLinkWithConnection } from '../privateLinks/privateLinks';
+import { loadBilling } from '../orders/billing';
+import { assertCheckoutSchema, PaymentHistory, safePaymentData } from '../payments/paymentHistory';
 
-let RazorpayLib: any = null;
-try { RazorpayLib = require('razorpay'); } catch { /* configured at runtime */ }
+import { CashfreeClient, CashfreeError, PaymentHoldError, cashfreeMode, amountInPaise, utcDate } from '../payments/cashfree';
 
-const KEY_ID = () => (process.env.RAZORPAY_KEY_ID || '').trim();
-const KEY_SECRET = () => (process.env.RAZORPAY_KEY_SECRET || '').trim();
-const HOLD_MINUTES = 15;
+// Cashfree requires order expiry strictly more than 15 minutes after creation.
+const HOLD_MINUTES = 20;
 const CANCELLATION_HOURS = 48;
 const ACTIVE_STATES = ['PENDING_PAYMENT', 'BOOKED', 'READY', 'CANCEL_REQUESTED', 'REFUND_PENDING'];
 const ISSUE_REASONS = ['DELIVERY_ISSUE', 'UPC_ISSUE', 'ACTIVATION_ISSUE'];
@@ -56,6 +56,7 @@ export class Prebooks {
           await connection.query(`UPDATE orders SET status='CANCELLED', payment_status='FAILED' WHERE order_id=? AND payment_status='UNPAID'`, [row.order_id]);
           await connection.query(`UPDATE order_items SET item_status='CANCELLED' WHERE order_id=?`, [row.order_id]);
           await connection.query(`UPDATE vip_numbers SET status='AVAILABLE' WHERE number_id=? AND status='RESERVED'`, [row.number_id]);
+          await new PaymentHistory(this.dao).event({ order_id: row.order_id }, 'HOLD_EXPIRED', 'FAILED', {}, 'SERVER', connection, `expired:${row.order_id}`);
         }
         await connection.commit();
       } catch (error) {
@@ -106,8 +107,19 @@ export class Prebooks {
         where.push('n.rtp_available_at<?'); params.push(sqlUtc(end));
       }
       if (payload.category) {
-        where.push('EXISTS (SELECT 1 FROM vip_number_categories vnc WHERE vnc.number_id=n.number_id AND vnc.category_slug=?)');
-        params.push(String(payload.category).slice(0, 64));
+        const category = getCategoryBySlug(payload.category);
+        if (!category) throw new Error('Unknown category.');
+        if (payload.subcategory_id !== undefined && payload.subcategory_id !== null && payload.subcategory_id !== '') {
+          const subcategoryId = Number(payload.subcategory_id);
+          if (!Number.isSafeInteger(subcategoryId) || !getSubcategoryForCategory(category.slug, subcategoryId)) throw new Error('Unknown subcategory.');
+          where.push('EXISTS (SELECT 1 FROM vip_number_subcategories vns WHERE vns.number_id=n.number_id AND vns.category_id=? AND vns.subcategory_id=? AND vns.classifier_version=?)');
+          params.push(category.id, subcategoryId, CATEGORY_CLASSIFIER_VERSION);
+        } else {
+          where.push('EXISTS (SELECT 1 FROM vip_number_categories vnc WHERE vnc.number_id=n.number_id AND vnc.category_slug=? AND vnc.classifier_version=?)');
+          params.push(category.slug, CATEGORY_CLASSIFIER_VERSION);
+        }
+      } else if (payload.subcategory_id !== undefined && payload.subcategory_id !== null && payload.subcategory_id !== '') {
+        throw new Error('Select a category before its subcategory.');
       }
       const page = Math.max(1, Number(payload.page) || 1);
       const limit = Math.min(60, Math.max(1, Number(payload.limit) || 20));
@@ -132,18 +144,22 @@ export class Prebooks {
     return res;
   }
 
-  async create(payload: any) {
+  async quote(payload: any) { return this.create(payload, true); }
+  async create(payload: any, quoteOnly = false) {
     const res = this.response();
     let connection: any;
     try {
-      await this.reconcile();
+      if (!quoteOnly) {
+        connection = await this.dao.getConnection(); await assertCheckoutSchema(connection);
+        await this.reconcile();
+      }
       const userId = Number(payload.user_id);
       const numberId = Number(payload.number_id);
       if (!userId || !numberId) throw new Error('Choose a number to pre-book.');
-      connection = await this.dao.getConnection();
+      connection = connection || await this.dao.getConnection();
       await connection.beginTransaction();
       const [numbers]: any = await connection.query(
-        `SELECT number_id,display_number,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status,rtp_available_at
+        `SELECT number_id,display_number,mrp,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status,rtp_available_at
          FROM vip_numbers WHERE number_id=? FOR UPDATE`, [numberId],
       );
       const number = numbers?.[0];
@@ -157,14 +173,18 @@ export class Prebooks {
         if (!link) throw new Error('This Offline number is only available through its active private link.');
         privateLinkId = Number(link.private_link_id);
       }
+      const billing = await loadBilling(connection, [number]);
+      if (quoteOnly) {
+        await connection.commit(); res.status = 1; res.info = 'OK'; res.data = billing; return res;
+      }
       const [users]: any = await connection.query('SELECT full_name,email,phone FROM auth_user WHERE user_id=?', [userId]);
       const user = users?.[0] || {};
       const orderNo = 'VNW-PB-' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 900 + 100);
       const holdExpires = new Date(Date.now() + HOLD_MINUTES * 60_000);
       const [orderInsert]: any = await connection.query(
-        `INSERT INTO orders (order_no,user_id,subtotal,discount,total,status,payment_status,order_type,payment_expires_at,customer_name,customer_email,customer_phone)
-         VALUES (?,?,?,?,?,'PENDING','UNPAID','PREBOOK',?,?,?,?)`,
-        [orderNo, userId, number.offer_price, 0, number.offer_price, sqlUtc(holdExpires), user.full_name, user.email, user.phone],
+        `INSERT INTO orders (order_no,user_id,subtotal,discount,total,status,payment_status,order_type,payment_expires_at,customer_name,customer_email,customer_phone,mrp_total,offer_savings,taxable_amount,gst_percent,gst_amount)
+         VALUES (?,?,?,?,?,'PENDING','UNPAID','PREBOOK',?,?,?,?,?,?,?,?,?)`,
+        [orderNo, userId, billing.subtotal, 0, billing.total, sqlUtc(holdExpires), user.full_name, user.email, user.phone,billing.mrp_total,billing.offer_savings,billing.taxable_amount,billing.gst_percent,billing.gst_amount],
       );
       const orderId = Number(orderInsert.insertId);
       let commission = 0;
@@ -186,9 +206,11 @@ export class Prebooks {
         `UPDATE vip_numbers SET status='RESERVED' WHERE number_id=? AND status='AVAILABLE' AND rtp_status='NON_RTP'`, [numberId],
       );
       if (reserved.affectedRows !== 1) throw new Error('This number was just reserved by another customer.');
+      await connection.query("UPDATE orders SET payment_provider='CASHFREE',gateway_environment=? WHERE order_id=?", [cashfreeMode(), orderId]);
+      await new PaymentHistory(this.dao).event({ order_id: orderId, user_id: userId }, 'CHECKOUT_CREATED', 'UNPAID', { ...billing, order_type: 'PREBOOK' }, 'CHECKOUT', connection, `checkout:${orderId}`);
       await connection.commit();
       res.status = 1; res.info = 'Pre-book payment hold created.';
-      res.data = { prebook_id: Number(prebookInsert.insertId), order_id: orderId, order_no: orderNo, total: Number(number.offer_price), payment_expires_at: sqlUtc(holdExpires) };
+      res.data = { prebook_id: Number(prebookInsert.insertId), order_id: orderId, order_no: orderNo, ...billing, payment_expires_at: sqlUtc(holdExpires) };
     } catch (error) {
       if (connection) { try { await connection.rollback(); } catch { /* best effort */ } }
       res.status = -33; res.info = 'catch : ' + error;
@@ -204,19 +226,23 @@ export class Prebooks {
       const [orders]: any = await connection.query(`SELECT * FROM orders WHERE order_id=? FOR UPDATE`, [orderId]);
       const order = orders?.[0];
       if (!order || order.order_type !== 'PREBOOK') throw new Error('Pre-book order not found.');
-      if (order.payment_status === 'PAID') { await connection.commit(); return order; }
+      if (['PAID', 'REFUNDED'].includes(order.payment_status)) { await connection.commit(); return order; }
       const [prebooks]: any = await connection.query(`SELECT * FROM prebookings WHERE order_id=? FOR UPDATE`, [orderId]);
       const prebook = prebooks?.[0];
-      if (!prebook || prebook.status !== 'PENDING_PAYMENT') throw new Error('Pre-book payment hold is no longer active.');
-      if (new Date(prebook.hold_expires_at + 'Z') <= new Date()) throw new Error('Pre-book payment hold expired.');
+      if (!prebook || prebook.status !== 'PENDING_PAYMENT') throw new PaymentHoldError('Pre-book payment hold is no longer active.');
+      const paidAt = utcDate(pay.paid_at);
+      if (order.status !== 'PENDING' || !Number.isFinite(paidAt.getTime()) || paidAt.getTime() > utcDate(prebook.hold_expires_at).getTime()) throw new PaymentHoldError('Pre-book payment hold expired.');
+      const [inventory]: any = await connection.query('SELECT status FROM vip_numbers WHERE number_id=? FOR UPDATE', [prebook.number_id]);
+      if (inventory?.[0]?.status !== 'RESERVED') throw new PaymentHoldError('The reserved number is no longer available.');
       await connection.query(
-        `UPDATE orders SET status='PAID',payment_status='PAID',razorpay_order_id=?,razorpay_payment_id=?,razorpay_signature=? WHERE order_id=?`,
-        [pay.razorpay_order_id || order.razorpay_order_id, pay.razorpay_payment_id || null, pay.razorpay_signature || null, orderId],
+        `UPDATE orders SET status='PAID',payment_status='PAID',gateway_order_id=?,gateway_payment_id=? WHERE order_id=?`,
+        [pay.gateway_order_id || order.gateway_order_id, pay.gateway_payment_id || null, orderId],
       );
       await connection.query(`UPDATE order_items SET item_status='PAID' WHERE order_id=?`, [orderId]);
+      await new PaymentHistory(this.dao).event({ ...order, gateway_payment_id: pay.gateway_payment_id }, 'ORDER_PAID', 'PAID', { paid_at: pay.paid_at, total: order.total }, 'SERVER', connection, `paid:${orderId}`);
       await connection.query(
-        `UPDATE prebookings SET status=IF(rtp_available_at_snapshot<=UTC_TIMESTAMP(),'READY','BOOKED'),paid_at=UTC_TIMESTAMP(),cancellation_deadline=DATE_ADD(UTC_TIMESTAMP(),INTERVAL ${CANCELLATION_HOURS} HOUR) WHERE prebook_id=?`,
-        [prebook.prebook_id],
+        `UPDATE prebookings SET status=IF(rtp_available_at_snapshot<=UTC_TIMESTAMP(),'READY','BOOKED'),paid_at=?,cancellation_deadline=DATE_ADD(?,INTERVAL ${CANCELLATION_HOURS} HOUR) WHERE prebook_id=?`,
+        [sqlUtc(paidAt), sqlUtc(paidAt), prebook.prebook_id],
       );
       if (new Date(prebook.rtp_available_at_snapshot + 'Z') <= new Date()) {
         await connection.query(`UPDATE vip_numbers SET rtp_status='RTP' WHERE number_id=?`, [prebook.number_id]);
@@ -248,6 +274,7 @@ export class Prebooks {
         await connection.query(`UPDATE orders SET status='CANCELLED',payment_status='FAILED' WHERE order_id=?`, [orderId]);
         await connection.query(`UPDATE order_items SET item_status='CANCELLED' WHERE order_id=?`, [orderId]);
         await connection.query(`UPDATE vip_numbers SET status='AVAILABLE' WHERE number_id=? AND status='RESERVED'`, [pending.number_id]);
+        await new PaymentHistory(this.dao).event({ order_id: orderId, user_id: pending.user_id }, 'HOLD_RELEASED', 'FAILED', {}, 'SERVER', connection, `released:${orderId}`);
         failed = pending;
       }
       await connection.commit();
@@ -263,7 +290,7 @@ export class Prebooks {
     try {
       await this.reconcile();
       const q: any = await this.dao.executeQuery(
-        `SELECT p.*,o.order_no,o.total,o.payment_status,o.status AS order_status,o.razorpay_payment_id,
+        `SELECT p.*,o.order_no,o.total,o.payment_status,o.status AS order_status,o.gateway_payment_id,
                 n.display_number,n.number_value,n.operator,n.rtp_status,n.rtp_available_at,n.offer_price,
                 r.refund_request_id,r.status AS refund_status,r.reason_type,r.gateway_status
          FROM prebookings p INNER JOIN orders o ON o.order_id=p.order_id
@@ -308,6 +335,7 @@ export class Prebooks {
         [prebookId, prebook.user_id, reason, prebook.status, prebook.total, String(payload.note || '').trim().slice(0, 1000) || null],
       );
       await connection.query(`UPDATE prebookings SET status='CANCEL_REQUESTED',issue_note=? WHERE prebook_id=?`, [String(payload.note || '').trim().slice(0, 1000) || null, prebookId]);
+      await new PaymentHistory(this.dao).event({ order_id: prebook.order_id, user_id: payload.user_id }, 'REFUND_REQUESTED', 'PENDING', { refund_request_id: inserted.insertId, reason, amount: prebook.total }, admin ? 'ADMIN' : 'CUSTOMER', connection, `refund-request:${inserted.insertId}`);
       await connection.commit();
       res.status = 1; res.info = 'Refund request submitted for admin review.'; res.data = { refund_request_id: Number(inserted.insertId) };
       await pushNotification({ user_id: prebook.user_id, type: 'order', title: 'Refund request received', message: 'Your request is awaiting admin review.' });
@@ -335,14 +363,20 @@ export class Prebooks {
       const where: string[] = []; const params: any[] = [];
       if (payload.status) { where.push('p.status=?'); params.push(String(payload.status).toUpperCase()); }
       if (payload.q) { where.push('(n.display_number LIKE ? OR o.order_no LIKE ? OR u.full_name LIKE ?)'); params.push(...Array(3).fill(`%${String(payload.q).slice(0, 64)}%`)); }
+      const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+      const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+      const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+      const count: any = await this.dao.executeQuery(
+        `SELECT COUNT(*) AS total FROM prebookings p INNER JOIN orders o ON o.order_id=p.order_id INNER JOIN vip_numbers n ON n.number_id=p.number_id INNER JOIN auth_user u ON u.user_id=p.user_id ${whereSql}`, params);
+      const total = Number(count.rows?.[0]?.total || 0);
       const q: any = await this.dao.executeQuery(
-        `SELECT p.*,o.order_no,o.total,o.payment_status,o.status AS order_status,o.razorpay_payment_id,
+        `SELECT p.*,o.order_no,o.total,o.payment_status,o.status AS order_status,o.gateway_payment_id,
                 n.display_number,n.rtp_status,n.rtp_available_at,n.status AS number_status,u.full_name,u.email,u.phone
          FROM prebookings p INNER JOIN orders o ON o.order_id=p.order_id
          INNER JOIN vip_numbers n ON n.number_id=p.number_id INNER JOIN auth_user u ON u.user_id=p.user_id
-         ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY p.created_at DESC LIMIT 300`, params,
+         ${whereSql} ORDER BY p.created_at DESC, p.prebook_id DESC LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit],
       );
-      res.status = 1; res.info = 'OK'; res.data = q.rows || [];
+      res.status = 1; res.info = 'OK'; res.data = { items: q.rows || [], total, page, limit, pages: Math.ceil(total / limit) };
     } catch (error) { res.status = -33; res.info = 'catch : ' + error; }
     return res;
   }
@@ -352,14 +386,18 @@ export class Prebooks {
     try {
       const where = payload.status ? 'WHERE r.status=?' : '';
       const params = payload.status ? [String(payload.status).toUpperCase()] : [];
+      const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+      const limit = Math.min(1000, Math.max(1, Math.floor(Number(payload.limit) || 20)));
+      const count: any = await this.dao.executeQuery(`SELECT COUNT(*) AS total FROM prebook_refund_requests r ${where}`, params);
+      const total = Number(count.rows?.[0]?.total || 0);
       const q: any = await this.dao.executeQuery(
-        `SELECT r.*,p.order_id,p.number_id,p.status AS prebook_status,o.order_no,o.razorpay_payment_id,
+        `SELECT r.*,p.order_id,p.number_id,p.status AS prebook_status,o.order_no,o.gateway_payment_id,
                 n.display_number,u.full_name,u.email
          FROM prebook_refund_requests r INNER JOIN prebookings p ON p.prebook_id=r.prebook_id
          INNER JOIN orders o ON o.order_id=p.order_id INNER JOIN vip_numbers n ON n.number_id=p.number_id
-         INNER JOIN auth_user u ON u.user_id=p.user_id ${where} ORDER BY r.requested_at DESC LIMIT 300`, params,
+         INNER JOIN auth_user u ON u.user_id=p.user_id ${where} ORDER BY r.requested_at DESC, r.refund_request_id DESC LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit],
       );
-      res.status = 1; res.info = 'OK'; res.data = q.rows || [];
+      res.status = 1; res.info = 'OK'; res.data = { items: q.rows || [], total, page, limit, pages: Math.ceil(total / limit) };
     } catch (error) { res.status = -33; res.info = 'catch : ' + error; }
     return res;
   }
@@ -372,13 +410,14 @@ export class Prebooks {
       if (!note) throw new Error('A rejection reason is required.');
       connection = await this.dao.getConnection(); await connection.beginTransaction();
       const [rows]: any = await connection.query(
-        `SELECT r.*,p.user_id FROM prebook_refund_requests r INNER JOIN prebookings p ON p.prebook_id=r.prebook_id
+        `SELECT r.*,p.user_id,p.order_id FROM prebook_refund_requests r INNER JOIN prebookings p ON p.prebook_id=r.prebook_id
          WHERE r.refund_request_id=? FOR UPDATE`, [Number(payload.refund_request_id)],
       );
       const request = rows?.[0];
       if (!request || request.status !== 'PENDING') throw new Error('Refund request is no longer pending.');
       await connection.query(`UPDATE prebook_refund_requests SET status='REJECTED',admin_note=?,reviewed_by=?,reviewed_at=UTC_TIMESTAMP() WHERE refund_request_id=?`, [note, payload.user_id, request.refund_request_id]);
       await connection.query(`UPDATE prebookings SET status=? WHERE prebook_id=? AND status='CANCEL_REQUESTED'`, [request.status_before_request, request.prebook_id]);
+      await new PaymentHistory(this.dao).event({ order_id: request.order_id, user_id: payload.user_id }, 'REFUND_REJECTED', 'REJECTED', { refund_request_id: request.refund_request_id, note }, 'ADMIN', connection, `refund-rejected:${request.refund_request_id}`);
       await connection.commit();
       await pushNotification({ user_id: request.user_id, type: 'order', title: 'Refund request update', message: `Your refund request was not approved: ${note}` });
       res.status = 1; res.info = 'Refund request rejected.';
@@ -401,11 +440,12 @@ export class Prebooks {
       // The pre-book state is the idempotency boundary for the business update.
       if (request.status === 'PROCESSED' && request.prebook_status === 'REFUNDED') { await connection.commit(); return; }
       await connection.query(
-        `UPDATE prebook_refund_requests SET status='PROCESSED',gateway_status='processed',razorpay_refund_id=COALESCE(?,razorpay_refund_id),gateway_payload=?,processed_at=UTC_TIMESTAMP() WHERE refund_request_id=?`,
-        [gateway?.id || null, JSON.stringify(gateway || {}).slice(0, 60000), requestId],
+        `UPDATE prebook_refund_requests SET status='PROCESSED',gateway_status='SUCCESS',gateway_refund_id=COALESCE(?,gateway_refund_id),gateway_payload=?,processed_at=UTC_TIMESTAMP() WHERE refund_request_id=?`,
+        [gateway?.refund_id || null, JSON.stringify(safePaymentData(gateway || {})), requestId],
       );
       await connection.query(`UPDATE prebookings SET status='REFUNDED',refunded_at=UTC_TIMESTAMP() WHERE prebook_id=?`, [request.prebook_id]);
       await connection.query(`UPDATE orders SET status='REFUNDED',payment_status='REFUNDED' WHERE order_id=?`, [request.order_id]);
+      await new PaymentHistory(this.dao).event({ order_id: request.order_id, gateway_refund_id: gateway.refund_id }, 'REFUND_COMPLETED', 'PROCESSED', { refund_request_id: requestId, amount: request.amount, gateway }, 'SERVER', connection, `refund-completed:${gateway.refund_id}`);
       await connection.query(`UPDATE order_items SET item_status='CANCELLED' WHERE order_id=?`, [request.order_id]);
       if (request.reason_type === 'CUSTOMER_CANCELLATION') {
         await connection.query(
@@ -420,64 +460,87 @@ export class Prebooks {
     finally { if (connection) connection.release(); }
   }
 
+  private async refundQuery(sql: string, values: any[]) {
+    const q: any = await this.dao.executeQuery(sql, values);
+    if (q.status !== 1) throw new Error('Refund storage is unavailable. Check the manual Cashfree migration.');
+    return q;
+  }
+
+  private async syncRefund(request: any, create = false) {
+    const history = new PaymentHistory(this.dao);
+    const client = new CashfreeClient(request, history);
+    let gateway: any;
+    try { gateway = await client.getRefund(request.gateway_order_id, request.gateway_refund_id); }
+    catch (error) { if (!create || !(error instanceof CashfreeError) || error.statusCode !== 404) throw error; }
+    if (!gateway && create) gateway = await client.createRefund(request.gateway_order_id, {
+      refund_id: request.gateway_refund_id, refund_amount: Number(request.amount), refund_note: 'Full pre-book refund', refund_speed: 'STANDARD',
+    });
+    if (gateway?.order_id !== request.gateway_order_id || gateway.refund_id !== request.gateway_refund_id ||
+        gateway.refund_currency !== 'INR' || amountInPaise(gateway.refund_amount) !== amountInPaise(request.amount) ||
+        (gateway.cf_payment_id && String(gateway.cf_payment_id) !== String(request.gateway_payment_id)))
+      throw new Error('Cashfree refund details do not match this request.');
+    const status = String(gateway.refund_status);
+    await history.event(request, 'REFUND_STATUS', status, { refund_request_id: request.refund_request_id, gateway }, 'SERVER', undefined, `refund:${request.gateway_refund_id}:${status}`);
+    // Never let an out-of-order failure change a completed refund.
+    if (status === 'SUCCESS') await this.completeRefund(request.refund_request_id, gateway);
+    else await this.refundQuery(
+      `UPDATE prebook_refund_requests SET gateway_status=?,gateway_payload=?,status=? WHERE refund_request_id=? AND gateway_refund_id=? AND status<>'PROCESSED'`,
+      [status, JSON.stringify(safePaymentData(gateway)), ['FAILED', 'CANCELLED'].includes(status) ? 'FAILED' : 'PROCESSING', request.refund_request_id, request.gateway_refund_id],
+    );
+    return gateway;
+  }
+
   async approveRefund(payload: any) {
     const res = this.response();
+    let connection: any;
     let request: any;
+    let newlySubmitted = false;
     try {
-      const q: any = await this.dao.executeQuery(
-        `SELECT r.*,p.order_id,p.user_id,o.razorpay_payment_id FROM prebook_refund_requests r
-         INNER JOIN prebookings p ON p.prebook_id=r.prebook_id INNER JOIN orders o ON o.order_id=p.order_id
-         WHERE r.refund_request_id=?`, [Number(payload.refund_request_id)],
-      );
-      request = q.rows?.[0];
-      if (!request || !['PENDING', 'FAILED'].includes(request.status)) throw new Error('Refund request cannot be processed.');
-      if (!request.razorpay_payment_id) throw new Error('Captured Razorpay payment was not found.');
-      if (!RazorpayLib || !KEY_ID() || !KEY_SECRET()) throw new Error('Razorpay refund service is not configured.');
-      await this.dao.executeQuery(
-        `UPDATE prebook_refund_requests SET status='PROCESSING',reviewed_by=?,reviewed_at=UTC_TIMESTAMP(),admin_note=? WHERE refund_request_id=? AND status IN ('PENDING','FAILED')`,
-        [payload.user_id, String(payload.admin_note || '').trim().slice(0, 1000) || null, request.refund_request_id],
-      );
-      await this.dao.executeQuery(`UPDATE prebookings SET status='REFUND_PENDING' WHERE prebook_id=?`, [request.prebook_id]);
-      const razorpay = new RazorpayLib({ key_id: KEY_ID(), key_secret: KEY_SECRET() });
-      const gateway = await razorpay.payments.refund(request.razorpay_payment_id, {
-        amount: Math.round(Number(request.amount) * 100), speed: 'normal',
-        receipt: `PBREF-${request.refund_request_id}`,
-        notes: { refund_request_id: String(request.refund_request_id), prebook_id: String(request.prebook_id) },
-      });
-      await this.dao.executeQuery(
-        `UPDATE prebook_refund_requests SET razorpay_refund_id=?,gateway_status=?,gateway_payload=?,status=? WHERE refund_request_id=?`,
-        [gateway.id, gateway.status, JSON.stringify(gateway).slice(0, 60000), gateway.status === 'failed' ? 'FAILED' : 'PROCESSING', request.refund_request_id],
-      );
-      if (gateway.status === 'processed') await this.completeRefund(request.refund_request_id, gateway);
-      else await pushNotification({ user_id: request.user_id, type: 'order', title: 'Refund submitted', message: 'Your 100% refund has been submitted to the payment provider.' });
-      res.status = 1; res.info = gateway.status === 'processed' ? 'Refund processed.' : 'Refund submitted to Razorpay.'; res.data = { refund_id: gateway.id, status: gateway.status };
-    } catch (error) {
-      if (request?.refund_request_id) {
-        await this.dao.executeQuery(`UPDATE prebook_refund_requests SET status='FAILED',gateway_status='failed',gateway_payload=? WHERE refund_request_id=?`, [String(error).slice(0, 60000), request.refund_request_id]);
-        await pushNotification({ user_id: request.user_id, type: 'order', title: 'Refund processing delayed', message: 'The refund could not be submitted. Our team can safely retry it.' });
+      connection = await this.dao.getConnection(); await connection.beginTransaction();
+      const [rows]: any = await connection.query(
+        `SELECT r.*,p.order_id,o.payment_provider,o.payment_status,o.gateway_environment,o.gateway_order_id,o.gateway_payment_id,o.total
+         FROM prebook_refund_requests r INNER JOIN prebookings p ON p.prebook_id=r.prebook_id
+         INNER JOIN orders o ON o.order_id=p.order_id WHERE r.refund_request_id=? FOR UPDATE`, [Number(payload.refund_request_id)]);
+      request = rows?.[0];
+      if (!request || !['PENDING', 'FAILED', 'PROCESSING'].includes(request.status)) throw new Error('Refund request cannot be processed.');
+      if (request.payment_provider !== 'CASHFREE' || request.gateway_environment !== cashfreeMode() ||
+          request.payment_status !== 'PAID' || !request.gateway_order_id || !request.gateway_payment_id)
+        throw new Error('A captured payment in the current Cashfree environment is required. Historical payments need provider-side review.');
+      if (amountInPaise(request.amount) !== amountInPaise(request.total)) throw new Error('The refund must match the original pre-book payment.');
+      if (request.status !== 'PROCESSING') {
+        // A new attempt is allowed only after Cashfree reports a terminal failure.
+        const attempt = Number(request.refund_attempt || 0) + 1;
+        request.gateway_refund_id = `vnw_ref_${request.refund_request_id}_${attempt}`;
+        await connection.query(`UPDATE prebook_refund_requests SET status='PROCESSING',refund_attempt=?,gateway_refund_id=?,gateway_status='PENDING',reviewed_by=?,reviewed_at=UTC_TIMESTAMP(),admin_note=? WHERE refund_request_id=?`,
+          [attempt, request.gateway_refund_id, payload.user_id, String(payload.admin_note || '').trim().slice(0, 1000) || null, request.refund_request_id]);
+        newlySubmitted = true;
       }
-      res.status = -33; res.info = 'catch : ' + error;
-    }
+      if (!request.gateway_refund_id) throw new Error('The refund reference is missing. Contact support.');
+      await connection.query("UPDATE prebookings SET status='REFUND_PENDING' WHERE prebook_id=?", [request.prebook_id]);
+      await new PaymentHistory(this.dao).event({ ...request, user_id: payload.user_id }, 'REFUND_APPROVED', 'PROCESSING', { refund_request_id: request.refund_request_id, amount: request.amount }, 'ADMIN', connection, `refund-approved:${request.gateway_refund_id}`);
+      await connection.commit(); connection.release(); connection = null;
+      const gateway = await this.syncRefund(request, true);
+      if (newlySubmitted && gateway.refund_status !== 'SUCCESS')
+        await pushNotification({ user_id: request.user_id, type: 'order', title: 'Refund submitted', message: 'Your full refund has been submitted to Cashfree.' });
+      res.status = 1; res.info = gateway.refund_status === 'SUCCESS' ? 'Refund processed.' : 'Cashfree refund status refreshed.';
+      res.data = { refund_id: gateway.refund_id, status: gateway.refund_status };
+    } catch (error: any) {
+      if (connection) { try { await connection.rollback(); } catch {} }
+      // A timeout may follow a successful submission. Keep PROCESSING and reuse the same
+      // reference/idempotency key when checking again, rather than refunding twice.
+      res.status = -33; res.info = error.message || 'Refund processing delayed. Check its status before retrying.';
+    } finally { connection?.release(); }
     return res;
   }
 
-  async handleRefundWebhook(event: string, entity: any, raw: any) {
-    const refundId = entity?.id;
-    if (!refundId || !['refund.processed', 'refund.failed'].includes(event)) return;
-    let q: any = await this.dao.executeQuery(`SELECT refund_request_id,user_id FROM prebook_refund_requests r INNER JOIN prebookings p ON p.prebook_id=r.prebook_id WHERE razorpay_refund_id=?`, [refundId]);
-    let request = q.rows?.[0];
-    const notedRequestId = Number(entity?.notes?.refund_request_id || 0);
-    if (!request && notedRequestId) {
-      q = await this.dao.executeQuery(`SELECT r.refund_request_id,p.user_id FROM prebook_refund_requests r INNER JOIN prebookings p ON p.prebook_id=r.prebook_id WHERE r.refund_request_id=?`, [notedRequestId]);
-      request = q.rows?.[0];
-      if (request) await this.dao.executeQuery(`UPDATE prebook_refund_requests SET razorpay_refund_id=COALESCE(razorpay_refund_id,?) WHERE refund_request_id=?`, [refundId, notedRequestId]);
-    }
-    if (!request) return;
-    if (event === 'refund.processed') await this.completeRefund(Number(request.refund_request_id), entity);
-    else {
-      await this.dao.executeQuery(`UPDATE prebook_refund_requests SET status='FAILED',gateway_status='failed',gateway_payload=? WHERE refund_request_id=?`, [JSON.stringify(raw).slice(0, 60000), request.refund_request_id]);
-      await pushNotification({ user_id: request.user_id, type: 'order', title: 'Refund processing delayed', message: 'The payment provider could not process the refund. Our team can retry it.' });
-    }
+  async handleRefundWebhook(refundId: string) {
+    if (!refundId) return;
+    const q = await this.refundQuery(
+      `SELECT r.*,p.order_id,o.gateway_order_id,o.gateway_payment_id,o.gateway_environment FROM prebook_refund_requests r
+       JOIN prebookings p ON p.prebook_id=r.prebook_id JOIN orders o ON o.order_id=p.order_id
+       WHERE r.gateway_refund_id=? AND o.payment_provider='CASHFREE' AND o.gateway_environment=?`,
+      [refundId, cashfreeMode()]);
+    if (q.rows?.[0]) await this.syncRefund(q.rows[0]);
   }
 
   async fulfill(payload: any) {
@@ -496,6 +559,7 @@ export class Prebooks {
       if (item.status === 'READY') {
         await connection.query(`UPDATE prebookings SET status='FULFILLED',fulfilled_at=UTC_TIMESTAMP() WHERE prebook_id=?`, [item.prebook_id]);
         await connection.query(`UPDATE orders SET status='COMPLETED' WHERE order_id=?`, [item.order_id]);
+        await new PaymentHistory(this.dao).event({ order_id: item.order_id, user_id: payload.user_id }, 'ORDER_FULFILLED', 'COMPLETED', {}, 'ADMIN', connection, `fulfilled:${item.order_id}`);
         await connection.query(`UPDATE order_items SET item_status='TRANSFERRED' WHERE order_id=?`, [item.order_id]);
         await connection.query(`UPDATE vip_numbers SET status='SOLD',stock=0,rtp_status='RTP' WHERE number_id=?`, [item.number_id]);
       }

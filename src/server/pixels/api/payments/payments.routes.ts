@@ -24,21 +24,23 @@ const handle = (fn: (p: any) => Promise<any>) => async (req: Request, res: Respo
     }
 };
 
-router.post('/razorpay/create-order', handle((p) => payments.createRazorpayOrder(p)));
-router.post('/razorpay/verify', handle((p) => payments.verify(p)));
+router.post('/cashfree/create-order', handle((p) => payments.createCashfreeOrder(p)));
+router.post('/cashfree/verify', handle((p) => payments.verify(p)));
 
 // Public webhook (verified via signature header, not JWT).
-router.post('/razorpay/webhook', async (req: Request, res: Response) => {
+router.post('/cashfree/webhook', async (req: Request, res: Response) => {
     let resModel = masterModel.getResponseModel();
     try {
-        const signature = (req.headers['x-razorpay-signature'] as string) || '';
-        const rawBody = JSON.stringify(req.body || {});
-        resModel = await payments.webhook(rawBody, signature, req.body);
+        const signature = req.get('x-webhook-signature') || '';
+        const rawBody = (req as any).rawBody || '';
+        const result = await payments.webhook(rawBody, signature, req.get('x-webhook-timestamp') || '');
+        res.status(result.httpStatus).json({ status: result.status, info: result.info });
+        return;
     } catch (error) {
         resModel.status = -9;
-        resModel.info = 'catch: ' + error;
+        resModel.info = 'Webhook processing delayed.';
     } finally {
-        res.status(gtUtil.Constants.HTTP_OK).json(resModel);
+        if (!res.headersSent) res.status(503).json(resModel);
     }
 });
 
