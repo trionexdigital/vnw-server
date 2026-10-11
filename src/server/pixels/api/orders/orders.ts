@@ -106,7 +106,7 @@ export class Orders {
             if (numberIds.length) {
                 const placeholders = numberIds.map(() => '?').join(',');
                 const result: any = await connection.query(
-                    `SELECT number_id,display_number,mrp,title_label,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status FROM vip_numbers WHERE number_id IN (${placeholders}) FOR UPDATE`, numberIds);
+                    `SELECT number_id,display_number,mrp,title_label,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status FROM vip_numbers WHERE deleted_at IS NULL AND number_id IN (${placeholders}) FOR UPDATE`, numberIds);
                 nums = result[0] || [];
             }
             if ((nums || []).length !== numberIds.length) throw new Error('One or more selected numbers were not found.');
@@ -168,7 +168,7 @@ export class Orders {
                      VALUES (?,?,?,?,?,?,?, 'PENDING')`,
                     [orderId,n.number_id,privateLinkByNumber.get(Number(n.number_id)) || null,n.seller_id,n.display_number,n.offer_price,commission]
                 );
-                const [reserved]: any = await connection.query(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ? AND status='AVAILABLE' AND stock>0 AND rtp_status IN ('RTP','RTA')`, [n.number_id]);
+                const [reserved]: any = await connection.query(`UPDATE vip_numbers SET status = 'RESERVED' WHERE number_id = ? AND deleted_at IS NULL AND status='AVAILABLE' AND stock>0 AND rtp_status IN ('RTP','RTA')`, [n.number_id]);
                 if (reserved.affectedRows !== 1) throw new Error(`Number ${n.display_number} was just reserved by another customer.`);
             }
             await connection.query("UPDATE orders SET payment_provider='CASHFREE',gateway_environment=? WHERE order_id=?", [cashfreeMode(), orderId]);

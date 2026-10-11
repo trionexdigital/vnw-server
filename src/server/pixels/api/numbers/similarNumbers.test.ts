@@ -72,7 +72,7 @@ test('numbers/similar returns stable pagination from a bounded candidate pool', 
     (numbers as any).dao = {
         executeQuery: async (sql: string, params: any[] = []) => {
             calls.push({ sql, params });
-            if (sql.includes('WHERE n.number_id = ? LIMIT 1')) {
+            if (sql.includes('WHERE n.number_id = ?') && sql.includes('LIMIT 1')) {
                 return { status: 1, rows: [source], fetchedRows: 1 };
             }
             return {

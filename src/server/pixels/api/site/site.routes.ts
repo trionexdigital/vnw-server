@@ -5,6 +5,8 @@ import { Site } from './site';
 import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
 import { MarketplaceContent } from './marketplaceContent';
 import { HomePremium } from './homePremium';
+import { Translation } from './translation';
+import { DeliveryCities } from './deliveryCities';
 
 const masterModel = new MasterModel();
 const site = new Site();
@@ -29,14 +31,17 @@ const pub = (fn: (p: any) => Promise<any>) => async (req: Request, res: Response
     }
 };
 
+const translation = new Translation();
+router.post('/translate', async (req, res) => res.json(await translation.translate(req.body || {}, req.ip)));
+
 router.post('/settings', pub((p) => site.settings()));
+router.post('/delivery-cities', pub(() => new DeliveryCities().list()));
 router.post('/hero-stats', pub((p) => site.heroStats()));
 router.post('/deals-of-day', pub(() => dealsOfDay.publicList()));
 router.post('/newsletter', pub((p) => site.subscribe(p)));
 router.post('/enquiry', pub((p) => site.enquiry(p)));
 router.post('/family-packs', pub((p) => marketplace.packs(p)));
-// Backward-compatible alias for older clients and saved integrations.
-router.post('/corporate-packs', pub((p) => marketplace.packs(p)));
+router.post('/corporate-packs', pub((p) => marketplace.packs(p, true)));
 router.post('/operators', pub(() => marketplace.operators()));
 router.post('/home-premium-numbers', pub(() => homePremium.list(false)));
 router.post('/trusted-clients', pub(() => marketplace.clients(false)));

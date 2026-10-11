@@ -35,7 +35,7 @@ export class Cart {
                         n.discount_pct, n.numerology_sum, n.operator, n.status,n.visibility_type,n.rtp_status,n.rtp_available_at
                  FROM cart_items ci JOIN vip_numbers n ON n.number_id = ci.number_id
                  LEFT JOIN number_private_links pl ON pl.private_link_id=ci.private_link_id
-                 WHERE ci.cart_id = ? AND (n.visibility_type='ONLINE' OR (pl.name=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
+                 WHERE ci.cart_id = ? AND n.deleted_at IS NULL AND (n.visibility_type='ONLINE' OR (pl.name=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
                  ORDER BY ci.added_at DESC`, [cartId, OFFLINE_CATALOG_NAME]
             );
             const numberItems = (q.rows || []).map((row: any) => ({
@@ -65,7 +65,7 @@ export class Cart {
             if (!payload.number_id) throw new Error('number_id is required.');
             const cartId = await this.getCartId(payload.user_id);
             // ensure the number exists & is available
-            const chk: any = await this.dao.executeQuery(`SELECT status,rtp_status,visibility_type FROM vip_numbers WHERE number_id = ?`, [payload.number_id]);
+            const chk: any = await this.dao.executeQuery(`SELECT status,rtp_status,visibility_type FROM vip_numbers WHERE number_id = ? AND deleted_at IS NULL`, [payload.number_id]);
             if (chk.fetchedRows === 0) throw new Error('Number not found.');
             if (chk.rows[0].status !== 'AVAILABLE') throw new Error('This number is no longer available.');
             if (chk.rows[0].rtp_status === 'NON_RTP') throw new Error('NON-RTP numbers must be pre-booked until their ready-to-port date.');
@@ -103,16 +103,17 @@ export class Cart {
         try {
             await this.prebooks.reconcile();
             const ids = Array.isArray(payload.number_ids)
-                ? payload.number_ids.map(Number).filter((id) => id > 0) : [];
+                ? payload.number_ids.map(Number) : [];
+            if (ids.some((id) => !Number.isSafeInteger(id) || id <= 0)) throw new Error('The selected pack contains an invalid number ID.');
             const uniqueIds = Array.from(new Set(ids));
             if (uniqueIds.length !== ids.length) throw new Error('The selected pack contains duplicate numbers.');
-            if (uniqueIds.length < 2 || uniqueIds.length > 10) throw new Error('Choose a pack containing 2 to 10 numbers.');
+            if (uniqueIds.length < 2 || uniqueIds.length > 200) throw new Error('Choose a pack containing 2 to 200 numbers.');
 
             connection = await this.dao.getConnection();
             await connection.beginTransaction();
             const [numbers]: any = await connection.query(
                 `SELECT number_id, display_number, status, stock, rtp_status,visibility_type FROM vip_numbers
-                 WHERE number_id IN (${uniqueIds.map(() => '?').join(',')}) FOR UPDATE`, uniqueIds,
+                 WHERE deleted_at IS NULL AND number_id IN (${uniqueIds.map(() => '?').join(',')}) FOR UPDATE`, uniqueIds,
             );
             if ((numbers || []).length !== uniqueIds.length) throw new Error('One or more pack numbers no longer exist.');
             const unavailable = (numbers || []).find((number: any) => number.status !== 'AVAILABLE' || Number(number.stock) <= 0 || number.rtp_status === 'NON_RTP');

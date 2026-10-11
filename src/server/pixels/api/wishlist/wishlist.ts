@@ -24,7 +24,7 @@ export class Wishlist {
                         n.discount_pct,n.numerology_sum,n.operator,n.status,n.stock,n.visibility_type,n.rtp_status,n.rtp_available_at
                  FROM wishlist w JOIN vip_numbers n ON n.number_id = w.number_id
                  LEFT JOIN number_private_links pl ON pl.private_link_id=w.private_link_id
-                 WHERE w.user_id = ? AND (n.visibility_type='ONLINE' OR (pl.name=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
+                 WHERE w.user_id = ? AND n.deleted_at IS NULL AND (n.visibility_type='ONLINE' OR (pl.name=? AND pl.revoked_at IS NULL AND (pl.expires_at IS NULL OR pl.expires_at>UTC_TIMESTAMP())))
                  ORDER BY w.created_at DESC`, [payload.user_id, OFFLINE_CATALOG_NAME]
             );
             const items = (q.rows || []).map((row: any) => decorateNumberCategories(row));
@@ -46,7 +46,7 @@ export class Wishlist {
         let resModel = this.masterModel.getResponseModel();
         try {
             if (!payload.number_id) throw new Error('number_id is required.');
-            const number: any = await this.dao.executeQuery('SELECT visibility_type FROM vip_numbers WHERE number_id=?', [payload.number_id]);
+            const number: any = await this.dao.executeQuery('SELECT visibility_type FROM vip_numbers WHERE number_id=? AND deleted_at IS NULL', [payload.number_id]);
             if (!number.rows?.length) throw new Error('Number not found.');
             let privateLinkId: number | null = null;
             if (number.rows[0].visibility_type === 'OFFLINE') {

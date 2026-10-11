@@ -49,8 +49,8 @@ export class Admin {
                 `SELECT
                   (SELECT COUNT(*) FROM auth_user) AS users,
                   (SELECT COUNT(*) FROM auth_user WHERE role='DEALER') AS dealers,
-                  (SELECT COUNT(*) FROM vip_numbers) AS numbers,
-                  (SELECT COUNT(*) FROM vip_numbers WHERE status='AVAILABLE') AS available,
+                  (SELECT COUNT(*) FROM vip_numbers WHERE deleted_at IS NULL) AS numbers,
+                  (SELECT COUNT(*) FROM vip_numbers WHERE deleted_at IS NULL AND status='AVAILABLE') AS available,
                   (SELECT COUNT(*) FROM vip_numbers WHERE status='SOLD') AS sold,
                   (SELECT COUNT(*) FROM vip_numbers WHERE status='PENDING_APPROVAL') AS pending_approval,
                   (SELECT COUNT(*) FROM orders) AS orders,
@@ -62,7 +62,7 @@ export class Admin {
                  FROM orders o LEFT JOIN auth_user u ON u.user_id = o.user_id ORDER BY o.created_at DESC LIMIT 8`, []
             );
             const topNumbers: any = await this.dao.executeQuery(
-                `SELECT number_id, number_value, display_number, views, offer_price, status, rtp_status, rtp_available_at FROM vip_numbers ORDER BY views DESC LIMIT 6`, []
+                `SELECT number_id, number_value, display_number, views, offer_price, status, rtp_status, rtp_available_at FROM vip_numbers WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 6`, []
             );
             // last 6 months revenue trend
             const trend: any = await this.dao.executeQuery(
@@ -203,10 +203,10 @@ export class Admin {
     async dealersList(payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            resModel.data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM dealer_profiles`,
+            resModel.data = await this.queryPage(payload, `SELECT COUNT(*) AS total FROM dealer_profiles d JOIN auth_user u ON u.user_id=d.dealer_id WHERE u.role='DEALER'`,
                 `SELECT d.*, u.full_name, u.email, u.phone,
                         (SELECT COUNT(*) FROM vip_numbers n WHERE n.seller_id = d.dealer_id) AS listings
-                 FROM dealer_profiles d LEFT JOIN auth_user u ON u.user_id = d.dealer_id ORDER BY d.created_at DESC, d.dealer_id DESC`);
+                 FROM dealer_profiles d JOIN auth_user u ON u.user_id = d.dealer_id WHERE u.role='DEALER' ORDER BY d.created_at DESC, d.dealer_id DESC`);
             resModel.status = 1; resModel.info = 'OK';
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;

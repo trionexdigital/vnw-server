@@ -16,7 +16,7 @@ export class HomePremium {
     try {
       const q: any = await this.dao.executeQuery(`SELECT ${NUMBER_COLUMNS},h.homepage_premium_id,h.sort_order,h.is_active AS homepage_active
         FROM homepage_premium_numbers h INNER JOIN vip_numbers n ON n.number_id=h.number_id
-        ${admin ? '' : "WHERE h.is_active=1 AND n.status='AVAILABLE' AND n.stock>0 AND n.visibility_type='ONLINE'"}
+        ${admin ? '' : "WHERE h.is_active=1 AND n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock>0 AND n.visibility_type='ONLINE'"}
         ORDER BY h.sort_order,h.homepage_premium_id`, []);
       res.status = 1;
       res.info = 'OK';

@@ -14,12 +14,18 @@ export class DealerPurchases {
 
     async dealers() {
         const response = this.response();
+        // Bookkeeping records are linked by account ID; names never identify accounts.
+        const sync: any = await this.dao.executeQuery(`INSERT INTO external_dealers (dealer_user_id,name,phone,email,created_by)
+            SELECT u.user_id,u.full_name,u.phone,u.email,0 FROM auth_user u
+            LEFT JOIN external_dealers d ON d.dealer_user_id=u.user_id WHERE u.role='DEALER' AND d.external_dealer_id IS NULL
+            ON DUPLICATE KEY UPDATE dealer_user_id=VALUES(dealer_user_id)`, []);
+        if (sync.status !== 1) return this.fail(response, sync.info);
         const q: any = await this.dao.executeQuery(
-            `SELECT d.*,
-                    COALESCE(SUM(CASE WHEN p.state<>'DELETED' THEN p.purchase_price ELSE 0 END),0) AS total_billed,
+            `SELECT d.*,u.full_name AS name,u.email,u.phone,
+                    (SELECT COALESCE(SUM(p.purchase_price),0) FROM dealer_purchase_numbers p WHERE p.external_dealer_id=d.external_dealer_id AND p.state<>'DELETED') AS total_billed,
                     (SELECT COALESCE(SUM(dp.amount),0) FROM dealer_purchase_payments dp WHERE dp.external_dealer_id=d.external_dealer_id AND dp.status='POSTED') AS total_paid
-             FROM external_dealers d LEFT JOIN dealer_purchase_numbers p ON p.external_dealer_id=d.external_dealer_id
-             GROUP BY d.external_dealer_id ORDER BY d.name`, [],
+             FROM external_dealers d JOIN auth_user u ON u.user_id=d.dealer_user_id AND u.role='DEALER' AND u.status='ACTIVE'
+             ORDER BY u.full_name,u.user_id`, [],
         );
         if (q.status !== 1) return this.fail(response, q.info);
         response.status = 1; response.info = 'OK';
@@ -28,44 +34,41 @@ export class DealerPurchases {
     }
 
     async createDealer(payload: any) {
+        // Retired supplier-only creation. The admin dealer-management API creates accounts.
+        return this.fail(this.response(), 'Create a dealer account in Dealer Management, then select that account.');
+    }
+
+    async unlinkedDealers() {
         const response = this.response();
+        const result: any = await this.dao.executeQuery('SELECT external_dealer_id,name,email,phone FROM external_dealers WHERE dealer_user_id IS NULL AND is_active=1 ORDER BY name,external_dealer_id', []);
+        if (result.status !== 1) return this.fail(response, result.info);
+        response.status = 1; response.info = 'OK'; response.data = result.rows || []; return response;
+    }
+
+    async linkDealerAccount(payload: any) {
+        const response = this.response(); let connection: any;
         try {
-            const name = String(payload.name || '').trim();
-            if (name.length < 2 || name.length > 120) throw new Error('Dealer name must be 2 to 120 characters.');
-            const existing: any = await this.dao.executeQuery(
-                `SELECT external_dealer_id,name,is_active FROM external_dealers WHERE LOWER(name)=LOWER(?) LIMIT 1`,
-                [name],
-            );
-            if (existing.status !== 1) throw new Error(existing.info);
-            if (existing.rows?.[0]) {
-                const dealer = existing.rows[0];
-                if (!Number(dealer.is_active)) {
-                    await this.dao.executeQuery(`UPDATE external_dealers SET is_active=1 WHERE external_dealer_id=?`, [dealer.external_dealer_id]);
+            const supplierId = Number(payload.external_dealer_id); const userId = Number(payload.dealer_user_id);
+            if (!supplierId || !userId) throw new Error('Select a historical supplier and a dealer account.');
+            connection = await this.dao.getConnection(); await connection.beginTransaction();
+            const [users]: any = await connection.query("SELECT user_id FROM auth_user WHERE user_id=? AND role='DEALER' AND status='ACTIVE' FOR UPDATE", [userId]);
+            if (!users?.length) throw new Error('Select an active dealer account.');
+            const [suppliers]: any = await connection.query('SELECT * FROM external_dealers WHERE external_dealer_id=? AND dealer_user_id IS NULL AND is_active=1 FOR UPDATE', [supplierId]);
+            if (!suppliers?.length) throw new Error('Historical supplier was already linked. Refresh the list.');
+            const [linked]: any = await connection.query('SELECT external_dealer_id FROM external_dealers WHERE dealer_user_id=? FOR UPDATE', [userId]);
+            if (linked?.length) {
+                const targetId = Number(linked[0].external_dealer_id);
+                // Keep transaction IDs, prices and audit events; only their account reference changes.
+                for (const table of ['dealer_purchase_numbers','dealer_purchase_payments','dealer_purchase_events']) {
+                    await connection.query(`UPDATE ${table} SET external_dealer_id=? WHERE external_dealer_id=?`, [targetId, supplierId]);
                 }
-                response.status = 1;
-                response.info = 'Existing dealer selected.';
-                response.data = { external_dealer_id: Number(dealer.external_dealer_id), name: dealer.name, existing: true };
-                return response;
+                await connection.query("UPDATE external_dealers SET is_active=0,notes=CONCAT(COALESCE(notes,''),?) WHERE external_dealer_id=?", [`\nLinked to dealer account #${userId} / ledger #${targetId} by admin #${Number(payload.user_id)}.`, supplierId]);
+            } else {
+                await connection.query('UPDATE external_dealers SET dealer_user_id=? WHERE external_dealer_id=?', [userId, supplierId]);
             }
-            const q: any = await this.dao.executeQuery(
-                `INSERT INTO external_dealers (name,phone,email,notes,created_by) VALUES (?,?,?,?,?)`,
-                [name, String(payload.phone || '').trim() || null, String(payload.email || '').trim() || null, String(payload.notes || '').trim() || null, Number(payload.user_id)],
-            );
-            if (q.status !== 1) {
-                if (/duplicate/i.test(q.info)) {
-                    const raced: any = await this.dao.executeQuery(
-                        `SELECT external_dealer_id,name FROM external_dealers WHERE LOWER(name)=LOWER(?) LIMIT 1`, [name],
-                    );
-                    if (raced.rows?.[0]) {
-                        response.status = 1; response.info = 'Existing dealer selected.';
-                        response.data = { external_dealer_id: Number(raced.rows[0].external_dealer_id), name: raced.rows[0].name, existing: true };
-                        return response;
-                    }
-                }
-                throw new Error(q.info);
-            }
-            response.status = 1; response.info = 'Dealer added.'; response.data = { external_dealer_id: Number(q.insertId), name };
-        } catch (error) { return this.fail(response, error); }
+            await connection.commit(); response.status = 1; response.info = 'Historical supplier linked. Purchase and payment history preserved.';
+        } catch (error) { try { await connection?.rollback(); } catch {} return this.fail(response, error); }
+        finally { connection?.release(); }
         return response;
     }
 
@@ -148,7 +151,7 @@ export class DealerPurchases {
             connection = await this.dao.getConnection(); await connection.beginTransaction();
             const globalDiscount = await readGlobalDiscount(connection);
             const catalogPrice = discountedPrice(intended, globalDiscount);
-            const [dealers]: any = await connection.query('SELECT external_dealer_id FROM external_dealers WHERE external_dealer_id=? AND is_active=1 FOR UPDATE', [dealerId]);
+            const [dealers]: any = await connection.query("SELECT d.external_dealer_id FROM external_dealers d JOIN auth_user u ON u.user_id=d.dealer_user_id WHERE d.external_dealer_id=? AND d.is_active=1 AND u.role='DEALER' AND u.status='ACTIVE' FOR UPDATE", [dealerId]);
             if (!dealers?.length) throw new Error('Dealer not found or inactive.');
             const [existing]: any = await connection.query(`SELECT number_value FROM vip_numbers WHERE number_value IN (${numbers.map(()=>'?').join(',')}) FOR UPDATE`, numbers);
             if (existing?.length) throw new Error(`Already listed: ${existing.map((n:any)=>n.number_value).join(', ')}`);
@@ -186,14 +189,14 @@ export class DealerPurchases {
         try {
             const ids=this.ids(payload); const soldAt=String(payload.sold_at || new Date().toISOString().slice(0,19).replace('T',' '));
             connection=await this.dao.getConnection(); await connection.beginTransaction();
-            const [rows]:any=await connection.query(`SELECT dpn.*,n.status,n.display_number FROM dealer_purchase_numbers dpn JOIN vip_numbers n ON n.number_id=dpn.number_id WHERE dpn.dealer_purchase_id IN (${ids.map(()=>'?').join(',')}) FOR UPDATE`,ids);
+            const [rows]:any=await connection.query(`SELECT dpn.*,n.status,n.display_number FROM dealer_purchase_numbers dpn JOIN vip_numbers n ON n.number_id=dpn.number_id WHERE n.deleted_at IS NULL AND dpn.dealer_purchase_id IN (${ids.map(()=>'?').join(',')}) FOR UPDATE`,ids);
             if ((rows||[]).length!==ids.length) throw new Error('One or more dealer numbers were not found.');
             for (const row of rows) {
                 if (row.state!=='INVENTORY' || row.status!=='AVAILABLE') throw new Error(`${row.display_number} is not available to mark sold.`);
                 const price=payload.actual_sale_price===undefined||payload.actual_sale_price===''?Number(row.intended_sale_price):Number(payload.actual_sale_price);
                 if (!Number.isFinite(price)||price<=0) throw new Error('Actual sale price must be greater than zero.');
                 await connection.query(`UPDATE dealer_purchase_numbers SET state='SOLD',actual_sale_price=?,sold_at=?,sold_order_item_id=NULL WHERE dealer_purchase_id=?`,[price,soldAt,row.dealer_purchase_id]);
-                await connection.query(`UPDATE vip_numbers SET status='SOLD',stock=0 WHERE number_id=?`,[row.number_id]);
+                await connection.query(`UPDATE vip_numbers SET status='SOLD',stock=0 WHERE number_id=? AND deleted_at IS NULL`,[row.number_id]);
                 await connection.query(`INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by) VALUES (?,?,'SOLD',?,?)`,[row.dealer_purchase_id,row.external_dealer_id,JSON.stringify({actual_sale_price:price,sold_at:soldAt}),Number(payload.user_id)]);
             }
             await connection.commit(); response.status=1; response.info=`${ids.length} number${ids.length===1?'':'s'} marked sold.`;
@@ -205,13 +208,13 @@ export class DealerPurchases {
         const response=this.response(); let connection:any;
         try{
             const ids=this.ids(payload); connection=await this.dao.getConnection(); await connection.beginTransaction();
-            const [rows]:any=await connection.query(`SELECT dpn.*,n.display_number FROM dealer_purchase_numbers dpn JOIN vip_numbers n ON n.number_id=dpn.number_id WHERE dpn.dealer_purchase_id IN (${ids.map(()=>'?').join(',')}) FOR UPDATE`,ids);
+            const [rows]:any=await connection.query(`SELECT dpn.*,n.display_number FROM dealer_purchase_numbers dpn JOIN vip_numbers n ON n.number_id=dpn.number_id WHERE n.deleted_at IS NULL AND dpn.dealer_purchase_id IN (${ids.map(()=>'?').join(',')}) FOR UPDATE`,ids);
             if((rows||[]).length!==ids.length) throw new Error('One or more dealer numbers were not found.');
             for(const row of rows){
                 if(row.state!=='SOLD') throw new Error(`${row.display_number} is not in Dealer Sales.`);
                 if(row.sold_order_item_id) throw new Error(`${row.display_number} was sold through a paid store order and cannot be reversed manually.`);
                 await connection.query(`UPDATE dealer_purchase_numbers SET state='INVENTORY',actual_sale_price=NULL,sold_at=NULL WHERE dealer_purchase_id=?`,[row.dealer_purchase_id]);
-                await connection.query(`UPDATE vip_numbers SET status='AVAILABLE',stock=1 WHERE number_id=?`,[row.number_id]);
+                await connection.query(`UPDATE vip_numbers SET status='AVAILABLE',stock=1 WHERE number_id=? AND deleted_at IS NULL`,[row.number_id]);
                 await connection.query(`INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by) VALUES (?,?,'SALE_REVERSED',NULL,?)`,[row.dealer_purchase_id,row.external_dealer_id,Number(payload.user_id)]);
             }
             await connection.commit(); response.status=1; response.info='Sale reversed.';
@@ -224,7 +227,7 @@ export class DealerPurchases {
         try{
             const ids=this.ids(payload); const reason=String(payload.reason||'').trim(); if(reason.length<5) throw new Error('Enter a valid deletion reason of at least 5 characters.');
             connection=await this.dao.getConnection(); await connection.beginTransaction();
-            const [rows]:any=await connection.query(`SELECT dpn.*,n.display_number,n.status FROM dealer_purchase_numbers dpn JOIN vip_numbers n ON n.number_id=dpn.number_id WHERE dpn.dealer_purchase_id IN (${ids.map(()=>'?').join(',')}) FOR UPDATE`,ids);
+            const [rows]:any=await connection.query(`SELECT dpn.*,n.display_number,n.status FROM dealer_purchase_numbers dpn JOIN vip_numbers n ON n.number_id=dpn.number_id WHERE n.deleted_at IS NULL AND dpn.dealer_purchase_id IN (${ids.map(()=>'?').join(',')}) FOR UPDATE`,ids);
             if((rows||[]).length!==ids.length) throw new Error('One or more dealer numbers were not found.');
             const suppliers=Array.from(new Set(rows.map((r:any)=>Number(r.external_dealer_id))));
             for(const supplierId of suppliers){
@@ -237,7 +240,7 @@ export class DealerPurchases {
                 if(row.status==='RESERVED') throw new Error(`${row.display_number} is reserved and cannot be deleted.`);
                 if(row.sold_order_item_id) throw new Error(`${row.display_number} belongs to a paid store order and cannot be deleted.`);
                 await connection.query(`UPDATE dealer_purchase_numbers SET state_before_delete=state,state='DELETED',deleted_reason=?,deleted_at=UTC_TIMESTAMP(),deleted_by=? WHERE dealer_purchase_id=?`,[reason,Number(payload.user_id),row.dealer_purchase_id]);
-                await connection.query(`UPDATE vip_numbers SET status='INACTIVE',stock=0 WHERE number_id=?`,[row.number_id]);
+                await connection.query(`UPDATE vip_numbers SET status='INACTIVE',stock=0 WHERE number_id=? AND deleted_at IS NULL`,[row.number_id]);
                 await connection.query(`INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by) VALUES (?,?,'DELETED',?,?)`,[row.dealer_purchase_id,row.external_dealer_id,JSON.stringify({reason}),Number(payload.user_id)]);
             }
             await connection.commit(); response.status=1; response.info='Dealer numbers deleted.';
@@ -255,7 +258,7 @@ export class DealerPurchases {
                 if(row.state!=='DELETED') throw new Error('Only deleted records can be restored.');
                 const restored=row.state_before_delete==='SOLD'?'SOLD':'INVENTORY';
                 await connection.query(`UPDATE dealer_purchase_numbers SET state=?,deleted_reason=NULL,deleted_at=NULL,deleted_by=NULL,state_before_delete=NULL WHERE dealer_purchase_id=?`,[restored,row.dealer_purchase_id]);
-                await connection.query(`UPDATE vip_numbers SET status=?,stock=? WHERE number_id=?`,[restored==='SOLD'?'SOLD':'AVAILABLE',restored==='SOLD'?0:1,row.number_id]);
+                await connection.query(`UPDATE vip_numbers SET status=?,stock=? WHERE number_id=? AND deleted_at IS NULL`,[restored==='SOLD'?'SOLD':'AVAILABLE',restored==='SOLD'?0:1,row.number_id]);
                 await connection.query(`INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by) VALUES (?,?,'RESTORED',?,?)`,[row.dealer_purchase_id,row.external_dealer_id,JSON.stringify({state:restored}),Number(payload.user_id)]);
             }
             await connection.commit(); response.status=1; response.info='Dealer numbers restored.';
@@ -280,6 +283,8 @@ export class DealerPurchases {
         try{
             const dealerId=Number(payload.external_dealer_id); const amount=Number(payload.amount); if(!dealerId)throw new Error('Select a dealer.'); if(!Number.isFinite(amount)||amount<=0)throw new Error('Payment amount must be greater than zero.');
             const paidAt=String(payload.paid_at||new Date().toISOString().slice(0,19).replace('T',' ')); connection=await this.dao.getConnection();await connection.beginTransaction();
+            const [dealer]:any=await connection.query("SELECT d.external_dealer_id FROM external_dealers d JOIN auth_user u ON u.user_id=d.dealer_user_id WHERE d.external_dealer_id=? AND d.is_active=1 AND u.role='DEALER' AND u.status='ACTIVE' FOR UPDATE",[dealerId]);
+            if(!dealer?.length)throw new Error('Select an active dealer account.');
             const [totals]:any=await connection.query(`SELECT (SELECT COALESCE(SUM(purchase_price),0) FROM dealer_purchase_numbers WHERE external_dealer_id=? AND state<>'DELETED') AS billed,(SELECT COALESCE(SUM(amount),0) FROM dealer_purchase_payments WHERE external_dealer_id=? AND status='POSTED') AS paid`,[dealerId,dealerId]);
             if(!totals?.length)throw new Error('Dealer not found.'); const remaining=Number(totals[0].billed)-Number(totals[0].paid); if(amount>remaining)throw new Error(`Payment exceeds the remaining ₹${remaining.toFixed(2)}.`);
             const [insert]:any=await connection.query(`INSERT INTO dealer_purchase_payments (external_dealer_id,amount,payment_method,reference_no,notes,paid_at,created_by) VALUES (?,?,?,?,?,?,?)`,[dealerId,amount,String(payload.payment_method||'').trim()||null,String(payload.reference_no||'').trim()||null,String(payload.notes||'').trim()||null,paidAt,Number(payload.user_id)]);

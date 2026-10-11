@@ -53,7 +53,7 @@ export class Site {
             const q: any = await this.dao.executeQuery(
                 `SELECT
                     (SELECT COUNT(*) FROM order_items WHERE item_status = 'TRANSFERRED') AS delivered_numbers,
-                    (SELECT COUNT(*) FROM vip_numbers WHERE status = 'AVAILABLE' AND visibility_type='ONLINE') AS available_numbers,
+                    (SELECT COUNT(*) FROM vip_numbers WHERE deleted_at IS NULL AND status='AVAILABLE' AND visibility_type='ONLINE') AS available_numbers,
                     (SELECT COUNT(DISTINCT user_id) FROM orders WHERE status = 'COMPLETED') AS customers_served`,
                 []
             );

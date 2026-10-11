@@ -93,7 +93,7 @@ export class Prebooks {
     const res = this.response();
     try {
       await this.reconcile();
-      const where: string[] = ["n.status='AVAILABLE'", 'n.stock > 0', "n.rtp_status='NON_RTP'", "n.visibility_type='ONLINE'", 'n.rtp_available_at > UTC_TIMESTAMP()'];
+      const where: string[] = ["n.deleted_at IS NULL", "n.status='AVAILABLE'", 'n.stock > 0', "n.rtp_status='NON_RTP'", "n.visibility_type='ONLINE'", 'n.rtp_available_at > UTC_TIMESTAMP()'];
       const params: any[] = [];
       const q = String(payload.q || '').replace(/\D/g, '').slice(0, 10);
       if (q) { where.push('(n.number_value LIKE ? OR n.display_number LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
@@ -160,7 +160,7 @@ export class Prebooks {
       await connection.beginTransaction();
       const [numbers]: any = await connection.query(
         `SELECT number_id,display_number,mrp,offer_price,seller_id,seller_type,status,stock,visibility_type,rtp_status,rtp_available_at
-         FROM vip_numbers WHERE number_id=? FOR UPDATE`, [numberId],
+         FROM vip_numbers WHERE number_id=? AND deleted_at IS NULL FOR UPDATE`, [numberId],
       );
       const number = numbers?.[0];
       if (!number || number.status !== 'AVAILABLE' || Number(number.stock) <= 0) throw new Error('This number is no longer available for pre-booking.');

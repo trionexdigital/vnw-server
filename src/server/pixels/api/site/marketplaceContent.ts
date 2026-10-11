@@ -131,20 +131,24 @@ export class MarketplaceContent {
     return output;
   }
 
-  async packs(payload: any = {}) {
+  async packs(payload: any = {}, corporate = false) {
     const res = this.response();
     try {
       await this.prebooks.reconcile();
       const type = text(payload.pack_type || 'MIXED', 32).toUpperCase() as PackType;
-      const size = Number(payload.size ?? 3);
+      const size = Number(payload.size ?? (corporate ? 10 : 3));
       const limit = Math.min(24, Math.max(1, Number(payload.limit) || 12));
       if (!PACK_TYPES.includes(type)) throw new Error('Choose a valid matching type.');
-      if (!Number.isInteger(size) || size < 2 || size > 10) throw new Error('Pack size must be between 2 and 10.');
+      if (!Number.isInteger(size) || (corporate ? ![10, 20, 50, 75, 100, 150, 200].includes(size) : size < 2 || size > 10)) {
+        throw new Error(corporate ? 'Choose a corporate pack of 10, 20, 50, 75, 100, 150 or 200 numbers.' : 'Pack size must be between 2 and 10.');
+      }
+      const category = text(payload.category_slug, 96);
+      const categoryWhere = category ? ' AND EXISTS (SELECT 1 FROM vip_number_categories c WHERE c.number_id=n.number_id AND c.category_slug=?)' : '';
       const q: any = await this.dao.executeQuery(
         `SELECT ${NUMBER_COLUMNS}
          FROM vip_numbers n
-         WHERE n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status IN ('RTP','RTA')
-         ORDER BY n.is_featured DESC, n.views DESC, n.created_at DESC, n.number_id DESC`, [],
+         WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status IN ('RTP','RTA')${categoryWhere}
+         ORDER BY n.is_featured DESC, n.views DESC, n.created_at DESC, n.number_id DESC`, category ? [category] : [],
       );
       if (q.status !== 1) throw new Error(q.info || 'Unable to load available numbers.');
       const rows = (q.rows || [])
@@ -165,7 +169,7 @@ export class MarketplaceContent {
     try {
       const q: any = await this.dao.executeQuery(
         `SELECT TRIM(operator) AS operator, COUNT(*) AS count
-         FROM vip_numbers WHERE status = 'AVAILABLE' AND stock > 0 AND visibility_type='ONLINE' AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
+         FROM vip_numbers WHERE deleted_at IS NULL AND status='AVAILABLE' AND stock > 0 AND visibility_type='ONLINE' AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
          GROUP BY TRIM(operator) ORDER BY FIELD(operator,'Airtel','Jio','Vi','BSNL')`, [],
       );
       if (q.status !== 1) throw new Error(q.info || 'Unable to load operators.');

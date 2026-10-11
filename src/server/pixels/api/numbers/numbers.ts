@@ -2,6 +2,7 @@ import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
 import axios from 'axios';
+import { NumberRecycle } from './numberRecycle';
 import {
     CATEGORY_CATALOG,
     CATEGORY_CLASSIFIER_VERSION,
@@ -67,7 +68,7 @@ export class Numbers {
 
     private async queryListing(payload: any): Promise<ListingResult> {
         await this.prebooks.reconcile();
-        const where: string[] = [];
+        const where: string[] = ['n.deleted_at IS NULL'];
         const params: any[] = [];
 
         if (!payload.admin_scope) where.push("n.visibility_type = 'ONLINE'", 'n.stock > 0');
@@ -191,7 +192,7 @@ export class Numbers {
         try {
             const q: any = await this.dao.executeQuery(
                 `SELECT TRIM(operator) AS operator, COUNT(*) AS count FROM vip_numbers
-                 WHERE status = 'AVAILABLE' AND stock > 0 AND visibility_type='ONLINE' AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
+                 WHERE deleted_at IS NULL AND status='AVAILABLE' AND stock > 0 AND visibility_type='ONLINE' AND TRIM(operator) IN ('Airtel','Jio','Vi','BSNL')
                  GROUP BY TRIM(operator) ORDER BY FIELD(operator,'Airtel','Jio','Vi','BSNL')`, [],
             );
             if (q.status !== 1) throw new Error(q.info || 'Unable to load operators.');
@@ -348,7 +349,7 @@ export class Numbers {
             const limit = Math.min(24, Math.max(1, Number(payload?.limit) || 12));
 
             const sourceQ: any = await this.dao.executeQuery(
-                `SELECT ${SELECT_COLS} FROM vip_numbers n WHERE n.number_id = ? LIMIT 1`,
+                `SELECT ${SELECT_COLS} FROM vip_numbers n WHERE n.number_id = ? AND n.deleted_at IS NULL LIMIT 1`,
                 [id],
             );
             if (sourceQ.status !== 1) throw new Error(sourceQ.info || 'Unable to load source number.');
@@ -369,7 +370,7 @@ export class Numbers {
             // front while still filling the bounded pool with popular inventory.
             const candidatesQ: any = await this.dao.executeQuery(
                 `SELECT ${SELECT_COLS} FROM vip_numbers n
-                 WHERE n.number_id <> ? AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
+                 WHERE n.number_id <> ? AND n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
                  ORDER BY CASE WHEN
                     EXISTS (SELECT 1 FROM vip_number_categories vnc
                         WHERE vnc.number_id = n.number_id
@@ -636,7 +637,7 @@ export class Numbers {
             if (!id) throw new Error('number_id is required.');
             const q: any = await this.dao.executeQuery(
                 `SELECT ${SELECT_COLS}, u.full_name AS seller_name FROM vip_numbers n
-                 LEFT JOIN auth_user u ON u.user_id = n.seller_id WHERE n.number_id = ?`, [id]
+                 LEFT JOIN auth_user u ON u.user_id = n.seller_id WHERE n.number_id = ? AND n.deleted_at IS NULL`, [id]
             );
             if (q.fetchedRows === 0) throw new Error('Number not found.');
             if (q.rows[0].visibility_type === 'OFFLINE') {
@@ -766,7 +767,7 @@ export class Numbers {
                 const ownerParams = payload.owner_id ? [id, Number(payload.owner_id)] : [id];
                 const [rows]: any = await connection.query(
                     `SELECT number_value, display_number, mrp, offer_price, status, visibility_type, rtp_status, rtp_available_at
-                     FROM vip_numbers WHERE number_id = ?${ownerScope} FOR UPDATE`, ownerParams);
+                     FROM vip_numbers WHERE number_id = ? AND deleted_at IS NULL${ownerScope} FOR UPDATE`, ownerParams);
                 if (!Array.isArray(rows) || rows.length === 0) throw new Error('Number not found.');
                 const current = rows[0];
                 let dateChangeUserId = 0;
@@ -908,26 +909,7 @@ export class Numbers {
         return resModel;
     }
 
-    async remove(payload: { number_id: number, owner_id?: number }) {
-        let startMS = new Date().getTime();
-        let resModel = this.masterModel.getResponseModel();
-        try {
-            const id = Number(payload.number_id);
-            if (!id) throw new Error('number_id is required.');
-            const params: any[] = [id];
-            let scope = '';
-            if (payload.owner_id) { scope = ' AND seller_id = ?'; params.push(Number(payload.owner_id)); }
-            await this.dao.executeQuery(`DELETE FROM vip_numbers WHERE number_id = ?${scope}`, params);
-            resModel.status = 1;
-            resModel.info = 'OK';
-            resModel.data = { number_id: id };
-        } catch (error) {
-            resModel.status = -33;
-            resModel.info = 'catch : ' + error;
-            this.logger.error(JSON.stringify(resModel));
-        } finally {
-            try { resModel.tat = (new Date().getTime() - startMS) / 1000; } catch (e) { }
-        }
-        return resModel;
+    async remove(payload: { number_id: number, owner_id?: number, user_id?: number }) {
+        return new NumberRecycle().removeById(payload);
     }
 }

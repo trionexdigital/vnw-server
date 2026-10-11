@@ -22,6 +22,7 @@ describe('dealer purchase validation', () => {
     (service as any).dao = { getConnection: async () => ({
       beginTransaction: async () => undefined,
       query: async (sql: string) => {
+        if (sql.includes('JOIN auth_user')) return [[{ external_dealer_id: 2 }]];
         if (sql.includes('COALESCE(SUM(purchase_price)')) return [[{ billed: '1000.00', paid: '800.00' }]];
         throw new Error(`Unexpected query: ${sql}`);
       },

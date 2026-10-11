@@ -36,7 +36,7 @@ export class PrivateLinks {
                 const page = Math.max(1, Math.floor(Number(payload.page) || 1));
                 const limit = Math.min(60, Math.max(1, Math.floor(Number(payload.limit) || 24)));
                 const search = String(payload.q || '').replace(/\D/g, '').slice(0, 10);
-                const where = "n.status='AVAILABLE' AND n.stock>0" + (search ? ' AND n.number_value LIKE ?' : '');
+                const where = "n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock>0" + (search ? ' AND n.number_value LIKE ?' : '');
                 const params = search ? [`%${search}%`] : [];
                 const [count]: any = await connection.query(`SELECT COUNT(*) AS total FROM vip_numbers n WHERE ${where}`, params);
                 const [rows]: any = await connection.query(

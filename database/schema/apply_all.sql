@@ -11,6 +11,7 @@ SOURCE dealer_purchase_numbers.sql;
 SOURCE dealer_purchase_payments.sql;
 SOURCE dealer_purchase_events.sql;
 SOURCE schema_migrations.sql;
+SOURCE delivery_cities.sql;
 SOURCE vip_number_categories.sql;
 SOURCE vip_number_subcategories.sql;
 SOURCE deal_of_day_numbers.sql;
@@ -49,3 +50,6 @@ SOURCE sell_requests.sql;
 SOURCE approval_requests.sql;
 SOURCE wallets.sql;
 SOURCE wallet_transactions.sql;
+
+SOURCE number_recycle_events.sql;
+SOURCE translation_cache.sql;

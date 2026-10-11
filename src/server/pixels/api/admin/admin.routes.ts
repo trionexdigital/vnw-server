@@ -17,6 +17,8 @@ import { NumberImport } from './numberImport';
 import { notifyAdminActivity } from '../notifications/adminActivity';
 import { PaymentAnalysis } from '../payments/paymentAnalysis';
 import { Payments } from '../payments/payments';
+import { DeliveryCities } from '../site/deliveryCities';
+import { NumberRecycle } from '../numbers/numberRecycle';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
@@ -70,6 +72,9 @@ const handle = (fn: (p: any) => Promise<any>) => async (req: Request, res: Respo
 };
 
 router.post('/dashboard', handle((p) => admin.dashboard(p)));
+router.post('/delivery-cities/list', handle(() => new DeliveryCities().list(true)));
+router.post('/delivery-cities/save', handle((p) => new DeliveryCities().save(p)));
+router.post('/delivery-cities/delete', handle((p) => new DeliveryCities().remove(p)));
 router.post('/payments/overview', handle((p) => new PaymentAnalysis().overview(p)));
 router.post('/payments/detail', handle((p) => new PaymentAnalysis().detail(p)));
 router.post('/payments/reconcile', handle((p) => new Payments().adminReconcile(p)));
@@ -77,7 +82,11 @@ router.post('/payments/reconcile', handle((p) => new Payments().adminReconcile(p
 // Numbers
 router.post('/numbers/list', handle((p) => admin.numbersList(p)));
 router.post('/numbers/save', handle((p) => admin.numberSave(p)));
-router.post('/numbers/delete', handle((p) => admin.numberDelete(p)));
+router.post('/numbers/delete/validate', handle((p) => new NumberRecycle().validate(p)));
+router.post('/numbers/delete', handle((p) => new NumberRecycle().softDelete(p)));
+router.post('/numbers/recycle/list', handle((p) => new NumberRecycle().list(p)));
+router.post('/numbers/recycle/restore', handle((p) => new NumberRecycle().change(p)));
+router.post('/numbers/recycle/permanent-delete', handle((p) => new NumberRecycle().change(p, true)));
 router.post('/numbers/approve', handle((p) => admin.numberApprove(p)));
 router.post('/numbers/reject', handle((p) => admin.numberReject(p)));
 router.post('/numbers/analyze', async (req, res) => {
@@ -100,6 +109,8 @@ router.post('/private-links/revoke', handle((p) => privateLinks.revoke(p)));
 // Numbers purchased from external suppliers
 router.post('/dealer-purchases/dealers/list', handle(() => dealerPurchases.dealers()));
 router.post('/dealer-purchases/dealers/create', handle((p) => dealerPurchases.createDealer(p)));
+router.post('/dealer-purchases/dealers/unlinked', handle(() => dealerPurchases.unlinkedDealers()));
+router.post('/dealer-purchases/dealers/link', handle((p) => dealerPurchases.linkDealerAccount(p)));
 router.post('/dealer-purchases/summary', handle((p) => dealerPurchases.summary(p)));
 router.post('/dealer-purchases/list', handle((p) => dealerPurchases.list(p)));
 router.post('/dealer-purchases/create', handle((p) => dealerPurchases.create(p)));
