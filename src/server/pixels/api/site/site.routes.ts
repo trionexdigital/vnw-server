@@ -5,7 +5,7 @@ import { Site } from './site';
 import { DealsOfDay } from '../dealsOfDay/dealsOfDay';
 import { MarketplaceContent } from './marketplaceContent';
 import { HomePremium } from './homePremium';
-import { Translation } from './translation';
+import { LanguageManagement } from './languageManagement';
 import { DeliveryCities } from './deliveryCities';
 
 const masterModel = new MasterModel();
@@ -31,8 +31,8 @@ const pub = (fn: (p: any) => Promise<any>) => async (req: Request, res: Response
     }
 };
 
-const translation = new Translation();
-router.post('/translate', async (req, res) => res.json(await translation.translate(req.body || {}, req.ip)));
+const languages = new LanguageManagement();
+router.post('/languages/catalog', pub((p) => languages.catalog(p)));
 
 router.post('/settings', pub((p) => site.settings()));
 router.post('/delivery-cities', pub(() => new DeliveryCities().list()));

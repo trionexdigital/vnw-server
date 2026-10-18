@@ -1,0 +1,5702 @@
+[
+  {
+    "source": ", and",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": ", or",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "(prefers-color-scheme: dark)",
+    "context": "shared/theme/ThemeProvider.tsx"
+  },
+  {
+    "source": "[data-combobox-option]",
+    "context": "shared/ui/combobox.tsx"
+  },
+  {
+    "source": "[data-motion-reveal], [data-testid=\"number-card\"], [data-testid=\"family-pack-card\"]",
+    "context": "shared/motion/PublicScrollMotion.tsx"
+  },
+  {
+    "source": "[data-scroll-reveal], .number-card-grid, .public-scroll-grid",
+    "context": "shared/motion/PublicScrollMotion.tsx"
+  },
+  {
+    "source": "[role=\"radio\"]",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "{count} shown",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "{label}: {value}",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "&copy;",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "% OFF",
+    "context": "shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "₹0 to ₹10,00,000",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "0 results",
+    "context": "shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "0 to 17",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "0 to 90",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "00 · reflection",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "00·XY·00",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "000 Middle",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "0000 ending",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "0000 Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "0000 Special",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "00000 ending",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "00000 Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "000xy (Special)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "01 / The pattern gallery",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "02 / Signature repeats",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "03 / Minimal & memorable",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "04 / Numbers with rhythm",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "05 / Personal significance",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "06 / Effortlessly memorable",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "07 / A signature that sticks",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "0px 0px -7% 0px",
+    "context": "shared/motion/PublicScrollMotion.tsx"
+  },
+  {
+    "source": "1 to 9",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "1+ Semi Mirror",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "10 Digits symmetry",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "10-digit calculator",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "10-digit symmetry",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "100% genuine",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "100% issue guarantee:",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "100% issue refund",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "100% Money Back",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "13 repeating",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "13 Repeating",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "13 with Zeros",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "13.8rem",
+    "context": "shared/ui/sidebar.tsx"
+  },
+  {
+    "source": "17 August 2026",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "2 Couples",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "2 Digit Numbers",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "2 Digits AD (6D)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "2 Times Tetra",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "2 Times Trippling",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "2-digit numbers",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "3 Couples",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "3 Digit Numbers",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "3 Digits AD (5+D)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "3 digits with 0",
+    "context": "pages/home/components/HomeDiscovery.tsx, API/category taxonomy"
+  },
+  {
+    "source": "3 times 13",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "3 Times Trippling",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "3 Times xy - broken",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "3 Times xyz",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "3-digit numbers",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "4 Couple (Joint)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "4 Couples",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "4 Digit Asending",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "4 Digits Repeating",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "4 Digits Semi Mirror",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "4 Times xy",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "4 Times XY - Broken",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "48-hour cancellation:",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "48h cancellation",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "5 Couples",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "5 Digits Semi Mirror",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "786 at the end under ₹30,000",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "786 End",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "786 Middle",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "786 start",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "8 9 Digits symmetry",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "8-9 Digits Asending",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "8/9-digit symmetry",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "A cleaner way to shop for VIP numbers",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "A clear checkout. A confident first step.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "A clear five-stage path, including our 100% money-back assurance.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "A clear path from choosing your number to activation.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "A closer look at your next memorable number.",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "A memorable number does not confer ownership of another party’s trade mark, identity, reputation, or communications. Buyers must use numbers lawfully and must not impersonate, harass, defraud, or mislead others.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "A memorable start",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "A number for every budget",
+    "context": "pages/home/Home.tsx"
+  },
+  {
+    "source": "A person acting for a child or another individual must have valid authority. Please do not submit third-party identity information without permission.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "A pre-book cancellation request can be made within 48 hours after booking confirmation. A full-refund review is available when we cannot provide the number because of recorded delivery, UPC, activation, eligibility, or number-availability failure attributable to the fulfilment process.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "A pre-book cancellation request may be submitted within 48 hours of confirmed booking. Delivery, UPC, activation, or availability failures are reviewed for a full refund under the Refund Policy.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "A premium VIP number, with support through booking and ownership transfer.",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "A small set of distinct digits can make a number remarkably easy to remember.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "A supported path to your preferred network.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "AA · BB · CC",
+    "context": "pages/home/components/HomeDiscovery.tsx, shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "AAA · BBB",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "AB AB",
+    "context": "pages/home/components/HomeSections.tsx, pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "AB CDE · AB CDE",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "AB CDE · ED CBA",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "ABAB · XYXY",
+    "context": "pages/home/components/HomeDiscovery.tsx, shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "ABC ABC",
+    "context": "pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "ABCD · ABCD",
+    "context": "pages/home/components/HomeDiscovery.tsx, shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "About & Contact",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Acceptable use and intellectual property",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Acceptance and accounts",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Accessible fancy numbers",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "account",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Account",
+    "context": "shared/layout/AccountLayout.tsx, shared/layout/BottomNav.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Account created",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Account navigation",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Acknowledgement and review",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Activate your choice",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Activation issue",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Activation Support",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Active filters",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Acts-302-307-751-720 etc",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Add a minimum or maximum count.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Add at least one advanced search condition.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Add complete pack",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Add digit rule",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Add Number",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "add to cart",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Add to Cart",
+    "context": "shared/components/FamilyPackCard.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Add to compare",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "add to wishlist",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Add up to 4 numbers using the Compare button on any card.",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "Added to cart",
+    "context": "pages/shop/NumberDetail.tsx, shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Added to comparison",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Added to wishlist",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Adding…",
+    "context": "pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx, shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Address",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Address fields are ready for UI use; backend support can be wired when available.",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Admin settings",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Advanced filters applied",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Advanced Search",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Advanced VIP Number Search",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "After your order is confirmed, follow the guidance provided for your number. The Unique Porting Code (UPC) and transfer instructions help you move into the porting stage when your order is ready.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "AI assisted",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "AI Search",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "AI search interpretation",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "AI, exact digits, budget, or specialist patterns.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "AI: {query}",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Airtel",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Airtel, Jio, Vi, and BSNL labels describe the number’s catalogued series or origin. They are not a promise that the number must remain on that operator. Eligible customers may port to another operator through Mobile Number Portability.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Alert",
+    "context": "shared/ui/alert.tsx"
+  },
+  {
+    "source": "All categories",
+    "context": "pages/corporate/CorporateNumbers.tsx, pages/home/components/HomeDiscovery.tsx, pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "All Categories",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "All Mixed",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "All operators",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "All Orders",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "All subcategories",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "All VIP numbers",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Already have an account?",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Already in your comparison.",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "An admin will review the full refund.",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "and",
+    "context": "pages/checkout/Checkout.tsx, pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "and acknowledge our",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Any",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Any maximum",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Any minimum",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Any operator",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Any Price",
+    "context": "pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "Anywhere",
+    "context": "pages/shop/SearchWorkbench.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Appearance",
+    "context": "pages/settings/Settings.tsx, shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "applied",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Apply",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Apply · Show",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Apply filters",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Apply Search",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Approvals",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Approved refunds are limited to the affected order amount, and duplicate or over-value refunds are prevented. Refund timing after approval depends on Cashfree, the issuing bank, and the original payment method.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Are you a dealer?",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Asending Desending",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Asending-Desending",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Ask about a VIP number, an existing order, activation, or becoming a dealer.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Ask about your order",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Ask AI",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Ask for assistance",
+    "context": "pages/corporate/CorporateElitePack.tsx"
+  },
+  {
+    "source": "At midnight India time on the shown date, the number moves to RTP status and is ready to begin the porting process.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Auto",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Automatic pattern matching",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Availability and third parties",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Available matches",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Available to pre-book",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Avoid using your phone number or business name.",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Back",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Back to cart",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Back to Home",
+    "context": "pages/not-found.tsx"
+  },
+  {
+    "source": "Back to number details",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Back to shop",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Back to store",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Back to Store",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Back to top",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Badge",
+    "context": "pages/compare/Compare.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Beautiful endings, repeated zeros and patterns that are easy to remember.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Become a Dealer",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Begin the porting journey for an eligible number.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Best price",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Best Seller",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Bhagyank (Destiny)",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Bhagyank / Destiny",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Biggest Discount",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Billing contact",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Billing preferences",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Billing summary",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Both Ends",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Brands that value a memorable identity",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "breadcrumb",
+    "context": "shared/ui/breadcrumb.tsx"
+  },
+  {
+    "source": "Breadcrumb",
+    "context": "shared/ui/breadcrumb.tsx"
+  },
+  {
+    "source": "Bring your number to your chosen network.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Broken Hexa Digits",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Broken Hexa Zeros",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Browse all available numbers or discover the complete automatic category catalog.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Browse all available VIP numbers and refine your search at any time.",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Browse all available VIP numbers, including offline inventory.",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "Browse all numbers",
+    "context": "pages/categories/Categories.tsx, pages/numerology/Numerology.tsx, pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Browse numbers",
+    "context": "pages/checkout/PaymentReturn.tsx, pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Browse Numbers",
+    "context": "pages/checkout/Checkout.tsx, pages/compare/Compare.tsx, pages/dashboard/Dashboard.tsx, pages/orders/Orders.tsx"
+  },
+  {
+    "source": "Browse our premium VIP numbers and add your favourites.",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Browse pre-book numbers",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Browse Premium Numbers",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Browse series",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Browse the full marketplace.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Browse the same categories and subcategories used in our internal inventory. A number can match more than one pattern.",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Browse VIP number categories",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Browse VIP numbers",
+    "context": "pages/home/components/HomeSections.tsx, pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Build a coordinated number collection",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Business or billing address",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Business-ready patterns",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Button",
+    "context": "shared/ui/button.tsx"
+  },
+  {
+    "source": "button:not([disabled]), select:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Buy Now",
+    "context": "pages/compare/Compare.tsx, pages/home/components/DealOfDayShowcase.tsx, shared/components/FamilyPackCard.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Buy this number",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "By accessing the platform or placing an order, you agree to these terms and the policies linked here. You must provide accurate information, protect your login credentials, and be legally capable of entering a contract.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "By creating an account, you agree to our",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "By paying, you agree to the",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Calculate My Numbers",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Calculate your personal numbers",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Calendar",
+    "context": "shared/ui/calendar.tsx"
+  },
+  {
+    "source": "Call Me",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Call us",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Cancel",
+    "context": "pages/sell/SellNumber.tsx, pages/settings/Settings.tsx, pages/shop/SearchWorkbench.tsx, shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Cancel & request refund",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Cancel crop",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Cancellation requested within the 48-hour policy.",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Cancellation submitted",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Cancellation window closed",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Card",
+    "context": "shared/ui/card.tsx"
+  },
+  {
+    "source": "Carousel",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "carousel-cropped.jpg",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Cart",
+    "context": "pages/shop/NumberDetail.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Catalog",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "catalogued series",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "categories",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Categories",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Categories could not be loaded right now.",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "category",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Category",
+    "context": "pages/compare/Compare.tsx, pages/corporate/CorporateNumbers.tsx, pages/prebook/PreBook.tsx, shared/layout/BottomNav.tsx"
+  },
+  {
+    "source": "category matches",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Category: {category}",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Change of mind after the cancellation window, failed customer identity checks, an expired customer-supplied UPC, or a port rejected for customer-side eligibility may not qualify unless consumer law requires otherwise.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Change password",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Change Password",
+    "context": "pages/settings/ChangePassword.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Change shared admin passwords regularly.",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Chart",
+    "context": "shared/ui/chart.tsx"
+  },
+  {
+    "source": "Check again",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Check that calls and messages work as expected after activation. If you encounter a fulfilment issue, keep the order reference and relevant details ready so our support team can help you with the next step.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Check the instructions carefully and keep the code secure. Readiness and operator eligibility can affect the next step, so contact our team if anything in the order guidance needs clarification.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Check your new SIM’s calling and messaging services.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Checking your payment",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Checking...",
+    "context": "shared/components/DetectedCategories.tsx"
+  },
+  {
+    "source": "Checking…",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Checkout",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Checkout error",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Checkout keeps the existing secure payment flow intact.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Choose a carousel slide",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Choose a digit.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Choose a matching style and pick the numbers your family loves.",
+    "context": "pages/corporate/CorporateElitePack.tsx"
+  },
+  {
+    "source": "Choose a NON-RTP number above to reserve it exclusively.",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Choose a price range and see available numbers without digging through filters.",
+    "context": "pages/home/Home.tsx"
+  },
+  {
+    "source": "Choose literal digits or a preset, not both.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Choose with confidence",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Choose your path",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Choose your preferred operator",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "CIN:",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "City",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Clean zero patterns",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Clear",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Clear all",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "Clear assistance, even when something needs attention.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Clear guidance for choosing, buying, porting, and activating your VIP number.",
+    "context": "pages/static/Faq.tsx"
+  },
+  {
+    "source": "Clear ordering",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Clear prices",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Clear Pricing",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Clear search",
+    "context": "pages/categories/Categories.tsx, shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Clear selection",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Clear the search to explore all automatic categories.",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "close",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Close",
+    "context": "pages/prebook/PreBook.tsx, shared/ui/dialog.tsx, shared/ui/sheet.tsx"
+  },
+  {
+    "source": "Close advanced search",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Close dialog",
+    "context": "shared/components/Modal.tsx"
+  },
+  {
+    "source": "Close filters",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Close navigation menu",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Close sale announcement",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Close sidebar",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Closest matches",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Color theme",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Combine number positions, patterns, sums, price, masks, and digit-frequency rules.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Combined Consultation",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Communication, freedom, intellect & versatility.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Compare",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Compare numbers",
+    "context": "pages/compare/Compare.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Compare Numbers",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Compare price, pattern & numerology.",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Compare this number",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Compare up to four favourites side by side.",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "Complete activation with your preferred mobile operator.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Complete operator verification and activate your premium number on the new SIM.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Complete pack",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Complete pack added",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Complete the required operator identity checks.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Configure a Family Pack",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Confirm password",
+    "context": "pages/auth/Auth.tsx, pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Consumer Protection material",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Contact",
+    "context": "shared/layout/PublicLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Contact activation support",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Contact and legal identity",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Contact and updates",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Contact and WhatsApp paths remain available for enquiries.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Contact our team",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Contact Phone",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Contact support",
+    "context": "pages/checkout/PaymentReturn.tsx, pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Contact support promptly if the number, UPC, transfer assistance, or activation process is not provided as confirmed. If we cannot fulfil because of number availability, delivery, UPC handling, or activation failure attributable to the fulfilment process, we will review the affected amount for refund.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Contact support with the order number, affected VIP number, reason, and relevant evidence. This policy does not restrict remedies available under the Consumer Protection Act, 2019 or other applicable law.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Contact the grievance channel below for a privacy request. Material updates will be communicated through the platform or available contact details, and the effective date will be revised.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Contact the grievance officer using the details below. Include your name and verified account contact, order or transaction reference, a clear description, supporting evidence, and the resolution requested. Do not email passwords, OTPs, or complete payment credentials.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Contact us",
+    "context": "pages/home/components/HomeSections.tsx, pages/static/Faq.tsx"
+  },
+  {
+    "source": "Contains",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Continue payment",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Continue Shopping",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Cookie Policy",
+    "context": "pages/legal/LegalPage.tsx, shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Coordinate numbers for a family or business.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Copy",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Corporate category",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Corporate matching style",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Corporate Numbers",
+    "context": "pages/corporate/CorporateNumbers.tsx, shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Corporate Pack",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Corporate pack size",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Could not add",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Could not apply coupon.",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Could not check your payment.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Could not crop image.",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Could not load checkout.",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Could not load matching packs.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Could not load more numbers.",
+    "context": "pages/home/components/HomeDiscovery.tsx, shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Could not load notifications",
+    "context": "pages/settings/Notifications.tsx"
+  },
+  {
+    "source": "Could not load notifications.",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Could not load pre-book numbers",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Could not load this collection.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Could not mark notifications as read",
+    "context": "pages/settings/Notifications.tsx"
+  },
+  {
+    "source": "Could not mark notifications as read.",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Could not remove number",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Could not reopen checkout.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Could not report issue",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Could not request cancellation",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Could not send enquiry",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Could not start pre-booking",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Could not subscribe",
+    "context": "shared/components/NewsletterForm.tsx"
+  },
+  {
+    "source": "Counting",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/HomeSections.tsx, pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "Counting patterns",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Coupon code",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Coupon discount",
+    "context": "shared/components/BillingSummary.tsx"
+  },
+  {
+    "source": "Coupons",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Coupons and GST are calculated at checkout.",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Create Account",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Create one",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Creativity, wisdom, optimism & growth.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Credited:",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Crop logo",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Crop zoom",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Cropping…",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Curated collection",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Current Number Analysis",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Current password",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Custom price range",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Customer",
+    "context": "pages/home/components/HomeSections.tsx, pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Customer feedback",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Customer responsibilities",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Customer review screenshots",
+    "context": "pages/home/components/ReviewScreenshots.tsx"
+  },
+  {
+    "source": "Dark",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Dashboard",
+    "context": "pages/dashboard/Dashboard.tsx, shared/layout/AccountLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Data may be shared with payment providers, telecom or activation partners, delivery carriers, hosting and communications vendors, professional advisers, and public authorities where legally required. Vendors receive only what they need and are expected to protect it. We do not sell personal data.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Data we collect",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Date",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Date of birth",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Dealer Profile",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Dealer Purchases",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "dealer.dashboard",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "dealer.listings.create",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "dealer.listings.view",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "dealer.payouts",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "dealer.profile",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "dealer.sales",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Dealers",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Debited:",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Delivery & Fulfilment",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Delivery and Fulfilment Policy",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Delivery issue",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Delivery Policy",
+    "context": "pages/checkout/Checkout.tsx, pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Describe the number you want",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Describe the VIP number you want.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Deselect",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Digit",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Digit frequency",
+    "context": "pages/shop/SearchWorkbench.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Digit total",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "Digit Total",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Digits",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Digits anywhere",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Discipline, stability, hard work & structure.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Disclaimer",
+    "context": "pages/legal/LegalPage.tsx, shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Disclaimers, liability, and force majeure",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Discount",
+    "context": "pages/compare/Compare.tsx, pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Discounted Price",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Discover a memorable VIP number with clear pricing and guidance from selection to activation.",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Discover your signature pattern",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Discuss both your current number and preferences for a new premium identity.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Dismiss filters",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Displays the mobile sidebar.",
+    "context": "shared/ui/sidebar.tsx"
+  },
+  {
+    "source": "Distinctive numbers with presence, personality and a pattern you will remember.",
+    "context": "pages/home/Home.tsx"
+  },
+  {
+    "source": "Do not scrape at harmful scale, probe security, automate purchases unfairly, upload malicious content, impersonate others, or use the service for unlawful communications. Platform software, branding, original copy, and design remain protected intellectual property.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Double",
+    "context": "pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "Doubling",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/HomeSections.tsx, pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "Doublling (AABBCC)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "DPDP Rules 2025",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Drag and zoom to fit the profile tile.",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Drag to position your image. Adjust zoom to fill the",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "e.g. 9999 or 786",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "e.g. mirror number ending in 786 under ₹30,000",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "e.g. Rahul Sharma",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Each digit can only be used once.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Each number is analysed automatically and assigned to its strongest matching pattern.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Earn 2% rewards on every purchase your referrals make",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Edit",
+    "context": "shared/components/FormSection.tsx"
+  },
+  {
+    "source": "Edit profile",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Edit Search",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Effective",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Eligibility and process for VIP-number refunds and pre-book cancellations.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Email",
+    "context": "pages/numerology/Numerology.tsx, pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Email address",
+    "context": "pages/auth/Auth.tsx, pages/static/About.tsx"
+  },
+  {
+    "source": "Email us",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "End",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "End with 000",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "End xxx",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Ends",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Ends with",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Ends With",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Ends With pattern preset",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Energy, courage, passion & determination.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Enquiry received",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Enter 10 digits to continue",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Enter a valid 10-digit mobile number to see its matching categories and subcategories.",
+    "context": "shared/components/DetectedCategories.tsx"
+  },
+  {
+    "source": "Enter at least one digit.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Enter code",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Enter your email",
+    "context": "shared/components/NewsletterForm.tsx"
+  },
+  {
+    "source": "Enter your name",
+    "context": "pages/numerology/Numerology.tsx, pages/static/About.tsx"
+  },
+  {
+    "source": "Error",
+    "context": "pages/auth/Auth.tsx, pages/sell/SellNumber.tsx, pages/settings/ChangePassword.tsx, pages/settings/Settings.tsx, pages/shop/NumberDetail.tsx, shared/components/NewsletterForm.tsx, shared/components/NumberCard.tsx, shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Escalation and statutory remedies",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Escape",
+    "context": "pages/shop/Shop.tsx, shared/layout/HeaderNumberSearch.tsx, shared/ui/combobox.tsx"
+  },
+  {
+    "source": "Essential storage is necessary for requested features. You can clear or block browser storage, but sign-in, checkout, remembered settings, and other functions may stop working. Where consent is legally required for non-essential technologies, controls will be provided.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Every included group must match; every excluded group must be absent",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Every pattern has a personality.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Everyday favourites",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Exact ten-position mask",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Exclusive Drops",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Exclusive hold",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Exclusive pre-booking",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Expected Price (₹)",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Explore all automatically detected patterns.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Explore all patterns",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Explore every VIP pattern",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Explore Family Packs",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Explore memorable runs from four matching digits to rare seven- and eight-digit patterns.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Explore numbers",
+    "context": "pages/cart/Cart.tsx, pages/wishlist/Wishlist.tsx"
+  },
+  {
+    "source": "Explore Numbers",
+    "context": "pages/cart/Cart.tsx, pages/home/components/DealOfDayShowcase.tsx, pages/wishlist/Wishlist.tsx"
+  },
+  {
+    "source": "Explore numbers prepared for the activation process.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Explore pattern",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Explore popular patterns",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Explore symbolic sequences or choose a number by its root sum.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Explore the catalog, compare the patterns you like, and open a number to review its price and readiness. A memorable number should suit the way you live, work, and connect.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Explore the full marketplace or try another numerology root.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Explore the nine roots",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Explore VIP numbers",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Explore VIP numbers matching your profile",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Explore your number root and discover VIP numbers aligned with your preferred sum.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Failed",
+    "context": "pages/shop/NumberDetail.tsx, shared/components/NewsletterForm.tsx"
+  },
+  {
+    "source": "Family and business packs",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Family Pack",
+    "context": "shared/layout/PublicLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Family packs",
+    "context": "pages/corporate/CorporateElitePack.tsx, pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Fancy",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "FAQs",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Feature",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "Featured",
+    "context": "pages/home/components/HomeDeliveryCities.tsx"
+  },
+  {
+    "source": "Filter groups",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Filter VIP number results",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Filters",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Final Root",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Find a pre-book number",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Find a VIP number by",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Find the right number faster",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Find your matching sum",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Find your number",
+    "context": "pages/home/components/HomeSections.tsx, pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Find your perfect number pattern",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Find your signature VIP number",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Finding available numbers…",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Finding live matching packs…",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Finding…",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Fit",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Five repeating digits",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Fix individual positions and use ? as a wildcard",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Follow system theme",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Follow the confirmed porting instructions and timeline.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Follow the order and support path for UPC and transfer guidance.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Follow the supported mobile number portability steps with your chosen operator.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Follow the UPC and readiness guidance for your order.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Follow Us",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "footer, nav, [role=\"dialog\"], [data-no-scroll-motion]",
+    "context": "shared/motion/PublicScrollMotion.tsx"
+  },
+  {
+    "source": "Forgot password?",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Four clear steps",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Four repeating digits",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Four-digit repeats",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "frame.",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Free calculators",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Frequently asked questions",
+    "context": "pages/static/Faq.tsx"
+  },
+  {
+    "source": "Fresh from the collection",
+    "context": "pages/home/Home.tsx"
+  },
+  {
+    "source": "From {price}",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "From checkout to confident activation",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Fulfilment problems",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Full Digit Sum",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Full digit sum can be 0 to 90.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Full name",
+    "context": "pages/auth/Auth.tsx, pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Full name (optional)",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Full payment",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Full sum",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Full Symmery xy*xy",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Full-refund review for eligible fulfilment failures under our Refund and Cancellation Policy.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Full, mid, and root sums with an optional price range",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Funds reserved; admin will process it.",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Genuine & Verified",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Get premium number alerts and limited deals.",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Get ready to transfer",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Get transfer support",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Get your VIP number delivered in these service areas.",
+    "context": "pages/home/components/HomeDeliveryCities.tsx"
+  },
+  {
+    "source": "Give your business one memorable identity with a complete pack of live VIP numbers.",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Global Search",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Go to next page",
+    "context": "shared/ui/pagination.tsx"
+  },
+  {
+    "source": "Go to previous page",
+    "context": "shared/ui/pagination.tsx"
+  },
+  {
+    "source": "Gold Family Pack",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Grievance Officer",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Grievance Redressal",
+    "context": "pages/legal/LegalPage.tsx, shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "GST (",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "GST and coupons calculated at checkout.",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "GSTIN:",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Guaranteed full refund if you encounter any issues with UPC delivery or number activation.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Guidance that keeps your journey moving.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Guided support",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Help when you need it",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Help with VIP numbers, orders, activation and dealer enquiries.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Help, requests and escalation",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Helpful guidance through transfer and activation.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Hexa",
+    "context": "pages/shop/searchTypes.ts, API/category taxonomy"
+  },
+  {
+    "source": "Hexa · 6",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Hexa Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Hexa Pattern",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Hexa Zero",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Hexa Zeros Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "hexa Zeros middle",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Hi! I am interested in a VIP number.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Highly desirable • Easy to remember",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Home",
+    "context": "shared/layout/AccountLayout.tsx, shared/layout/BottomNav.tsx, shared/layout/StoreHeader.tsx, shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Home Delivery Cities",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Home delivery in selected cities",
+    "context": "pages/home/components/HomeDeliveryCities.tsx"
+  },
+  {
+    "source": "Homepage pack size",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "hover-elevate active-elevate-2",
+    "context": "shared/ui/button.tsx"
+  },
+  {
+    "source": "How browser storage and similar technologies support sign-in, security, preferences, and measurement.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "How can we help?",
+    "context": "pages/numerology/Numerology.tsx, pages/static/About.tsx"
+  },
+  {
+    "source": "How it works",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "How It Works",
+    "context": "shared/layout/PublicLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "How to raise a complaint, what information to include, and how we manage escalations.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "How to request help",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "How we collect, use, share, retain, and safeguard personal data in connection with our services.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "If a response does not resolve the issue, reply requesting escalation and identify the unresolved point. Consumers may also use applicable consumer commissions or government grievance channels, and data principals retain remedies under applicable data-protection law.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "if delivery, UPC, activation, or number availability fails before fulfilment, report it for a full refund review.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "If fulfilment fails because of number availability, delivery, UPC handling, or activation, contact our team with your order details. Eligible failures are reviewed for a full refund under the Refund and Cancellation Policy.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "If you completed payment, allow a moment for confirmation. Check the status before starting another checkout.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "image",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Image processing is unavailable.",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Important limits about numerology, availability, operator tags, third-party services, and informational content.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "In Series",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Inclusive price range",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "India",
+    "context": "pages/legal/LegalPage.tsx, pages/static/About.tsx"
+  },
+  {
+    "source": "India-focused draft",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "India's Premium VIP Number Marketplace",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "India's trusted VIP number marketplace with genuine numbers, secure payments, and pan-India delivery.",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Input",
+    "context": "shared/ui/input.tsx"
+  },
+  {
+    "source": "input-luxury w-full",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Instant VIP number results",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Invoices and payout documents",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Issue reported",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "It may already be ready to port or activate, reserved, or unavailable.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Items",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Jio",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Join VIP Number World",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Jupiter",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Jurisdiction:",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Just added",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Keep exploring this collection",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Keep your order information available and follow the operator’s instructions throughout the transfer. Porting schedules and eligibility are controlled by the operator; our team can help you understand your order’s next step.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Keep your order reference for support.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Keep your VNW account secure",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Ketu",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Languages",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Law and disputes",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Leadership, independence, ambition & authority.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Legal",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Legal contact:",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Let’s talk",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Light",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Link copied!",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "List premium numbers, reach more buyers, and manage every sale in one place.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Listings are presented as verified VIP, fancy, lucky, and premium mobile numbers.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Listings can change between browsing and transactional reservation. Operators, payment providers, carriers, and other third parties control parts of activation, payment, and delivery; their services may be interrupted or subject to separate terms.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Literal digits",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Live available numbers with the numerology root you selected.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Live family groups generated automatically from currently available VIP numbers.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Loading {label}",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Loading categories",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Loading content",
+    "context": "shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "Loading homepage carousel",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Loading Lucky Pick of the Day",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Loading more…",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Loading notifications…",
+    "context": "pages/settings/Notifications.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Loading number categories",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Loading series…",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Loading…",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Logout",
+    "context": "shared/layout/AccountLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Long-form balance",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Love, luxury, beauty & relationships.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Low ending",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Lucky digits:",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Lucky Pick",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Lucky Pick carousel controls",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Lucky Pick of the Day",
+    "context": "pages/home/components/DealOfDayShowcase.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Lucky Pick of the Day VIP numbers",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Lucky Pick price",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Lucky Picks are refreshing",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Lucky sequence",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Make it yours",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Make the move",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Mark all read",
+    "context": "pages/settings/Notifications.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Mars",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Mask",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Match a whole group",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Match by sum",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Match position",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Matches blend the automatic category, visible starting and ending sequences, digit positions and frequency, numerology, and price proximity.",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Matching categories",
+    "context": "shared/components/DetectedCategories.tsx"
+  },
+  {
+    "source": "Matching categories and subcategories",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Matching numbers",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Matching patterns",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Matching style",
+    "context": "pages/corporate/CorporateElitePack.tsx, pages/corporate/CorporateNumbers.tsx, pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Max",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Max price",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Maximum count must be 1 to 10.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Maximum price",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Maximum Price",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Maximum price must be at least the minimum price.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Maximum price must be from ₹0 to ₹10,00,000.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Memorable fancy numbers",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Menu",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Mercury",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Message",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Message not sent",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Message sent",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Messages",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "meta[name=\"theme-color\"]",
+    "context": "shared/theme/ThemeProvider.tsx"
+  },
+  {
+    "source": "Mid sum",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Mid Sum",
+    "context": "pages/numerology/Numerology.tsx, pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Mid sum can be 0 to 17.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Middle",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Min",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Min price",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "min-h-9 px-4 py-2",
+    "context": "shared/ui/button.tsx"
+  },
+  {
+    "source": "Minimal patterns with impact",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Minimum cannot exceed maximum.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Minimum count must be 1 to 10.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Minimum Digit Numbers",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Minimum digit patterns",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Minimum price",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Minimum Price",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Minimum price must be from ₹0 to ₹10,00,000.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Mirror",
+    "context": "pages/home/components/DealOfDayShowcase.tsx, pages/home/components/HomeDiscovery.tsx, pages/home/components/HomeSections.tsx, pages/shop/searchTypes.ts, API/category taxonomy"
+  },
+  {
+    "source": "Mirror & symmetry",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Mirror patterns",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Mirror style",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "mirror with root sum 9",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "MNP & Activation",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "MNP and Activation Policy",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "MNP Initiation",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "MNP Policy",
+    "context": "pages/orders/OrderDetail.tsx, pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Mobile navigation",
+    "context": "shared/layout/BottomNav.tsx"
+  },
+  {
+    "source": "Mobile number",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "mode=advanced",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Moon",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "More",
+    "context": "shared/layout/StoreHeader.tsx, shared/ui/breadcrumb.tsx"
+  },
+  {
+    "source": "More pages",
+    "context": "shared/ui/pagination.tsx"
+  },
+  {
+    "source": "Most Popular",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "MRP",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "MRP Price",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "MRP total",
+    "context": "pages/cart/Cart.tsx, shared/components/BillingSummary.tsx"
+  },
+  {
+    "source": "Mulank (Driver)",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Mulank / Driver",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Must contain",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Must Contain",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Must not contain",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Must Not Contain",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "My Listings",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "My Orders",
+    "context": "pages/orders/Orders.tsx, shared/layout/AccountLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "My Pre-booked Numbers",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "My Pre-books",
+    "context": "shared/layout/AccountLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "My Sell Requests",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "My Submissions",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Name Number",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Need help choosing?",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Need help? Review the",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Neither party is liable for delay caused by events beyond reasonable control, including telecom outages, regulatory actions, payment-network failures, natural events, or logistics disruption.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Never share OTPs, passwords, or payment PINs with anyone claiming to complete activation. We may request lawful verification documents but will not ask for confidential banking authentication credentials.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "New Number Guidance",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "New password",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Newest",
+    "context": "pages/prebook/PreBook.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Newly added",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Newly listed public numbers, ready for you to explore.",
+    "context": "pages/home/Home.tsx"
+  },
+  {
+    "source": "Next",
+    "context": "pages/shop/PrivateCollection.tsx, pages/shop/SimilarNumbers.tsx, shared/ui/pagination.tsx"
+  },
+  {
+    "source": "Next Lucky Pick",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Next page",
+    "context": "pages/prebook/PreBook.tsx, pages/shop/Shop.tsx, pages/shop/SimilarNumbers.tsx, shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "Next slide",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "No account?",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "No advanced conditions",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "No available",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "No available numbers",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "No category matches “",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "No complete matching packs available",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "No exact match found",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "No matching live Family Pack right now",
+    "context": "pages/corporate/CorporateElitePack.tsx"
+  },
+  {
+    "source": "No matching pattern found.",
+    "context": "shared/components/DetectedCategories.tsx"
+  },
+  {
+    "source": "No matching pre-book numbers",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "No matching public numbers found. Try another pattern or open the full search.",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "No notifications yet.",
+    "context": "pages/settings/Notifications.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "No numbers to compare",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "No orders yet",
+    "context": "pages/dashboard/Dashboard.tsx, pages/orders/Orders.tsx"
+  },
+  {
+    "source": "No pre-books yet",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "No preset",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "No public numbers are available in this selection right now. Try another pattern or view the full shop.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "No reviews yet. Be the first!",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "No sell requests yet",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "No similar numbers available",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "No Sum",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "No transactions yet.",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "No unlawful use",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "NON-RTP · Pre-book ·",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Normal Fancy Numbers",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Not sure which pattern to choose?",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Notes (optional)",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Nothing to checkout",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Notification",
+    "context": "pages/settings/Notifications.tsx"
+  },
+  {
+    "source": "Notifications",
+    "context": "pages/settings/Notifications.tsx, pages/settings/Settings.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Notifications marked as read",
+    "context": "pages/settings/Notifications.tsx"
+  },
+  {
+    "source": "Number categories",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Number Categories",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Number details",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Number Details",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Number fulfilment may require identity verification, a valid UPC, telecom eligibility, and completion of the operator’s MNP process. RTP means ready for the next transfer step, not guaranteed instant activation.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "number is",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Number not found",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Number not found.",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Number transfer and activation",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "numbers",
+    "context": "pages/corporate/CorporateElitePack.tsx, pages/corporate/CorporateNumbers.tsx, pages/home/components/MarketplaceSections.tsx, pages/prebook/PreBook.tsx, shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Numbers",
+    "context": "shared/components/PremiumShowcaseCards.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "numbers are",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Numbers are checked before they are listed.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "numbers available right now",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Numbers in pack",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Numbers in Series",
+    "context": "pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Numbers similar to",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Numbers that mean more",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Numbers with a striking reflection, reversal or balanced rhythm.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Numerology",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/HomeSections.tsx, pages/legal/LegalPage.tsx, pages/numerology/Numerology.tsx, pages/shop/Shop.tsx, shared/layout/PublicLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Numerology guidance for every stage",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Numerology is informational and does not guarantee financial, career, health, or relationship outcomes.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Numerology Numbers",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Numerology results, lucky-number suggestions, names, scores, and interpretations are provided for entertainment and personal preference. They are not financial, medical, legal, professional, or guaranteed predictive advice.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Numerology root",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "of",
+    "context": "pages/home/components/DealOfDayShowcase.tsx, pages/home/components/HomeCarousel.tsx, pages/prebook/PreBook.tsx, pages/shop/PrivateCollection.tsx, pages/shop/Shop.tsx, pages/shop/SimilarNumbers.tsx, shared/components/FamilyPackCard.tsx, shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "Offer price",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Offer savings",
+    "context": "pages/cart/Cart.tsx, shared/components/BillingSummary.tsx"
+  },
+  {
+    "source": "Offer subtotal",
+    "context": "shared/components/BillingSummary.tsx"
+  },
+  {
+    "source": "Offer your VIP number to us — our team reviews & approves each request",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Offline Catalog Link",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "On this page",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Once your operator confirms the transfer, follow its instructions to activate the new SIM. Complete any remaining verification before using your premium number.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "One Digit Asending (5d)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "One memorable identity for your whole family",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Only three digits",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Only two digits",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Open carousel link",
+    "context": "shared/components/carousel/CarouselArtboard.tsx"
+  },
+  {
+    "source": "Open navigation menu",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Open profile",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Open sidebar",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Opening checkout…",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Opening payment…",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Opening private VIP collection",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "Operations",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Operator",
+    "context": "pages/prebook/PreBook.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Operator eligibility and verification can vary. Ask our team about your next step.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Or choose a preset",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Or preset",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Order",
+    "context": "pages/dashboard/Dashboard.tsx, pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Order not found.",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Order Summary",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Orders",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Others",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Our service location",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Our team completes fulfilment after UPC delivery, MNP initiation, and activation checks.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Overview",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Pack could not be added",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Pack of",
+    "context": "pages/corporate/CorporateElitePack.tsx, pages/corporate/CorporateNumbers.tsx, pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Page",
+    "context": "pages/prebook/PreBook.tsx, pages/shop/Shop.tsx, pages/shop/SimilarNumbers.tsx, shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "pagination",
+    "context": "shared/ui/pagination.tsx"
+  },
+  {
+    "source": "Pagination",
+    "context": "shared/ui/pagination.tsx"
+  },
+  {
+    "source": "Paid amount",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Pairs and progressions",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Pairs in rhythm",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Pairs, triplets and rising sequences that sound as good as they look.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Pan India delivery",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Pan India Delivery",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Pan India delivery and support",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Password",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Password changed",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Password reset request",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Password tips",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Passwords do not match",
+    "context": "pages/auth/Auth.tsx, pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Pattern discovery",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Pause",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Pause automatic Lucky Pick rotation",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Pause carousel",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Pay & reserve exclusively",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Pay the full discounted price to reserve one NON-RTP number exclusively. It becomes ready to port on the date shown, with a 48-hour cancellation window and 100% issue-refund guarantee.",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Payment awaiting confirmation",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Payment confirmed",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Payment credentials are handled by the payment provider; we normally receive transaction identifiers and status rather than complete card or bank credentials.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Payment hold created for 20 minutes",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Payment received — review needed",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Payment refunded",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Payment session expired",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Payment status",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Payment successful!",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Payment summary",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Payment, embedded communications, or other providers may set technologies under their own policies when you use those features. We update this policy when our technology or legal obligations materially change.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Payments",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Payments are processed through the displayed payment provider. Coupons apply only when accepted by the server. We may cancel and refund an order affected by incorrect pricing, fraud checks, unavailable inventory, or payment mismatch.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Payments, pricing, and cancellation",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Payouts",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Penta",
+    "context": "pages/home/components/DealOfDayShowcase.tsx, pages/home/components/HomeDiscovery.tsx, pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "Penta · 5",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Penta Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Penta Numbers",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "People",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Per No.",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Perfect Matching Set",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Personal profile",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Phone",
+    "context": "pages/numerology/Numerology.tsx, pages/settings/Settings.tsx, pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Phone number",
+    "context": "pages/auth/Auth.tsx, pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Pick a root to see available matches.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Pincode",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Play",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Play carousel",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Please contact me about this numerology service.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Popular number patterns",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Popular patterns",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Popular price bands make a large catalogue easier to explore.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Popular VIP patterns",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Porting / activation",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "Position and patterns",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Power, wealth, ambition & karma.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Pre-book",
+    "context": "pages/compare/Compare.tsx, pages/home/components/DealOfDayShowcase.tsx, pages/shop/Shop.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "PRE-BOOK",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Pre-book a number",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Pre-book cancellation requests can be made within 48 hours of booking confirmation. Refund eligibility depends on the recorded issue and policy; approved refund timing also depends on the payment provider and your bank.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Pre-book checkout",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Pre-book this number",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Pre-book VIP number",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Pre-book VIP Numbers",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Pre-books & Refunds",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Premium",
+    "context": "pages/shop/Shop.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Premium combinations",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Premium Homepage",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Premium marketplace",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Premium numbers",
+    "context": "pages/home/Home.tsx"
+  },
+  {
+    "source": "Premium Numbers",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Premium numbers, personal identity",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Premium stories",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Premium VIP number stories",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Preparing…",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Previous",
+    "context": "pages/shop/PrivateCollection.tsx, pages/shop/SimilarNumbers.tsx, shared/ui/pagination.tsx"
+  },
+  {
+    "source": "Previous Lucky Pick",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Previous page",
+    "context": "pages/prebook/PreBook.tsx, pages/shop/Shop.tsx, pages/shop/SimilarNumbers.tsx, shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "Previous slide",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Price",
+    "context": "pages/compare/Compare.tsx"
+  },
+  {
+    "source": "Price: high to low",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Price: High to Low",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Price: low to high",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Price: Low to High",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Prices",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Prices, discounts, availability, and estimated activation or fulfilment information may change until an order is confirmed. We do not guarantee that every requested number, operator transfer, or activation will be completed by a telecom provider.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Primary navigation",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Print",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Privacy & security",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Privacy Policy",
+    "context": "pages/auth/Auth.tsx, pages/legal/LegalPage.tsx, shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Private access",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "Private collection unavailable",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "Proceed to Checkout",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Processing…",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Product cards and detail pages keep price, status, and actions visible.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Profile",
+    "context": "shared/layout/AccountLayout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Profile image uploaded",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Profile logo",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Profile updated",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Protected online payments powered by Cashfree.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Purposes and legal basis",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Qty",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Questions before choosing your number?",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Quick Links",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Quick links use existing shop routes and query parameters.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Quick transfer support",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Rahu",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Raise a grievance",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Ranked by pattern, category, numerology, and price closeness.",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Read the refund policy",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Ready to activate",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Ready to activate within minutes",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Ready to begin the porting process",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Ready to connect",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Ready to make your number memorable?",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Ready to port",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/prebook/PreBook.tsx, pages/prebook/PreBookCheckout.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Ready to Port",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Ready to port on",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Reason for reset",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Receive order guidance and the information needed to begin your number transfer.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Recent Activity",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Recent Orders",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Recently added",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Recycle",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Referral Code",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Referral code (optional)",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Referral Earnings",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Referral link copied!",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Referrals",
+    "context": "pages/referrals/Referrals.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Referred Users",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Reflections and balanced digits",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Refund and Cancellation Policy",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Refund Policy",
+    "context": "pages/checkout/Checkout.tsx, pages/orders/OrderDetail.tsx, pages/prebook/PreBookCheckout.tsx, shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Refund processing",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Refund:",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Refunds return to the original payment method. Bank processing time may vary.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Register",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Remembered it?",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Remove",
+    "context": "pages/checkout/Checkout.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Remove from compare",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "remove from wishlist",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Repeating pattern",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Repeating royalty",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Report a pre-book issue",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Report an issue",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Request a Callback",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Request a choice number",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Request a consultation",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Request a corporate pack",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "request cancellation within exactly 48 hours of successful payment for a 100% refund, subject to admin approval.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Request cancelled",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Request guidance",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Request sent",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Request submitted",
+    "context": "pages/auth/Auth.tsx, pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Require minimum or maximum counts for up to ten unique digits",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Required and excluded digits",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Reserve tomorrow’s VIP number today",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Reserve your number with a secure payment.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Reset",
+    "context": "pages/prebook/PreBook.tsx, pages/shop/SearchWorkbench.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Reset all",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Reset Password",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Reset search",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "results",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Results",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Retention and security",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Retry",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Reveal your mobile number root",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Review admin alerts, customer messages and catalog updates",
+    "context": "pages/settings/Notifications.tsx"
+  },
+  {
+    "source": "Review price and details, then use the existing cart and payment flow.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Review submitted",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Review the listing and complete checkout through the existing protected payment flow.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Review the number, offer price, and readiness.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Review the policy for eligibility and refund processing.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Review your numbers and billing.",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Review your selection, apply a coupon and pay securely.",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Reviews",
+    "context": "pages/shop/NumberDetail.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Reviews from our customers",
+    "context": "pages/home/components/ReviewScreenshots.tsx"
+  },
+  {
+    "source": "Rhythm & sequences",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Root sum",
+    "context": "pages/shop/Shop.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Root Sum",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Root sum can be 1 to 9.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Rows",
+    "context": "shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "Rows per page",
+    "context": "shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "RTA · Ready to activate",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "RTA · Ready to activate within minutes",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "RTP · Ready to begin porting",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "RTP · Ready to port",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "RTP and activation estimates are operational guidance, not guarantees. Telecom providers control validation, porting, SIM issuance, and network activation. If fulfilment fails because of our number availability, delivery, UPC handling, or activation process, the affected order is eligible for full-refund review.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "RTP date: latest",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "RTP date: soonest",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "RTP from",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "RTP to",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Rules for using VIP Number World, buying VIP numbers, payments, fulfilment, and responsible conduct.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Ruling planet:",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Safety",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Sales",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Saturn",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Save",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Save and compare favourites",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Save profile",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Save to wishlist",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Scroll {label} left",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Scroll {label} right",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Scroll reviews left",
+    "context": "pages/home/components/ReviewScreenshots.tsx"
+  },
+  {
+    "source": "Scroll reviews right",
+    "context": "pages/home/components/ReviewScreenshots.tsx"
+  },
+  {
+    "source": "Search",
+    "context": "pages/shop/PrivateCollection.tsx, pages/shop/SearchWorkbench.tsx, shared/layout/BottomNav.tsx, shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Search a number",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "Search all VIP numbers",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Search any number",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Search by digits, pattern, budget, numerology, or plain-language intent.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Search by Price",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Search categories",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Search digits",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Search digits, or enter a category such as Mirror or Penta. Press Enter for more search options.",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Search is temporarily unavailable",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Search is unavailable. Please try the full search.",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Search live public stock",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Search Mirror, 786, Counting…",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Search offline catalog",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "Search results pagination",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Search the marketplace or send an enquiry",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Searching available numbers…",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Searching the marketplace…",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Searching…",
+    "context": "pages/shop/SearchWorkbench.tsx, shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Secure",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Secure Cashfree payment",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Secure checkout",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Secure collection",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "Secure Payment",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Secure payment with Cashfree",
+    "context": "pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Secure payments",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Secure Payments",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Securely check your Cashfree payment.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "See the full journey",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "See upcoming numbers and their ready-to-port dates.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Select",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Select a series to browse matching numbers instantly. Every eligible number can still be ported to your preferred network through MNP.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Select all",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Select Pack",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "selected",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Selected numbers added",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Selected numbers could not be added",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Selected numbers ready",
+    "context": "shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Selected service",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Sell a Number",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Sell Requests",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Sell Your Number",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Semi Mirror",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/shop/searchTypes.ts, API/category taxonomy"
+  },
+  {
+    "source": "Semi Mirror with 00",
+    "context": "pages/home/components/HomeDiscovery.tsx, API/category taxonomy"
+  },
+  {
+    "source": "Semi-mirror patterns",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Send enquiry",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Send Message",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Send us a message",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Send your question to our support team.",
+    "context": "pages/static/Faq.tsx"
+  },
+  {
+    "source": "Sending...",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Sending…",
+    "context": "pages/numerology/Numerology.tsx, pages/static/About.tsx"
+  },
+  {
+    "source": "Sensitivity, intuition, diplomacy & harmony.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Septa / Octa",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Septa Octa",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Septa Octa Broken",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Septa/Octa",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Sequences worth remembering",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Sequential digits",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Series describes how we catalogue this number. After purchase, you may port it to another eligible operator under MNP.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "series numbers right now.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Series tags are informational",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Service coverage",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Services are provided with reasonable care, but indirect, incidental, special, or consequential loss is excluded to the extent permitted by law. Nothing excludes a consumer remedy, fraud liability, or another right that cannot lawfully be excluded.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Sessions, devices and verification",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Settings",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Settings menu",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Seven or eight repeating digits",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Share",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Share a contact method and our team will follow up. This is an enquiry, not a paid automated report.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Share a few details and our support team will get back to you.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Share transfer information only where required.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Share your experience...",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Share your referral link",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Sharing and processors",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Short Asending",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Show {count} more",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Show Numbers",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Showing testimonials returned by the existing API.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Sidebar",
+    "context": "shared/ui/sidebar.tsx"
+  },
+  {
+    "source": "Sign in",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Sign In",
+    "context": "pages/auth/Auth.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Sign in to see your reserved numbers, cancellation countdowns, and refund progress.",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Sign in to your account",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Signature choices",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Signature Family Pack",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Signature selections",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Signature VIP Number",
+    "context": "pages/home/components/DealOfDayShowcase.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "SIM Activation",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Similar",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Similar Both Ends",
+    "context": "pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Similar End",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Similar Numbers",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Similar numbers could not be loaded",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Similar numbers pagination",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Similar Start",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Single digit repeating",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Six repeating digits",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Slide",
+    "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "smart local matching",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Sort",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Sort results",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Sort:",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Source pattern",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Special Charactors/Digits",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Special Penta Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Spirituality, research, wisdom & mystery.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Stage",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Start automatic Lucky Pick rotation",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Start Shopping",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Start Tetra",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Start with a collection that feels like you.",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Start with a free calculation or ask our team for personal assistance.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Start with a memorable pattern",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Starting payment creates a 20-minute exclusive hold. Successful full payment keeps the number reserved only for you.",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Starts",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Starts with",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Starts With",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Starts with, anywhere, ends with, and pattern presets",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "State",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Statement numbers",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Status",
+    "context": "pages/compare/Compare.tsx, pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Step",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Still need help?",
+    "context": "pages/static/Faq.tsx"
+  },
+  {
+    "source": "Store",
+    "context": "pages/shop/NumberDetail.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Store menu",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Store navigation",
+    "context": "shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Storefront and platform controls",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Straightforward offers with no hidden surprises.",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Structured patterns that sound clear, look balanced and stay memorable.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "subcategories",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "Subcategory",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Subcategory: {subcategory}",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Subject",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Subject to applicable law, you may request access, correction, completion, erasure, consent withdrawal, and grievance resolution. We may verify identity and retain records required by law or needed to establish legal claims.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Submit for Review",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Submit issue",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Submit Review",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Submit your first number above.",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Submitting…",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Subscribe",
+    "context": "shared/components/NewsletterForm.tsx"
+  },
+  {
+    "source": "Subscribed 🎉",
+    "context": "shared/components/NewsletterForm.tsx"
+  },
+  {
+    "source": "Subscribers",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Subtotal",
+    "context": "pages/cart/Cart.tsx, pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Sum",
+    "context": "pages/cart/Cart.tsx, pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Sums and budget",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Sun",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Support",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Support available",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Support contact available",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Support throughout your journey",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Support you can reach",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Tab",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Table",
+    "context": "shared/ui/table.tsx"
+  },
+  {
+    "source": "Table pagination",
+    "context": "shared/components/ui-bits.tsx"
+  },
+  {
+    "source": "Take the supplied transfer guidance to your chosen mobile operator and begin the Mobile Number Portability (MNP) process. The operator will confirm the documents and checks needed for your request.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Talk to an expert",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Tap the heart on any number to save it here.",
+    "context": "pages/wishlist/Wishlist.tsx"
+  },
+  {
+    "source": "Taxable amount",
+    "context": "shared/components/BillingSummary.tsx"
+  },
+  {
+    "source": "Technologies used",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Tell support about the issue with your order reference.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Tell us what happened",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Tell us what you would like help with",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Tell us your preferred pack size and matching style.",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Ten-position exact mask",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Terms",
+    "context": "pages/auth/Auth.tsx, pages/checkout/Checkout.tsx"
+  },
+  {
+    "source": "Terms & Conditions",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "Terms and Conditions",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Testimonials",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Tetra",
+    "context": "pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "Tetra · 4",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Tetra Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Tetra Last (Special)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Tetra Numbers - XXXX",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Tetra, Penta, Hexa and beyond",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Textarea",
+    "context": "shared/ui/textarea.tsx"
+  },
+  {
+    "source": "The 48-hour cancellation and fulfilment-failure rules are explained in our",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "The homepage focuses on search, clear listings, and the existing support and purchase paths.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "The order reference is invalid.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "The page you're looking for doesn't exist.",
+    "context": "pages/not-found.tsx"
+  },
+  {
+    "source": "The practical rules behind catalogued series tags, portability, UPC handling, and activation.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "The repeat collection",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "The result updates automatically after all ten digits are entered.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "The right information for your next step.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "The zero collection",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Theme and display preferences",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "These terms are governed by Indian law. Courts at the jurisdiction shown below have jurisdiction, subject to mandatory consumer forums and other statutory remedies. Please first contact support or the grievance officer so we can attempt an efficient resolution.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Third parties and updates",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "This collection currently has no numbers available for purchase.",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "This explains the visible customer flow without changing the actual purchase workflow.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "This is an operational legal draft and should be reviewed by qualified counsel before production publication. Reference frameworks:",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "This number is not available for pre-booking",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "This number is truly distinctive. Browse the full collection to discover another pattern.",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "This order has already been refunded.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "This page took a wrong number.",
+    "context": "pages/not-found.tsx"
+  },
+  {
+    "source": "This private collection is unavailable.",
+    "context": "pages/shop/PrivateCollection.tsx"
+  },
+  {
+    "source": "This VIP number is no longer in the catalogue.",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Timelines and failures",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Timelines are estimates because telecom providers control validation, porting, SIM issuance, and final network activation.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "to {price}",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Today's Lucky Pick",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Toggle sidebar",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Toggle Sidebar",
+    "context": "shared/ui/sidebar.tsx"
+  },
+  {
+    "source": "Total",
+    "context": "pages/dashboard/Dashboard.tsx, pages/orders/OrderDetail.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Total Earned",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Total Orders",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Total payable",
+    "context": "shared/components/BillingSummary.tsx"
+  },
+  {
+    "source": "Total Price",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Total Spent",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Track your VIP number purchases",
+    "context": "pages/orders/Orders.tsx"
+  },
+  {
+    "source": "TRAI MNP guidance",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Transfer support",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Transparent guidance and help when you need it.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Triple",
+    "context": "pages/shop/searchTypes.ts"
+  },
+  {
+    "source": "Tripling",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Tripplate Semi Mirror",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Trust",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Trusted",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Trusted Clients",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Try a smaller pack, another category, or a different matching style.",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Try again",
+    "context": "pages/categories/Categories.tsx, pages/shop/Shop.tsx, pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "Try another matching style or a smaller pack size. Results are generated only from numbers that are currently available.",
+    "context": "pages/corporate/CorporateElitePack.tsx"
+  },
+  {
+    "source": "Try widening the date, price, or category filters.",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Try:",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Turn a memorable number into your everyday connection.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Two simple ways to explore your numerology",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Two-digit & minimal",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Ulta-Pulta",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Unable to check payment",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Unable to detect category.",
+    "context": "shared/components/DetectedCategories.tsx"
+  },
+  {
+    "source": "Unable to load categories. Please retry.",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Unable to load corporate packs.",
+    "context": "pages/corporate/CorporateNumbers.tsx"
+  },
+  {
+    "source": "Unable to load numbers",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Unable to send enquiry.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Unable to send your message",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "Unavailable",
+    "context": "pages/home/components/MarketplaceSections.tsx, pages/shop/NumberDetail.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Under ₹10,000",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Under ₹25,000",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Under ₹5,000",
+    "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Under ₹50,000",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Understand the digit total and numerological root of the mobile number you already use.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Unique",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Unique for Customer Care",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Unique Number",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "UPC Delivery",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "UPC delivery issue",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Update account login password",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Update password",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "Upload failed",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Uploading…",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Use ? for any digit; the mask must contain exactly 10 positions.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Use at least 8 characters with letters, numbers and symbols.",
+    "context": "pages/settings/ChangePassword.tsx"
+  },
+  {
+    "source": "use client",
+    "context": "shared/ui/avatar.tsx, shared/ui/chart.tsx, shared/ui/collapsible.tsx, shared/ui/dialog.tsx, shared/ui/form.tsx, shared/ui/select.tsx, shared/ui/sheet.tsx, shared/ui/sidebar.tsx, shared/ui/tooltip.tsx"
+  },
+  {
+    "source": "Use cropped logo",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Use dark theme",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Use exactly 10 positions containing digits or ? wildcards.",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Use light theme",
+    "context": "shared/theme/ThemeControl.tsx"
+  },
+  {
+    "source": "Use the existing numerology page.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Use the existing shop search, contact page, or WhatsApp enquiry path to continue.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Use this crop",
+    "context": "shared/components/ImageCropDialog.tsx"
+  },
+  {
+    "source": "Use your birth date, name, or both to calculate your core numbers.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Use your personal results to explore available numbers with a matching numerology sum.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "useChart must be used within a <ChartContainer />",
+    "context": "shared/ui/chart.tsx"
+  },
+  {
+    "source": "useFormField should be used within <FormField>",
+    "context": "shared/ui/form.tsx"
+  },
+  {
+    "source": "User",
+    "context": "shared/components/UserAvatar.tsx, shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "user.sell",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Users",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "useSidebar must be used within a SidebarProvider.",
+    "context": "shared/ui/sidebar.tsx"
+  },
+  {
+    "source": "useTheme must be used within a ThemeProvider",
+    "context": "shared/theme/ThemeProvider.tsx"
+  },
+  {
+    "source": "Value",
+    "context": "shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "Venus",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Verified",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Verified listings",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Verified numbers",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Vi",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Vichle 855-5911",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "View",
+    "context": "pages/dashboard/Dashboard.tsx, pages/orders/Orders.tsx"
+  },
+  {
+    "source": "View 7 more",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "View alerts and admin activity",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "View all",
+    "context": "pages/corporate/CorporateNumbers.tsx, pages/home/components/HomeDiscovery.tsx, shared/layout/AccountLayout.tsx, shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "View all categories",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "View all FAQs",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "View all similar numbers",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "View all Sum",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "View filtered shop",
+    "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "View more",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "View numbers",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "View order",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "View search results",
+    "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "VIP Category",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "VIP Collection",
+    "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "VIP number",
+    "context": "pages/home/components/MarketplaceSections.tsx, pages/shop/NumberDetail.tsx, pages/shop/Shop.tsx"
+  },
+  {
+    "source": "VIP Number",
+    "context": "pages/cart/Cart.tsx, pages/checkout/Checkout.tsx, pages/home/components/DealOfDayShowcase.tsx, pages/shop/NumberDetail.tsx, shared/components/NumberCard.tsx, shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "VIP number and pre-book refunds",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "VIP number search modes",
+    "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "VIP number search results",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "VIP Number World",
+    "context": "pages/legal/LegalPage.tsx, shared/components/Logo.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "VIP Number World - Premium Numbers. Premium Identity.",
+    "context": "shared/components/Logo.tsx"
+  },
+  {
+    "source": "VIP Number World currently presents pan-India delivery and support contact paths through the existing site content and layout.",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "VIP Number World location map",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "VIP numbers",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "VIP Numbers",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "VIP numbers aligned with Sum",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "VIP numbers and MNP",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "VIP numbers are offered subject to live availability, successful payment, identity checks where required, and telecom eligibility. A displayed series tag describes cataloguing or origin only. Through Mobile Number Portability, an eligible buyer may port the number to another operator under applicable TRAI rules.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "VIP pattern",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "vipnumberworld.com",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "VNW - VIP Number World. All rights reserved.",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "VNW Administrator",
+    "context": "pages/settings/Settings.tsx"
+  },
+  {
+    "source": "Wait for your operator’s activation confirmation.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Wallet Balance",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "We checked every active condition together. Review a filter or explore the closest matches below.",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "We collect account and contact details, shipping addresses, order and payment references, support communications, device and security logs, consent choices, wishlist/cart activity, and information required for number transfer or identity verification.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "We could not find similar numbers right now.",
+    "context": "pages/shop/SimilarNumbers.tsx"
+  },
+  {
+    "source": "We could not load the categories",
+    "context": "pages/categories/Categories.tsx"
+  },
+  {
+    "source": "We could not load VIP numbers. Please try again.",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "We may suspend access used unlawfully, deceptively, to interfere with the platform, or to violate another person’s rights.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "We process data to provide requested services, fulfil orders, prevent fraud, secure accounts, provide support, meet tax and legal duties, improve the platform, and send marketing only where permitted. We limit collection to information reasonably necessary for those purposes.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "We retain information for the active service relationship and for applicable accounting, dispute, fraud-prevention, and statutory periods, then delete or anonymise it where practical. We use role-based access, encrypted transport, logging, and appropriate technical and organisational safeguards; no system can promise absolute security.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "We use essential cookies or local storage for sessions, cart and wishlist counts, theme, consent, and security. We may use limited analytics or performance technologies to understand aggregate use and diagnose errors.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "We will acknowledge and examine complaints within the periods required by applicable Indian law. Complex matters involving a carrier, operator, payment provider, fraud review, or additional evidence may take longer; we will communicate meaningful updates.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "We will review your request",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Welcome back!",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "What happens next",
+    "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "What matters most to you?",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "What to expect during VIP-number transfer, UPC handling, and activation fulfilment.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "WhatsApp",
+    "context": "shared/layout/PublicLayout.tsx"
+  },
+  {
+    "source": "WhatsApp enquiry",
+    "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "WhatsApp Enquiry",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "When we approve a number you sell to us, the agreed amount is credited here. Withdraw anytime.",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "When you are ready, review the checkout summary, apply an eligible coupon, and check the final amount before paying. Your account keeps the order details together so you can follow what happens next.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Where we can reach you",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Wishlist",
+    "context": "pages/dashboard/Dashboard.tsx, shared/layout/AccountLayout.tsx, shared/layout/BottomNav.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Withdraw",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Withdraw Amount (₹)",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Withdrawal requested",
+    "context": "shared/components/WalletPanel.tsx"
+  },
+  {
+    "source": "Write your message here...",
+    "context": "pages/static/About.tsx"
+  },
+  {
+    "source": "XXX · YYY",
+    "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "xxxxABC etc.",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "xxxyyy Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "xxxyyy Middle",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "xxxyyy Start",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "XY · XY · XY",
+    "context": "pages/home/components/HomeDiscovery.tsx, shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "XYXY · XYZXYZ",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "xyxy (2 times)",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "xyxyxy Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "xyxyxy Start",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "XYZ · XYZ",
+    "context": "pages/home/components/HomeDiscovery.tsx, shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "xyzxyz Last",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "xyzxyz Middle",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "xyzxyz Start",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Years Words Etc.",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "You must provide accurate identity and telecom information, maintain eligibility, obtain and share a valid UPC when required, complete verification promptly, and follow operator instructions. TRAI and operator rules, including waiting periods or outstanding-dues conditions, may apply.",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Your 100% refund request is awaiting admin review.",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Your cart",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Your cart is empty",
+    "context": "pages/cart/Cart.tsx"
+  },
+  {
+    "source": "Your choices and rights",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Your contact details are used only to respond to this request.",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Your control",
+    "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Your core numerology numbers",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Your identity.",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Your name",
+    "context": "pages/numerology/Numerology.tsx, pages/shop/NumberDetail.tsx, pages/static/About.tsx"
+  },
+  {
+    "source": "Your next identity starts with a clear choice.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Your Number (with spaces)",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Your number is pending admin review.",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Your number.",
+    "context": "pages/auth/Auth.tsx"
+  },
+  {
+    "source": "Your number. Your identity.",
+    "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "Your Number. Your Identity.",
+    "context": "pages/home/components/DealOfDayShowcase.tsx"
+  },
+  {
+    "source": "Your number. Your identity. Ready to use.",
+    "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Your numbers",
+    "context": "pages/checkout/Checkout.tsx, shared/layout/StoreHeader.tsx"
+  },
+  {
+    "source": "Your payment was received after the reservation changed. Please contact support for fulfilment or a refund.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Your profile",
+    "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Your purchases will appear here.",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Your Referrals",
+    "context": "pages/referrals/Referrals.tsx"
+  },
+  {
+    "source": "Your reservations",
+    "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Your unpaid reservation has ended. Please begin a new checkout.",
+    "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Your VIP number order is confirmed and its transfer progress is shown below.",
+    "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "Your VIP Number World account at a glance",
+    "context": "pages/dashboard/Dashboard.tsx"
+  },
+  {
+    "source": "Your Wallet",
+    "context": "pages/sell/SellNumber.tsx"
+  },
+  {
+    "source": "Your wishlist",
+    "context": "pages/wishlist/Wishlist.tsx"
+  },
+  {
+    "source": "Your wishlist is empty",
+    "context": "pages/wishlist/Wishlist.tsx"
+  },
+  {
+    "source": "Zero repeating",
+    "context": "API/category taxonomy"
+  },
+  {
+    "source": "Zeros & endings",
+    "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Zoom",
+    "context": "shared/components/ImageCropDialog.tsx"
+  }
+]

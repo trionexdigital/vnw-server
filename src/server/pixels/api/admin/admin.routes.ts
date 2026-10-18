@@ -19,6 +19,7 @@ import { PaymentAnalysis } from '../payments/paymentAnalysis';
 import { Payments } from '../payments/payments';
 import { DeliveryCities } from '../site/deliveryCities';
 import { NumberRecycle } from '../numbers/numberRecycle';
+import { LanguageManagement } from '../site/languageManagement';
 
 const masterModel = new MasterModel();
 const admin = new Admin();
@@ -72,6 +73,13 @@ const handle = (fn: (p: any) => Promise<any>) => async (req: Request, res: Respo
 };
 
 router.post('/dashboard', handle((p) => admin.dashboard(p)));
+const languages = new LanguageManagement();
+router.post('/languages/list', handle((p) => languages.list(p)));
+router.post('/languages/save', handle((p) => languages.save(p)));
+router.post('/languages/import', handle((p) => languages.importDrafts(p)));
+router.post('/languages/export', handle((p) => languages.exportDrafts(p)));
+router.post('/languages/publish', handle((p) => languages.publish(p)));
+router.post('/languages/sync-content', handle(() => languages.syncContent()));
 router.post('/delivery-cities/list', handle(() => new DeliveryCities().list(true)));
 router.post('/delivery-cities/save', handle((p) => new DeliveryCities().save(p)));
 router.post('/delivery-cities/delete', handle((p) => new DeliveryCities().remove(p)));
