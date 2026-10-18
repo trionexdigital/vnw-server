@@ -1,3 +1,4 @@
+import { normalizeServiceablePins, saveServiceablePins } from '../numbers/serviceablePins';
 import { MySqlClient } from '../../../gen_db/database';
 import { MasterModel } from '../../../models/MasterModel';
 import { normalizeIndianNumber, syncNumberCategories } from '../categories/categoryClassifier';
@@ -141,6 +142,7 @@ export class DealerPurchases {
             const visibility = String(payload.visibility_type || 'ONLINE').toUpperCase(); if (!['ONLINE','OFFLINE'].includes(visibility)) throw new Error('Visibility must be Online or Offline.');
             const rtpStatus = String(payload.rtp_status || 'RTA').toUpperCase();
             if (!['RTP','NON_RTP','RTA'].includes(rtpStatus)) throw new Error('Status must be RTP, NON-RTP or RTA.');
+            const pins = normalizeServiceablePins(payload.serviceable_pin_codes, rtpStatus === 'RTA');
             const rtpDate = rtpStatus === 'NON_RTP' ? String(payload.rtp_available_date || '').trim() : null;
             const rtpAvailableAt = rtpDate ? istDateToUtc(rtpDate) : null;
             if (rtpStatus === 'NON_RTP' && !rtpAvailableAt) throw new Error('NON-RTP numbers require a future ready-to-port date.');
@@ -163,7 +165,7 @@ export class DealerPurchases {
                     [number, number, Number(payload.user_id), intended, catalogPrice, globalDiscount, visibility, rtpStatus,
                      rtpAvailableAt],
                 );
-                const numberId = Number(numberInsert.insertId); await syncNumberCategories(connection, numberId, number);
+                const numberId = Number(numberInsert.insertId); await saveServiceablePins(connection, numberId, rtpStatus === 'RTA' ? pins : []); await syncNumberCategories(connection, numberId, number);
                 const [purchaseInsert]: any = await connection.query(
                     `INSERT INTO dealer_purchase_numbers (number_id,external_dealer_id,purchase_price,intended_sale_price,created_by) VALUES (?,?,?,?,?)`,
                     [numberId,dealerId,purchase,intended,Number(payload.user_id)],

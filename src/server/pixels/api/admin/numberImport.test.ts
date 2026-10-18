@@ -6,10 +6,10 @@ import { describeAdminActivity } from '../notifications/adminActivity';
 import { Admin } from './admin';
 
 const secret = 'test-only-master-key';
-const row = (number = '9876543210') => ({ number, mrp: '4999', row: 1 });
+const row = (number = '9876543210') => ({ number, mrp: '4999', serviceable_pin_codes: ['400001'], row: 1 });
 
 test('backend parses comma/newline bulk numbers and validates canonical Indian numbers', () => {
-  const records = readNumberRows({ numbers: '+91 98765 43210, 8123456789\n7123456789', mrp: 1000 });
+  const records = readNumberRows({ numbers: '+91 98765 43210, 8123456789\n7123456789', mrp: 1000, serviceable_pin_codes: ['400001'] });
   assert.equal(records.length, 3);
   assert.equal(validateImportRow(records[0]).values.number, '9876543210');
   assert.equal(validateImportRow({ ...row(), number: '5123456789' }).reasons.length, 1);
@@ -23,7 +23,7 @@ test('backend rejects malformed price, status, visibility, stock and impossible 
 });
 
 test('CSV and XLSX use the same supported headers and reject formulas and unknown columns', () => {
-  const csv = readNumberRows({}, { name: 'numbers.csv', data: Buffer.from('number,mrp\n9876543210,4999\n8123456789,999') });
+  const csv = readNumberRows({}, { name: 'numbers.csv', data: Buffer.from('number,mrp,serviceable_pin_codes\n9876543210,4999,400001\n8123456789,999,400001') });
   assert.equal(csv.length, 2);
   assert.equal(validateImportRow(csv[0]).reasons.length, 0);
   const book = XLSX.utils.book_new();
@@ -39,7 +39,7 @@ test('CSV and XLSX use the same supported headers and reject formulas and unknow
 test('analysis rejects every repeated occurrence and numbers already present in the database', async () => {
   const service = new NumberImport();
   (service as any).dao = { executeQuery: async (sql: string) => ({ status: 1, rows: sql.includes('FROM env') ? [{ value: secret }] : [{ number_value: '8123456789' }] }) };
-  const result: any = await service.analyze({ user_id: 1, numbers: '9876543210,+91 9876543210,8123456789,7123456789,123', mrp: 1000 });
+  const result: any = await service.analyze({ user_id: 1, numbers: '9876543210,+91 9876543210,8123456789,7123456789,123', mrp: 1000, serviceable_pin_codes: ['400001'] });
   assert.equal(result.status, 1);
   assert.equal(result.data.ready, 1);
   assert.equal(result.data.rejected, 4);

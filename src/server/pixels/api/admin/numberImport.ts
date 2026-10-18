@@ -1,3 +1,4 @@
+import { normalizeServiceablePins, saveServiceablePins } from '../numbers/serviceablePins';
 import * as XLSX from 'xlsx';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { MySqlClient } from '../../../gen_db/database';
@@ -8,7 +9,7 @@ import { discountedPrice, readGlobalDiscount } from '../numbers/globalPricing';
 
 const MAX_ROWS = 5000;
 const signingKey = randomBytes(32); // Isolated default for pure helper tests; API uses its shared master key.
-const columns = ['number', 'mrp', 'title_label', 'badge', 'status', 'visibility_type', 'rtp_status', 'rtp_available_date', 'description', 'stock'];
+const columns = ['number', 'mrp', 'title_label', 'badge', 'status', 'visibility_type', 'rtp_status', 'serviceable_pin_codes', 'rtp_available_date', 'description', 'stock'];
 const statuses = ['AVAILABLE', 'RESERVED', 'SOLD', 'PENDING_APPROVAL', 'REJECTED', 'INACTIVE'];
 const badges = ['NONE', 'HOT_PICK', 'PREMIUM', 'BEST_SELLER', 'HOT_DEAL', 'NEW_ARRIVAL', 'VALUE_PICK'];
 export type ImportRow = { row: number; input: string; values?: any; reasons: string[]; number_id?: number };
@@ -57,6 +58,8 @@ export function validateImportRow(record: any): ImportRow {
   if (!statuses.includes(status)) reasons.push('Unknown catalog status.');
   if (!['ONLINE', 'OFFLINE'].includes(visibility)) reasons.push('Visibility must be ONLINE or OFFLINE.');
   if (!['RTP', 'RTA', 'NON_RTP'].includes(readiness)) reasons.push('Readiness must be RTP, RTA or NON_RTP.');
+  let pins: string[] = [];
+  try { pins = normalizeServiceablePins(record.serviceable_pin_codes, readiness === 'RTA' && (!record.number_id || record.serviceable_pin_codes !== undefined)); } catch (error: any) { reasons.push(error.message); }
   let availableAt: string | null = null;
   const availableDate = String(record.rtp_available_date || '').trim();
   if (readiness === 'NON_RTP') {
@@ -75,7 +78,7 @@ export function validateImportRow(record: any): ImportRow {
   if (!label || label.length > 64) reasons.push('Title must be 1 to 64 characters.');
   if (description.length > 10000) reasons.push('Description must be 10,000 characters or less.');
   if (record.formula) reasons.push('Use plain values instead of spreadsheet formulas.');
-  if (number) result.values = { number, mrp, title_label: label, description, badge, status, visibility_type: visibility, rtp_status: readiness, rtp_available_date: availableDate, rtp_available_at: availableAt, stock };
+  if (number) result.values = { number, mrp, title_label: label, description, badge, status, visibility_type: visibility, rtp_status: readiness, rtp_available_date: availableDate, rtp_available_at: availableAt, stock, serviceable_pin_codes: pins };
   return result;
 }
 
@@ -154,6 +157,7 @@ export class NumberImport {
           row.reasons.push('Number already exists in the catalog.');
           continue;
         }
+        await saveServiceablePins(connection, row.number_id!, value.rtp_status === 'RTA' ? value.serviceable_pin_codes : []);
         await syncNumberCategories(connection, row.number_id!, value.number);
       }
       await connection.commit();
@@ -172,7 +176,7 @@ export class NumberImport {
     XLSX.utils.book_append_sheet(book, sheet, 'Numbers');
     XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet([
       ['Column', 'Instructions'], ['number', 'Required: valid Indian mobile number. Store as text; spaces and +91 are supported.'], ['mrp', 'Required: positive amount, maximum two decimal places. Offer price is calculated by site settings.'],
-      ['title_label', 'Optional, up to 64 characters. Default VIP Number.'], ['badge', badges.join(' / ')], ['status', statuses.join(' / ')], ['visibility_type', 'ONLINE / OFFLINE (default ONLINE)'], ['rtp_status', 'RTP / RTA / NON_RTP (default RTA)'], ['rtp_available_date', 'Future YYYY-MM-DD date required for NON_RTP.'], ['description', 'Optional, up to 10,000 characters.'], ['stock', 'Positive integer (default 1).'], ['Duplicates', 'Existing catalog numbers and all repeated occurrences in an upload are rejected.'], ['Limits', 'One CSV or XLSX file, maximum 5,000 rows and 10 MB. Plain values only, no formulas.'],
+      ['title_label', 'Optional, up to 64 characters. Default VIP Number.'], ['badge', badges.join(' / ')], ['status', statuses.join(' / ')], ['visibility_type', 'ONLINE / OFFLINE (default ONLINE)'], ['rtp_status', 'RTP / RTA / NON_RTP (default RTA)'], ['serviceable_pin_codes', 'Required for RTA: six-digit PIN codes separated by semicolons, e.g. 400001;400002. Maximum 1,000.'], ['rtp_available_date', 'Future YYYY-MM-DD date required for NON_RTP.'], ['description', 'Optional, up to 10,000 characters.'], ['stock', 'Positive integer (default 1).'], ['Duplicates', 'Existing catalog numbers and all repeated occurrences in an upload are rejected.'], ['Limits', 'One CSV or XLSX file, maximum 5,000 rows and 10 MB. Plain values only, no formulas.'],
     ]), 'Instructions');
     return workbookDownload(book, 'number-import-template.xlsx');
   }
@@ -186,7 +190,7 @@ export class NumberImport {
       if (result.status !== 1) throw new Error(result.info || 'Export failed.');
       const items = result.data.items || [];
       total = Number(result.data.total || 0);
-      XLSX.utils.sheet_add_aoa(sheet, items.map((item: any) => columns.map((column) => column === 'number' ? String(item.number_value) : column === 'rtp_available_date' ? item.rtp_available_at ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(String(item.rtp_available_at).replace(' ', 'T') + 'Z')) : '' : item[column] ?? '')), { origin: -1 });
+      XLSX.utils.sheet_add_aoa(sheet, items.map((item: any) => columns.map((column) => column === 'serviceable_pin_codes' ? (item.serviceable_pin_codes || []).join(';') : column === 'number' ? String(item.number_value) : column === 'rtp_available_date' ? item.rtp_available_at ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(String(item.rtp_available_at).replace(' ', 'T') + 'Z')) : '' : item[column] ?? '')), { origin: -1 });
       if (!items.length) break;
       page++;
     } while ((page - 1) * 1000 < total);

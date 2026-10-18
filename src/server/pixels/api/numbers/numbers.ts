@@ -1,3 +1,4 @@
+import { normalizeServiceablePins, saveServiceablePins, rtaDiscoveryPredicate } from './serviceablePins';
 import { MySqlClient } from '../../../gen_db/database';
 import { Logger } from '../../../pixels-utility/Logger';
 import { MasterModel } from '../../../models/MasterModel';
@@ -71,10 +72,15 @@ export class Numbers {
         const where: string[] = ['n.deleted_at IS NULL'];
         const params: any[] = [];
 
-        if (!payload.admin_scope) where.push("n.visibility_type = 'ONLINE'", 'n.stock > 0');
+        if (!payload.admin_scope) {
+            where.push("n.visibility_type = 'ONLINE'", 'n.stock > 0');
+            const scope = rtaDiscoveryPredicate(payload);
+            where.push(...scope.where); params.push(...scope.params);
+        }
 
         // Public browsing only shows AVAILABLE unless an explicit status is requested (admin).
-        const status = payload.status ? String(payload.status).toUpperCase() : 'AVAILABLE';
+        if (payload.admin_scope && payload.number_id) { where.push('n.number_id=?'); params.push(Number(payload.number_id)); }
+        const status = payload.admin_scope && payload.status ? String(payload.status).toUpperCase() : 'AVAILABLE';
         if (status !== 'ALL') { where.push('n.status = ?'); params.push(status); }
 
         const hasSubcategory = payload.subcategory_id !== undefined && payload.subcategory_id !== null && payload.subcategory_id !== '';
@@ -175,10 +181,18 @@ export class Numbers {
             [...params, limit, offset],
         );
         if (rowsQ.status !== 1) throw new Error(rowsQ.info || 'Unable to load numbers.');
+        const pinMap = new Map<number, string[]>();
+        if (payload.admin_scope && rowsQ.rows?.length) {
+            const ids = rowsQ.rows.map((row: any) => row.number_id);
+            const pinRows: any = await this.dao.executeQuery(`SELECT number_id,pin_code FROM vip_number_serviceable_pins WHERE number_id IN (${ids.map(() => '?').join(',')}) ORDER BY pin_code`, ids);
+            if (pinRows.status !== 1) throw new Error('Unable to load serviceable PIN codes.');
+            for (const row of pinRows.rows || []) pinMap.set(Number(row.number_id), [...(pinMap.get(Number(row.number_id)) || []), row.pin_code]);
+        }
 
         return {
             items: (rowsQ.rows || []).map((row: any) => ({
                 ...decorateCatalogNumber(row),
+                ...(payload.admin_scope ? { serviceable_pin_codes: pinMap.get(Number(row.number_id)) || [] } : {}),
             })),
             total,
             page,
@@ -289,6 +303,7 @@ export class Numbers {
 
         if (alternatives.length === 0) {
             const popular = await this.queryListing({
+                rtp_status: payload.rtp_status, pin_code: payload.pin_code, show_all_rta: payload.show_all_rta,
                 status: 'AVAILABLE',
                 sort: 'popular',
                 page: 1,
@@ -306,7 +321,8 @@ export class Numbers {
     }
 
     /** Public catalog listing with filters, structured search, sorting and pagination. */
-    async list(payload: any) {
+    async list(payload: any, inventoryScope = false) {
+        payload = { ...payload, admin_scope: inventoryScope, rtp_status: payload?.rtp_status ? String(payload.rtp_status).toUpperCase() : undefined };
         const startMS = new Date().getTime();
         const resModel = this.masterModel.getResponseModel();
         try {
@@ -334,7 +350,7 @@ export class Numbers {
 
     /** Featured numbers for the landing page. */
     async featured(payload: any) {
-        return this.list({ ...payload, is_featured: 1, limit: payload.limit || 8, sort: 'newest' });
+        return this.list({ ...payload, rtp_status: String(payload.rtp_status || '').toUpperCase() === 'RTA' ? undefined : payload.rtp_status, show_all_rta: false, is_featured: 1, limit: payload.limit || 8, sort: 'newest' });
     }
 
     /** Public, deterministic recommendations for a single catalog number. */
@@ -370,7 +386,7 @@ export class Numbers {
             // front while still filling the bounded pool with popular inventory.
             const candidatesQ: any = await this.dao.executeQuery(
                 `SELECT ${SELECT_COLS} FROM vip_numbers n
-                 WHERE n.number_id <> ? AND n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
+                 WHERE n.number_id <> ? AND n.rtp_status <> 'RTA' AND n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
                  ORDER BY CASE WHEN
                     EXISTS (SELECT 1 FROM vip_number_categories vnc
                         WHERE vnc.number_id = n.number_id
@@ -597,6 +613,7 @@ export class Numbers {
                 ...(payload.badge ? { badge: payload.badge } : {}),
                 ...(payload.is_premium ? { is_premium: payload.is_premium } : {}),
                 ...(payload.operator ? { operator: payload.operator } : {}),
+                rtp_status: payload.rtp_status, pin_code: payload.pin_code, show_all_rta: payload.show_all_rta,
                 ...(payload.sort ? { sort: payload.sort } : {}),
                 status: 'AVAILABLE',
                 page: payload.page || 1,
@@ -692,6 +709,7 @@ export class Numbers {
             if (mrp <= 0) throw new Error('MRP must be greater than zero.');
             const rtpStatus = String(payload.rtp_status || 'RTA').toUpperCase();
             if (!['RTP', 'NON_RTP', 'RTA'].includes(rtpStatus)) throw new Error('Status must be RTP, NON-RTP or RTA.');
+            const pins = normalizeServiceablePins(payload.serviceable_pin_codes, rtpStatus === 'RTA');
             const rtpAvailableAt = rtpStatus === 'NON_RTP' ? istDateToUtc(payload.rtp_available_date) : null;
             if (rtpAvailableAt && new Date(rtpAvailableAt.replace(' ', 'T') + 'Z') <= new Date()) throw new Error('NON-RTP availability date must be in the future.');
             const visibility = String(payload.visibility_type || 'ONLINE').toUpperCase();
@@ -715,6 +733,7 @@ export class Numbers {
                 );
                 insertId = Number(result?.insertId) || 0;
                 if (!insertId) throw new Error('Unable to create listing.');
+                await saveServiceablePins(connection, insertId, rtpStatus === 'RTA' ? pins : []);
                 classification = await syncNumberCategories(connection, insertId, number_value);
                 await connection.commit();
             } catch (error) {
@@ -858,8 +877,18 @@ export class Numbers {
                     }
                 }
 
+                const nextReadiness = String(payload.rtp_status ?? current.rtp_status).toUpperCase();
+                const pinsChanged = payload.serviceable_pin_codes !== undefined;
+                if (pinsChanged || nextReadiness !== current.rtp_status) {
+                    const pins = normalizeServiceablePins(payload.serviceable_pin_codes, nextReadiness === 'RTA');
+                    if (current.status === 'RESERVED') {
+                        const [existing]: any = await connection.query('SELECT pin_code FROM vip_number_serviceable_pins WHERE number_id=? ORDER BY pin_code', [id]);
+                        if (JSON.stringify(existing.map((row: any) => row.pin_code).sort()) !== JSON.stringify(pins.slice().sort())) throw new Error('Serviceable PIN codes cannot change while this number is reserved.');
+                    }
+                    await saveServiceablePins(connection, id, nextReadiness === 'RTA' ? pins : []);
+                }
                 const categoryOnlyCompatibilityCall = fields.length === 0 && payload.category_id !== undefined;
-                if (fields.length === 0 && !categoryOnlyCompatibilityCall) throw new Error('Nothing to update.');
+                if (fields.length === 0 && !categoryOnlyCompatibilityCall && !pinsChanged) throw new Error('Nothing to update.');
                 if (fields.length > 0) {
                     const updateParams = [...params, id, ...(payload.owner_id ? [Number(payload.owner_id)] : [])];
                     await connection.query(

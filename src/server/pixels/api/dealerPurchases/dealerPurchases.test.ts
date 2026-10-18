@@ -13,7 +13,7 @@ describe('dealer purchase validation', () => {
   it('accepts Offline dealer inventory without a per-number collection', async () => {
     const service = new DealerPurchases(); let connected = false;
     (service as any).dao = { getConnection: async () => { connected = true; throw new Error('should not connect'); } };
-    const response: any = await service.create({ user_id: 1, external_dealer_id: 2, numbers: '9876543210', visibility_type: 'OFFLINE', purchase_price: 100, intended_sale_price: 200 });
+    const response: any = await service.create({ user_id: 1, external_dealer_id: 2, numbers: '9876543210', visibility_type: 'OFFLINE', serviceable_pin_codes: ['400001'], purchase_price: 100, intended_sale_price: 200 });
     assert.equal(response.status, -33); assert.match(response.info, /should not connect/i); assert.equal(connected, true);
   });
 

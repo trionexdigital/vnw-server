@@ -44,6 +44,10 @@
     "context": "shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
   },
   {
+    "source": "© OpenStreetMap contributors",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "₹0 to ₹10,00,000",
     "context": "pages/shop/SearchWorkbench.tsx"
   },
@@ -861,7 +865,7 @@
   },
   {
     "source": "Browse numbers",
-    "context": "pages/checkout/PaymentReturn.tsx, pages/home/components/HomeSections.tsx"
+    "context": "pages/checkout/PaymentReturn.tsx, pages/home/components/HomeSections.tsx, pages/shop/Shop.tsx"
   },
   {
     "source": "Browse Numbers",
@@ -1048,6 +1052,10 @@
     "context": "pages/settings/ChangePassword.tsx, shared/layout/AccountLayout.tsx"
   },
   {
+    "source": "Change PIN code",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Change shared admin passwords regularly.",
     "context": "pages/settings/ChangePassword.tsx"
   },
@@ -1112,6 +1120,10 @@
     "context": "pages/prebook/PreBook.tsx"
   },
   {
+    "source": "Choose a PIN code to find numbers ready to activate in your area.",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Choose a price range and see available numbers without digging through filters.",
     "context": "pages/home/Home.tsx"
   },
@@ -1122,6 +1134,10 @@
   {
     "source": "Choose with confidence",
     "context": "pages/static/HowItWorks.tsx"
+  },
+  {
+    "source": "Choose your location",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Choose your path",
@@ -1236,10 +1252,6 @@
     "context": "pages/numerology/Numerology.tsx"
   },
   {
-    "source": "Compare",
-    "context": "shared/layout/StoreHeader.tsx"
-  },
-  {
     "source": "Compare numbers",
     "context": "pages/compare/Compare.tsx, shared/layout/StoreHeader.tsx"
   },
@@ -1282,6 +1294,10 @@
   {
     "source": "Configure a Family Pack",
     "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Confirm or correct the detected PIN code before saving.",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Confirm password",
@@ -1426,6 +1442,10 @@
   {
     "source": "Could not load pre-book numbers",
     "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Could not load RTA numbers. Please try again.",
+    "context": "pages/home/components/HomeDiscovery.tsx"
   },
   {
     "source": "Could not load this collection.",
@@ -1644,6 +1664,10 @@
     "context": "shared/components/FamilyPackCard.tsx"
   },
   {
+    "source": "Detecting location…",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Digit",
     "context": "pages/shop/SearchWorkbench.tsx"
   },
@@ -1838,6 +1862,10 @@
   {
     "source": "Enter a valid 10-digit mobile number to see its matching categories and subcategories.",
     "context": "shared/components/DetectedCategories.tsx"
+  },
+  {
+    "source": "Enter a valid six-digit PIN code.",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Enter at least one digit.",
@@ -2228,6 +2256,10 @@
     "context": "shared/components/PremiumShowcaseCards.tsx"
   },
   {
+    "source": "GPS is unavailable. Enter your PIN code manually.",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Grievance Officer",
     "context": "pages/legal/LegalPage.tsx"
   },
@@ -2574,6 +2606,10 @@
   {
     "source": "Loading…",
     "context": "shared/layout/HeaderNumberSearch.tsx"
+  },
+  {
+    "source": "Location access failed or was denied. Enter your PIN code manually.",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Logout",
@@ -3052,6 +3088,10 @@
     "context": "pages/shop/NumberDetail.tsx"
   },
   {
+    "source": "No RTA numbers match your PIN code and current filters.",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "No sell requests yet",
     "context": "pages/sell/SellNumber.tsx"
   },
@@ -3136,6 +3176,10 @@
     "context": "pages/shop/NumberDetail.tsx"
   },
   {
+    "source": "Number readiness",
+    "context": "pages/shop/Shop.tsx"
+  },
+  {
     "source": "Number transfer and activation",
     "context": "pages/legal/LegalPage.tsx"
   },
@@ -3166,6 +3210,10 @@
   {
     "source": "Numbers in Series",
     "context": "pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx"
+  },
+  {
+    "source": "Numbers ready to activate in minutes",
+    "context": "pages/home/components/HomeDiscovery.tsx"
   },
   {
     "source": "Numbers similar to",
@@ -3526,6 +3574,14 @@
   {
     "source": "Pick a root to see available matches.",
     "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "PIN code",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
+    "source": "PIN code: {pin}",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Pincode",
@@ -4144,6 +4200,10 @@
     "context": "pages/home/components/HomeDiscovery.tsx"
   },
   {
+    "source": "Save PIN code",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Save profile",
     "context": "pages/settings/Settings.tsx"
   },
@@ -4424,6 +4484,10 @@
     "context": "pages/settings/Settings.tsx"
   },
   {
+    "source": "Set your PIN code to see local RTA numbers.",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Settings",
     "context": "shared/layout/AccountLayout.tsx"
   },
@@ -4472,8 +4536,24 @@
     "context": "pages/home/components/HomeDiscovery.tsx"
   },
   {
+    "source": "Show all numbers",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
+    "source": "Show all RTA numbers",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Show Numbers",
     "context": "pages/shop/SearchWorkbench.tsx"
+  },
+  {
+    "source": "Show numbers for my PIN",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
+    "source": "Showing all RTA numbers. Activation availability depends on the service area.",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Showing testimonials returned by the existing API.",
@@ -4554,6 +4634,10 @@
   {
     "source": "Six repeating digits",
     "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Skip",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Slide",
@@ -5045,7 +5129,7 @@
   },
   {
     "source": "Try again",
-    "context": "pages/categories/Categories.tsx, pages/shop/Shop.tsx, pages/shop/SimilarNumbers.tsx"
+    "context": "pages/categories/Categories.tsx, pages/home/components/HomeDiscovery.tsx, pages/shop/Shop.tsx, pages/shop/SimilarNumbers.tsx"
   },
   {
     "source": "Try another matching style or a smaller pack size. Results are generated only from numbers that are currently available.",
@@ -5192,6 +5276,10 @@
     "context": "shared/theme/ThemeControl.tsx"
   },
   {
+    "source": "Use my location",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
     "source": "Use the existing numerology page.",
     "context": "pages/home/components/HomeSections.tsx"
   },
@@ -5238,6 +5326,10 @@
   {
     "source": "useTheme must be used within a ThemeProvider",
     "context": "shared/theme/ThemeProvider.tsx"
+  },
+  {
+    "source": "Using GPS sends your approximate location to OpenStreetMap to find your PIN code.",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "Value",
@@ -5414,6 +5506,10 @@
   {
     "source": "We collect account and contact details, shipping addresses, order and payment references, support communications, device and security logs, consent choices, wishlist/cart activity, and information required for number transfer or identity verification.",
     "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "We could not detect an Indian PIN code. Enter it manually or try again.",
+    "context": "shared/location/LocationProvider.tsx"
   },
   {
     "source": "We could not find similar numbers right now.",

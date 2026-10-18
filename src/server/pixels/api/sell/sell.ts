@@ -134,7 +134,7 @@ export class Sell {
      * number and links it back to the request. MRP defaults to the user's asking
      * price; the store-wide discount determines the catalog selling price.
      */
-    async approve(payload: { user_id: number, request_id: number, offer_price?: number, mrp?: number, buy_price?: number, category_id?: unknown, admin_note?: string }) {
+    async approve(payload: { user_id: number, request_id: number, offer_price?: number, mrp?: number, buy_price?: number, category_id?: unknown, admin_note?: string, rtp_status?: string, serviceable_pin_codes?: unknown }) {
         let resModel = this.masterModel.getResponseModel();
         try {
             const rid = Number(payload.request_id);
@@ -154,6 +154,8 @@ export class Sell {
                 seller_id: 1,
                 seller_type: 'ADMIN',
                 title_label: 'VIP Number',
+                rtp_status: payload.rtp_status || 'RTA',
+                serviceable_pin_codes: payload.serviceable_pin_codes,
                 mrp,
                 description: reqRow.description,
                 status: 'AVAILABLE',

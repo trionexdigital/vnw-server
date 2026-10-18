@@ -1,5 +1,7 @@
 # VIP Number World database schema
 
+For PIN-based RTA discovery, apply `../migrations/20261018_rta_location_sqlyog.sql` before deploying the API and UI. See `../migrations/20261018_rta_location_README.md` for GPS configuration, existing inventory behavior and verification.
+
 This directory contains one schema-only SQL file for each application table. No file contains seed data. The application does not create, alter, migrate, or seed tables during startup.
 
 For a new empty database, run `mysql --database=<database_name> < apply_all.sql` from this directory, then apply the consolidated SQLyog migration below for its paging indexes. For an existing production database, `CREATE TABLE IF NOT EXISTS` deliberately preserves existing tables and rows.

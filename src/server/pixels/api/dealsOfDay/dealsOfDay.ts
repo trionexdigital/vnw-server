@@ -46,7 +46,7 @@ export class DealsOfDay {
                         ${NUMBER_COLUMNS}
                  FROM deal_of_day_numbers d
                  INNER JOIN vip_numbers n ON n.number_id = d.number_id
-                 WHERE d.is_active = 1 AND n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
+                 WHERE d.is_active = 1 AND n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status <> 'RTA'
                  ORDER BY d.sort_order ASC, d.deal_id ASC`,
                 [],
             );
@@ -63,7 +63,7 @@ export class DealsOfDay {
                 `SELECT NULL AS deal_id, NULL AS hero_label, NULL AS hero_description,
                         NULL AS sort_order, 1 AS is_active, ${NUMBER_COLUMNS}
                  FROM vip_numbers n
-                 WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.is_featured = 1
+                 WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status <> 'RTA' AND n.is_featured = 1
                  ORDER BY n.views DESC, n.created_at DESC
                  LIMIT 8`,
                 [],
@@ -75,7 +75,7 @@ export class DealsOfDay {
                     `SELECT NULL AS deal_id, NULL AS hero_label, NULL AS hero_description,
                             NULL AS sort_order, 1 AS is_active, ${NUMBER_COLUMNS}
                      FROM vip_numbers n
-                     WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE'
+                     WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status <> 'RTA'
                      ORDER BY n.created_at DESC
                      LIMIT 8`,
                     [],

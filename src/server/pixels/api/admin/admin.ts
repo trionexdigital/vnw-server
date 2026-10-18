@@ -89,7 +89,7 @@ export class Admin {
     }
 
     // ---------- Numbers ----------
-    async numbersList(payload: any) { return this.numbers.list({ ...payload, status: payload.status || 'ALL', admin_scope: true }); }
+    async numbersList(payload: any) { return this.numbers.list({ ...payload, status: payload.status || 'ALL' }, true); }
     async numberSave(payload: any) {
         const validation = validateImportRow({ ...payload, number: payload.number_value ?? payload.display_number, row: 1 });
         if (validation.reasons.length) return { ...this.masterModel.getResponseModel(), status: -33, info: validation.reasons.join(' ') };

@@ -1,3 +1,4 @@
+import { LocationPincode } from './locationPincode';
 import { Router, Request, Response } from 'express';
 import { MasterModel } from "../../../models/MasterModel";
 import * as gtUtil from "../../../pixels-utility";
@@ -31,6 +32,8 @@ const pub = (fn: (p: any) => Promise<any>) => async (req: Request, res: Response
     }
 };
 
+const locationPincode = new LocationPincode();
+router.post('/location/pincode', pub(p => locationPincode.lookup(p)));
 const languages = new LanguageManagement();
 router.post('/languages/catalog', pub((p) => languages.catalog(p)));
 

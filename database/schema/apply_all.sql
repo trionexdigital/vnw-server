@@ -54,3 +54,5 @@ SOURCE wallet_transactions.sql;
 SOURCE number_recycle_events.sql;
 SOURCE language_management.sql;
 SOURCE ../migrations/20261012_custom_language_management_sqlyog.sql;
+
+SOURCE rta_location.sql;

@@ -64,8 +64,8 @@ export class Dealer {
         return resModel;
     }
 
-    async listings(payload: { user_id: number, page?: number, limit?: number }) {
-        return this.numbers.list({ seller_id: payload.user_id, status: 'ALL', page: payload.page, limit: payload.limit || 20, sort: 'newest' });
+    async listings(payload: { user_id: number, page?: number, limit?: number, number_id?: number }) {
+        return this.numbers.list({ number_id: payload.number_id, seller_id: payload.user_id, status: 'ALL', page: payload.page, limit: payload.limit || 20, sort: 'newest' }, true);
     }
 
     /** Dealer creates a listing → enters PENDING_APPROVAL for admin review. */

@@ -29,7 +29,7 @@ export class Categories {
                 `SELECT vnc.category_slug AS slug, COUNT(DISTINCT vnc.number_id) AS number_count
                  FROM vip_number_categories vnc
                  INNER JOIN vip_numbers n ON n.number_id = vnc.number_id
-                 WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND vnc.classifier_version = ?
+                 WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status <> 'RTA' AND vnc.classifier_version = ?
                  GROUP BY vnc.category_slug`, [CATEGORY_CLASSIFIER_VERSION]
             );
             if (q.status !== 1) throw new Error(q.info || 'Unable to load category counts.');
@@ -40,7 +40,7 @@ export class Categories {
                 `SELECT vns.category_id, vns.subcategory_id, COUNT(DISTINCT vns.number_id) AS number_count
                  FROM vip_number_subcategories vns
                  INNER JOIN vip_numbers n ON n.number_id = vns.number_id
-                 WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type = 'ONLINE' AND vns.classifier_version = ?
+                 WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type = 'ONLINE' AND n.rtp_status <> 'RTA' AND vns.classifier_version = ?
                  GROUP BY vns.category_id, vns.subcategory_id`, [CATEGORY_CLASSIFIER_VERSION],
             );
             if (subs.status !== 1) throw new Error(subs.info || 'Unable to load subcategory counts.');

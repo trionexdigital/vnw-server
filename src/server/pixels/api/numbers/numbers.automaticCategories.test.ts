@@ -105,6 +105,7 @@ test('numbers/create classifies in the same transaction and ignores legacy categ
         category_id: 123,
         seller_id: 1,
         seller_type: 'ADMIN',
+        serviceable_pin_codes: ['400001'],
         mrp: 5000,
         offer_price: 4000,
     });

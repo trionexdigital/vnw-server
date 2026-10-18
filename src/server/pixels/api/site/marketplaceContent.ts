@@ -147,7 +147,7 @@ export class MarketplaceContent {
       const q: any = await this.dao.executeQuery(
         `SELECT ${NUMBER_COLUMNS}
          FROM vip_numbers n
-         WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status IN ('RTP','RTA')${categoryWhere}
+         WHERE n.deleted_at IS NULL AND n.status = 'AVAILABLE' AND n.stock > 0 AND n.visibility_type='ONLINE' AND n.rtp_status <> 'RTA' AND n.rtp_status = 'RTP'${categoryWhere}
          ORDER BY n.is_featured DESC, n.views DESC, n.created_at DESC, n.number_id DESC`, category ? [category] : [],
       );
       if (q.status !== 1) throw new Error(q.info || 'Unable to load available numbers.');
