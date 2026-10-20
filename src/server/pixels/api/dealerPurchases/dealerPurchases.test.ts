@@ -3,6 +3,32 @@ import { describe, it } from 'node:test';
 import { DealerPurchases } from './dealerPurchases';
 
 describe('dealer purchase validation', () => {
+  it('prices dealer inventory from either base-price input while retaining supplier cost', async () => {
+    for (const input of [{ base_price: '2500' }, { intended_sale_price: '2500' }]) {
+      const service = new DealerPurchases(); const inserts: Record<string, any[]> = {}; let committed = false;
+      (service as any).dao = { getConnection: async () => ({
+        beginTransaction: async () => undefined, commit: async () => { committed = true; },
+        rollback: async () => undefined, release: () => undefined,
+        query: async (sql: string, values: any[] = []) => {
+          if (sql.includes('JOIN auth_user')) return [[{ external_dealer_id: 2 }]];
+          if (sql.startsWith('SELECT number_value')) return [[]];
+          if (sql.startsWith('INSERT INTO vip_numbers')) {
+            assert.equal((sql.match(/\?/g) || []).length, values.length);
+            inserts.number = values; return [{ insertId: 7 }];
+          }
+          if (sql.startsWith('INSERT INTO dealer_purchase_numbers')) { inserts.ledger = values; return [{ insertId: 8 }]; }
+          return [{ affectedRows: 1 }];
+        },
+      }) };
+      const response: any = await service.create({ ...input, user_id: 1, external_dealer_id: 2, numbers: '8008009307', rtp_status: 'RTP', purchase_price: 2000, additional_discount_pct: '10' });
+      assert.equal(response.status, 1, response.info);
+      assert.equal(committed, true);
+      assert.deepEqual(inserts.number.slice(3, 6), ['3125.00', '2671.88', '14.50']);
+      assert.deepEqual(inserts.number.slice(-2), ['2500.00', '10.00']);
+      assert.deepEqual(inserts.ledger, [7, 2, 2000, '2500.00', 1]);
+    }
+  });
+
   it('rejects duplicate numbers before starting a transaction', async () => {
     const service = new DealerPurchases(); let connected = false;
     (service as any).dao = { getConnection: async () => { connected = true; throw new Error('should not connect'); } };

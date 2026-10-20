@@ -3,11 +3,13 @@ import { createHash } from 'crypto';
 import { MySqlClient } from '../../../gen_db/database';
 import { MasterModel } from '../../../models/MasterModel';
 import { isIndianPin } from '../numbers/serviceablePins';
+import { Logger } from '../../../pixels-utility/Logger';
 
 type LocationResult = { pin_code: string | null; reason?: 'INVALID_COORDINATES' | 'BUSY' | 'UNAVAILABLE' | 'NO_INDIAN_PIN' };
 
 export class LocationPincode {
     private dao = new MySqlClient('pixels');
+    private logger = new Logger();
 
     async lookup(payload: any) {
         const response = { ...new MasterModel().getResponseModel(), data: { pin_code: null } as LocationResult };
@@ -22,11 +24,17 @@ export class LocationPincode {
                 const base = process.env.NOMINATIM_BASE_URL || 'https://nominatim.openstreetmap.org';
                 const key = createHash('sha256').update(`${base}:${lat}:${lon}`).digest('hex');
                 const cached: any = await this.dao.executeQuery('SELECT pin_code FROM location_geocode_cache WHERE location_key=? AND expires_at>UTC_TIMESTAMP(3)', [key]);
-                if (cached.status !== 1) throw new Error('Cache unavailable');
+                if (cached.status !== 1) {
+                    this.logger.error('GPS PIN lookup: database cache unavailable. Check database connectivity and the RTA location migration.');
+                    throw new Error('Cache unavailable');
+                }
                 if (cached.rows?.length) {
                     data = { pin_code: cached.rows[0].pin_code, ...(cached.rows[0].pin_code ? {} : { reason: 'NO_INDIAN_PIN' as const }) };
                 } else {
                     // Atomic across processes/hosts sharing this database. No queue or automatic retries.
+                    // Repair a missing seed row without running schema changes in the application.
+                    const seed: any = await this.dao.executeQuery("INSERT IGNORE INTO location_geocode_throttle(service,next_request_at) VALUES ('nominatim','2000-01-01')", []);
+                    if (seed.status !== 1) throw new Error('Throttle unavailable');
                     const gate: any = await this.dao.executeQuery("UPDATE location_geocode_throttle SET next_request_at=DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 1100000 MICROSECOND) WHERE service='nominatim' AND next_request_at<=UTC_TIMESTAMP(3)", []);
                     if (gate.status !== 1) throw new Error('Throttle unavailable');
                     if (gate.affectedRows !== 1) data = { pin_code: null, reason: 'BUSY' };
@@ -38,6 +46,7 @@ export class LocationPincode {
                             maxRedirects: 0,
                         });
                         const address = result.data?.address;
+                        if (!address || typeof address.country_code !== 'string') throw new Error('Invalid geocoder response');
                         const pin = typeof address?.postcode === 'string' ? address.postcode.trim() : '';
                         const valid = address?.country_code === 'in' && isIndianPin(pin);
                         data = { pin_code: valid ? pin : null, ...(valid ? {} : { reason: 'NO_INDIAN_PIN' as const }) };
@@ -48,7 +57,10 @@ export class LocationPincode {
                     }
                 }
             }
-        } catch { /* Never log coordinates or upstream URLs. Manual entry remains available. */ }
+        } catch {
+            // Do not log the thrown Axios error: its configuration includes the coordinates.
+            this.logger.error('GPS PIN lookup unavailable. No coordinates or provider request details were logged.');
+        }
         response.status = 1; response.info = 'OK'; response.data = data;
         return response;
     }

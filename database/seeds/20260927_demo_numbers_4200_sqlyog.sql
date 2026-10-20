@@ -12,8 +12,6 @@ SET @vnw_demo_publish := 1; -- 0 = INACTIVE safe preview; 1 = AVAILABLE in an is
 SET @vnw_demo_marker := 'VNW DEMO SEED 2026-09-27';
 SET @vnw_demo_private_token := 'Toqhh2DJxgD8JkAgX6Jm__4ILrWU676Ngvz2XtD1w9I';
 SET @vnw_demo_admin_id := (SELECT user_id FROM auth_user WHERE role = 'ADMIN' AND status = 'ACTIVE' ORDER BY user_id LIMIT 1);
-SET @vnw_demo_discount := (SELECT ROUND(LEAST(99, GREATEST(0, COALESCE(CAST(value AS DECIMAL(5,2)),0))),0) FROM env WHERE key_id='GLOBAL_NUMBER_DISCOUNT_PERCENT' LIMIT 1);
-SET @vnw_demo_discount := COALESCE(@vnw_demo_discount,0);
 SELECT IF(@vnw_demo_admin_id IS NULL, 'STOP: create/activate an ADMIN user before running the inserts', CONCAT('Using ADMIN user ', @vnw_demo_admin_id)) AS preflight;
 
 DROP TEMPORARY TABLE IF EXISTS `_vnw_demo_subcategories`;
@@ -60765,11 +60763,11 @@ INSERT INTO `_vnw_demo_subcategories` (`number_value`,`category_id`,`subcategory
 ('7191993939',45,122);
 
 START TRANSACTION;
-INSERT INTO `vip_numbers` (`number_value`,`display_number`,`seller_id`,`seller_type`,`title_label`,`badge`,`mrp`,`offer_price`,`discount_pct`,`numerology_sum`,`operator`,`description`,`stock`,`status`,`visibility_type`,`rtp_status`,`rtp_available_at`,`is_featured`)
-SELECT s.number_value, CONCAT(LEFT(s.number_value,4),' ',SUBSTRING(s.number_value,5,3),' ',RIGHT(s.number_value,3)), @vnw_demo_admin_id, 'ADMIN', 'VIP Number', s.badge, s.mrp,
-  ROUND(s.mrp * (100 - @vnw_demo_discount) / 100, 2), ROUND(@vnw_demo_discount), s.numerology_sum, NULL, @vnw_demo_marker, 1,
+INSERT INTO `vip_numbers` (`number_value`,`display_number`,`seller_id`,`seller_type`,`title_label`,`badge`,`mrp`,`offer_price`,`discount_pct`,`numerology_sum`,`operator`,`description`,`stock`,`status`,`visibility_type`,`rtp_status`,`rtp_available_at`,`is_featured`,`base_price`,`additional_discount_pct`)
+SELECT s.number_value, CONCAT(LEFT(s.number_value,4),' ',SUBSTRING(s.number_value,5,3),' ',RIGHT(s.number_value,3)), @vnw_demo_admin_id, 'ADMIN', 'VIP Number', s.badge, ROUND(s.mrp * 1.25, 2),
+  ROUND(s.mrp * 1.25 * 0.95, 2), 5, s.numerology_sum, NULL, @vnw_demo_marker, 1,
   IF(@vnw_demo_publish=1,'AVAILABLE','INACTIVE'), s.visibility_type, s.rtp_status,
-  IF(s.rtp_status='NON_RTP',DATE_ADD(UTC_TIMESTAMP(), INTERVAL s.rtp_days DAY),NULL), s.is_featured
+  IF(s.rtp_status='NON_RTP',DATE_ADD(UTC_TIMESTAMP(), INTERVAL s.rtp_days DAY),NULL), s.is_featured, s.mrp, 0
 FROM `_vnw_demo_seed` s LEFT JOIN `vip_numbers` existing ON existing.number_value=s.number_value WHERE existing.number_id IS NULL;
 
 INSERT INTO `vip_number_categories` (`number_id`,`category_slug`,`classifier_version`)

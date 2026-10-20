@@ -9,7 +9,7 @@ test('PIN validation rejects malformed service areas and deduplicates exact PINs
     for (const value of ['', '000001', '12345', '1234567', '40000x', ['400001', '']]) assert.throws(() => normalizeServiceablePins(value, true));
     assert.deepEqual(normalizeServiceablePins(undefined), []);
     assert.match(validateImportRow({ number: '9876543210', mrp: 100, rtp_status: 'RTA' }).reasons.join(), /require/);
-    assert.equal(validateImportRow({ number_id: 1, number: '9876543210', mrp: 100, rtp_status: 'RTA' }).reasons.length, 0);
+    assert.match(validateImportRow({ number_id: 1, number: '9876543210', mrp: 100, visibility_type: 'ONLINE', rtp_status: 'RTA' }).reasons.join(), /PIN/);
 });
 
 test('RTA defaults never broaden missing or unmatched PINs', () => {
@@ -70,7 +70,7 @@ test('AI and all relaxed alternatives retain the RTA location boundary', async (
 
 test('RTA service areas survive an exported workbook and re-import validation', async () => {
     const importer = new NumberImport();
-    const file = await importer.export({}, async () => ({status:1,data:{items:[{number_value:'9876543210',mrp:100,rtp_status:'RTA',serviceable_pin_codes:['400001','400002']}],total:1}}));
+    const file = await importer.export({}, async () => ({status:1,data:{items:[{number_value:'9876543210',mrp:100,visibility_type:'ONLINE',rtp_status:'RTA',serviceable_pin_codes:['400001','400002']}],total:1}}));
     const rows = readNumberRows({}, {name:file.filename,data:Buffer.from(file.content_base64,'base64')});
     const result = validateImportRow(rows[0]);
     assert.deepEqual(result.reasons, []);
@@ -109,7 +109,7 @@ test('legacy RTA edits preserve unassigned service areas; explicit empty updates
         const statements:string[]=[];
         (numbers as any).dao={getConnection:async()=>({beginTransaction:async()=>{},release:()=>{},rollback:async()=>{rolledBack=true;},commit:async()=>{committed=true;},query:async(sql:string)=>{
             statements.push(sql);
-            if(sql.includes('FROM vip_numbers'))return [[{number_value:'9876543210',display_number:'9876543210',rtp_status:'RTA',status:'AVAILABLE'}]];
+            if(sql.includes('FROM vip_numbers'))return [[{number_value:'9876543210',display_number:'9876543210',mrp:'2500.00',offer_price:'1250.00',rtp_status:'RTA',status:'AVAILABLE'}]];
             return [{affectedRows:1}];
         }})};
         const result:any=await numbers.update({number_id:1,title_label:'Updated title',...(explicit?{serviceable_pin_codes:[]}: {})});

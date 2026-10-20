@@ -27,7 +27,7 @@ import { Prebooks, istDateToUtc } from '../prebooks/prebooks';
 import { pushNotification } from '../notifications/notifications';
 import { rankSimilarNumbers } from './similarNumbers';
 import { hashPrivateToken, OFFLINE_CATALOG_NAME } from '../privateLinks/privateLinks';
-import { discountedPrice, readGlobalDiscount } from './globalPricing';
+import { resolveNumberPricing } from './numberPricing';
 
 const SELECT_COLS = `n.number_id, n.number_value, n.display_number,
     n.seller_id, n.seller_type, n.title_label, n.badge, n.mrp, n.offer_price, n.discount_pct,
@@ -176,7 +176,7 @@ export class Numbers {
         const total = Number(countQ.rows?.[0]?.total) || 0;
 
         const rowsQ: any = await this.dao.executeQuery(
-            `SELECT ${SELECT_COLS} FROM vip_numbers n
+            `SELECT ${SELECT_COLS}${payload.admin_scope ? ', n.base_price, n.additional_discount_pct' : ''} FROM vip_numbers n
              ${whereSql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
             [...params, limit, offset],
         );
@@ -705,8 +705,7 @@ export class Numbers {
             if (normalizeIndianNumber(display_number) !== number_value) {
                 throw new Error('Display number must match the submitted mobile number.');
             }
-            const mrp = Number(payload.mrp) || 0;
-            if (mrp <= 0) throw new Error('MRP must be greater than zero.');
+            const pricing = resolveNumberPricing(payload);
             const rtpStatus = String(payload.rtp_status || 'RTA').toUpperCase();
             if (!['RTP', 'NON_RTP', 'RTA'].includes(rtpStatus)) throw new Error('Status must be RTP, NON-RTP or RTA.');
             const pins = normalizeServiceablePins(payload.serviceable_pin_codes, rtpStatus === 'RTA');
@@ -720,16 +719,14 @@ export class Numbers {
             let classification: ReturnType<typeof classifyNumber>;
             await connection.beginTransaction();
             try {
-                const discount = await readGlobalDiscount(connection);
-                const offer = discountedPrice(mrp, discount);
                 const [result]: any = await connection.query(
                 `INSERT INTO vip_numbers (number_value, display_number, seller_id, seller_type,
-                 title_label, badge, mrp, offer_price, discount_pct, numerology_sum, operator, description, stock, status, visibility_type, rtp_status, rtp_available_at, is_featured)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                 title_label, badge, mrp, offer_price, discount_pct, numerology_sum, operator, description, stock, status, visibility_type, rtp_status, rtp_available_at, is_featured, base_price, additional_discount_pct)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 [number_value, display_number, payload.seller_id, payload.seller_type || 'ADMIN',
-                 payload.title_label || 'VIP Number', (payload.badge || 'NONE').toUpperCase(), mrp, offer, discount,
+                 String(payload.title_label || '').trim(), (payload.badge || 'NONE').toUpperCase(), pricing.mrp, pricing.offer_price, pricing.discount_pct,
                  ([...number_value].reduce((sum, digit) => sum + Number(digit), 0) - 1) % 9 + 1, null, payload.description || null,
-                 Number(payload.stock) || 1, payload.status || 'AVAILABLE', visibility, rtpStatus, rtpAvailableAt, payload.is_featured ? 1 : 0]
+                 Number(payload.stock) || 1, payload.status || 'AVAILABLE', visibility, rtpStatus, rtpAvailableAt, payload.is_featured ? 1 : 0, pricing.base_price, pricing.additional_discount_pct]
                 );
                 insertId = Number(result?.insertId) || 0;
                 if (!insertId) throw new Error('Unable to create listing.');
@@ -749,6 +746,7 @@ export class Numbers {
             resModel.info = deprecationWarning || 'OK';
             resModel.data = {
                 number_id: insertId,
+                ...pricing,
                 categories: classification!.categories.map(categoryMatchToApiModel),
                 primary_category: classification!.primaryCategory ? categoryMatchToApiModel(classification!.primaryCategory) : null,
                 category_name: classification!.primaryCategory?.name || null,
@@ -785,7 +783,7 @@ export class Numbers {
                 const ownerScope = payload.owner_id ? ' AND seller_id = ?' : '';
                 const ownerParams = payload.owner_id ? [id, Number(payload.owner_id)] : [id];
                 const [rows]: any = await connection.query(
-                    `SELECT number_value, display_number, mrp, offer_price, status, visibility_type, rtp_status, rtp_available_at
+                    `SELECT number_value, display_number, mrp, offer_price, status, visibility_type, rtp_status, rtp_available_at, base_price, additional_discount_pct
                      FROM vip_numbers WHERE number_id = ? AND deleted_at IS NULL${ownerScope} FOR UPDATE`, ownerParams);
                 if (!Array.isArray(rows) || rows.length === 0) throw new Error('Number not found.');
                 const current = rows[0];
@@ -830,13 +828,9 @@ export class Numbers {
                     params.push(([...numberValue].reduce((sum, digit) => sum + Number(digit), 0) - 1) % 9 + 1);
                 }
 
-                if (payload.mrp !== undefined) {
-                    const mrp = Number(payload.mrp);
-                    if (!Number.isFinite(mrp) || mrp <= 0) throw new Error('MRP must be greater than zero.');
-                    const discount = await readGlobalDiscount(connection);
-                    fields.push('mrp = ?', 'offer_price = ?', 'discount_pct = ?');
-                    params.push(mrp, discountedPrice(mrp, discount), discount);
-                }
+                const pricing = resolveNumberPricing(payload, current);
+                fields.push('base_price = ?', 'additional_discount_pct = ?', 'mrp = ?', 'offer_price = ?', 'discount_pct = ?');
+                params.push(pricing.base_price, pricing.additional_discount_pct, pricing.mrp, pricing.offer_price, pricing.discount_pct);
 
                 if (payload.visibility_type !== undefined) {
                     const visibility = String(payload.visibility_type).toUpperCase();

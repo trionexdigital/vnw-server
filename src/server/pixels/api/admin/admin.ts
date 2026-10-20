@@ -91,9 +91,12 @@ export class Admin {
     // ---------- Numbers ----------
     async numbersList(payload: any) { return this.numbers.list({ ...payload, status: payload.status || 'ALL' }, true); }
     async numberSave(payload: any) {
-        const validation = validateImportRow({ ...payload, number: payload.number_value ?? payload.display_number, row: 1 });
+        // Stock remains internal availability state, never an uploader-controlled quantity.
+        const { stock: _ignoredStock, ...input } = payload;
+        const validation = validateImportRow({ ...input, number: input.number_value ?? input.display_number, row: 1 }, Boolean(input.number_id));
         if (validation.reasons.length) return { ...this.masterModel.getResponseModel(), status: -33, info: validation.reasons.join(' ') };
-        return payload.number_id ? this.numbers.update(payload) : this.numbers.create({ ...payload, seller_id: payload.user_id, seller_type: 'ADMIN', status: payload.status || 'AVAILABLE' });
+        const normalized = { ...input, title_label: input.number_id && input.title_label === undefined ? undefined : validation.values.title_label, badge: input.number_id && input.badge === undefined ? undefined : validation.values.badge, status: input.number_id && input.status === undefined ? undefined : validation.values.status, visibility_type: validation.values.visibility_type, rtp_status: validation.values.rtp_status, serviceable_pin_codes: validation.values.serviceable_pin_codes };
+        return input.number_id ? this.numbers.update(normalized) : this.numbers.create({ ...normalized, seller_id: input.user_id, seller_type: 'ADMIN' });
     }
     async numberDelete(payload: any) { return this.numbers.remove({ number_id: payload.number_id }); }
     async numberApprove(payload: any) {
@@ -437,14 +440,13 @@ export class Admin {
     async settingsGet(_payload: any) {
         let resModel = this.masterModel.getResponseModel();
         try {
-            const keys = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT','GST_PERCENT',
+            const keys = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GST_PERCENT',
                 'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
             const q: any = await this.dao.executeQuery(
                 `SELECT key_id, value FROM env WHERE key_id IN (${keys.map(() => '?').join(',')})`, keys);
             const map: any = {};
             (q.rows || []).forEach((r: any) => map[r.key_id] = r.value);
             if (map.GST_PERCENT === undefined) map.GST_PERCENT = '0';
-            if (map.GLOBAL_NUMBER_DISCOUNT_PERCENT === undefined) map.GLOBAL_NUMBER_DISCOUNT_PERCENT = '0';
             resModel.status = 1; resModel.info = 'OK'; resModel.data = map;
         } catch (error) { resModel.status = -33; resModel.info = 'catch : ' + error; }
         return resModel;
@@ -453,13 +455,9 @@ export class Admin {
         let resModel = this.masterModel.getResponseModel();
         let connection: any;
         try {
-            const allowed = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GLOBAL_NUMBER_DISCOUNT_PERCENT','GST_PERCENT',
+            const allowed = ['SITE_TITLE','SITE_TAGLINE','CONTACT_EMAIL','CONTACT_PHONE','WHATSAPP','SUPPORT_ADDRESS','PROMO_TEXT','PROMO_COUPON','GST_PERCENT',
                 'LEGAL_BUSINESS_NAME','LEGAL_REGISTERED_ADDRESS','LEGAL_JURISDICTION','LEGAL_EMAIL','GRIEVANCE_OFFICER_NAME','GRIEVANCE_EMAIL','GRIEVANCE_PHONE','GSTIN','CIN','POLICY_EFFECTIVE_DATE'];
             if (payload.GST_PERCENT !== undefined && (!/^\d{1,3}(\.\d{1,2})?$/.test(String(payload.GST_PERCENT)) || Number(payload.GST_PERCENT) > 100)) throw new Error('GST must be a percentage from 0 to 100 with at most two decimals.');
-            const globalDiscount = Number(payload.GLOBAL_NUMBER_DISCOUNT_PERCENT);
-            if (!Number.isInteger(globalDiscount) || globalDiscount < 0 || globalDiscount > 99) {
-                throw new Error('Store discount must be a whole percentage from 0 to 99.');
-            }
             connection = await this.dao.getConnection();
             await connection.beginTransaction();
             for (const k of allowed) {
@@ -468,11 +466,6 @@ export class Admin {
                         `INSERT INTO env (key_id, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)`, [k, String(payload[k])]);
                 }
             }
-            await connection.query(
-                `UPDATE vip_numbers
-                 SET offer_price=ROUND(mrp * (100 - ?) / 100, 2), discount_pct=?`,
-                [globalDiscount, globalDiscount],
-            );
             await connection.commit();
             resModel.status = 1; resModel.info = 'Settings saved.';
         } catch (error) {

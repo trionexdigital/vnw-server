@@ -6,28 +6,29 @@ import { describeAdminActivity } from '../notifications/adminActivity';
 import { Admin } from './admin';
 
 const secret = 'test-only-master-key';
-const row = (number = '9876543210') => ({ number, mrp: '4999', serviceable_pin_codes: ['400001'], row: 1 });
+const row = (number = '9876543210') => ({ number, mrp: '4999', visibility_type: 'ONLINE', rtp_status: 'RTA', serviceable_pin_codes: ['400001'], row: 1 });
 
 test('backend parses comma/newline bulk numbers and validates canonical Indian numbers', () => {
-  const records = readNumberRows({ numbers: '+91 98765 43210, 8123456789\n7123456789', mrp: 1000, serviceable_pin_codes: ['400001'] });
+  const records = readNumberRows({ numbers: '+91 98765 43210, 8123456789\n7123456789', mrp: 1000, visibility_type: 'ONLINE', rtp_status: 'RTA', serviceable_pin_codes: ['400001'] });
   assert.equal(records.length, 3);
   assert.equal(validateImportRow(records[0]).values.number, '9876543210');
   assert.equal(validateImportRow({ ...row(), number: '5123456789' }).reasons.length, 1);
   assert.equal(validateImportRow({ ...row(), number: '987654321x' }).reasons.length, 1);
 });
 
-test('backend rejects malformed price, status, visibility, stock and impossible dates', () => {
+test('backend rejects malformed price, status, visibility and impossible dates; stock is not an input', () => {
   const result = validateImportRow({ ...row(), mrp: '1.123', status: 'UNKNOWN', stock: -1, visibility_type: 'MAYBE', rtp_status: 'NON_RTP', rtp_available_date: '2030-02-31' });
-  assert.equal(result.reasons.length, 5);
+  assert.equal(result.reasons.length, 4);
+  assert.equal(validateImportRow({ ...row(), stock: -1 }).values.stock, undefined);
   assert.equal(validateImportRow({ ...row(), rtp_status: 'NON_RTP', rtp_available_date: '2030-02-28' }).reasons.length, 0);
 });
 
 test('CSV and XLSX use the same supported headers and reject formulas and unknown columns', () => {
-  const csv = readNumberRows({}, { name: 'numbers.csv', data: Buffer.from('number,mrp,serviceable_pin_codes\n9876543210,4999,400001\n8123456789,999,400001') });
+  const csv = readNumberRows({}, { name: 'numbers.csv', data: Buffer.from('number,mrp,serviceable_pin_codes,visibility_type,rtp_status\n9876543210,4999,400001,ONLINE,RTA\n8123456789,999,400001,OFFLINE,RTA') });
   assert.equal(csv.length, 2);
   assert.equal(validateImportRow(csv[0]).reasons.length, 0);
   const book = XLSX.utils.book_new();
-  const sheet = XLSX.utils.aoa_to_sheet([['number', 'mrp'], ['9876543210', 4999]]);
+  const sheet = XLSX.utils.aoa_to_sheet([['number', 'mrp', 'visibility_type', 'rtp_status'], ['9876543210', 4999, 'ONLINE', 'RTP']]);
   sheet.B2.f = '1000+3999';
   XLSX.utils.book_append_sheet(book, sheet, 'Numbers');
   const xlsx = readNumberRows({}, { name: 'numbers.xlsx', data: XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }) });
@@ -39,7 +40,7 @@ test('CSV and XLSX use the same supported headers and reject formulas and unknow
 test('analysis rejects every repeated occurrence and numbers already present in the database', async () => {
   const service = new NumberImport();
   (service as any).dao = { executeQuery: async (sql: string) => ({ status: 1, rows: sql.includes('FROM env') ? [{ value: secret }] : [{ number_value: '8123456789' }] }) };
-  const result: any = await service.analyze({ user_id: 1, numbers: '9876543210,+91 9876543210,8123456789,7123456789,123', mrp: 1000, serviceable_pin_codes: ['400001'] });
+  const result: any = await service.analyze({ user_id: 1, numbers: '9876543210,+91 9876543210,8123456789,7123456789,123', mrp: 1000, visibility_type: 'ONLINE', rtp_status: 'RTA', serviceable_pin_codes: ['400001'] });
   assert.equal(result.status, 1);
   assert.equal(result.data.ready, 1);
   assert.equal(result.data.rejected, 4);
@@ -63,6 +64,7 @@ test('commit rejects a concurrent duplicate while atomically importing the remai
   const connection = { beginTransaction: async () => {}, commit: async () => { committed = true; }, rollback: async () => {}, release: () => { released = true; }, query: async (sql: string, values: any[]) => {
     if (sql.startsWith('SELECT value')) return [[{ value: '50' }]];
     if (sql.startsWith('INSERT INTO vip_numbers')) {
+      assert.equal((sql.match(/\?/g) || []).length, values.length);
       if (values[0] === '9876543210') throw Object.assign(new Error('duplicate'), { code: 'ER_DUP_ENTRY' });
       insertValues.push(values); return [{ insertId: 42 }];
     }
@@ -72,7 +74,10 @@ test('commit rejects a concurrent duplicate while atomically importing the remai
   const token = signAnalysis(1, [validateImportRow(row()), validateImportRow({ ...row('8123456789'), row: 2 })], secret);
   const result: any = await service.commit({ user_id: 1, analysis_token: token });
   assert.equal(result.status, 1); assert.equal(result.data.imported, 1); assert.equal(result.data.rejected, 1);
-  assert.equal(insertValues[0][6], 2499.5);
+  assert.equal(insertValues[0][5], '6248.75');
+  assert.equal(insertValues[0][6], '5936.31');
+  assert.equal(insertValues[0][7], '5.00');
+  assert.equal(insertValues[0].at(-2), '4999.00');
   assert.ok(committed && released);
 });
 
@@ -88,6 +93,24 @@ test('export fetches all filtered numbers in bounded server pages; template is a
   const template = XLSX.read(Buffer.from(service.template().content_base64, 'base64'), { type: 'buffer' });
   assert.equal(XLSX.utils.sheet_to_json(template.Sheets.Numbers).length, 0);
   assert.ok(template.Sheets.Instructions);
+  const header = XLSX.utils.sheet_to_json<any[]>(template.Sheets.Numbers, { header: 1 })[0];
+  assert.ok(header.includes('base_price'));
+  assert.ok(header.includes('additional_discount_pct'));
+  assert.ok(!header.includes('stock'));
+});
+
+test('new import/export columns retain original bases and independent discounts', async () => {
+  const records = readNumberRows({}, { name: 'prices.csv', data: Buffer.from('number,base_price,additional_discount_pct,rtp_status,visibility_type\n8008005413,2500,10,RTP,ONLINE') });
+  const parsed = validateImportRow(records[0]);
+  assert.deepEqual(parsed.reasons, []);
+  assert.equal(parsed.values.offer_price, '2671.88');
+  const service = new NumberImport();
+  const download = await service.export({}, async () => ({ status: 1, data: { items: [{ number_value: '8008005413', ...parsed.values, mrp: '3125.00' }], total: 1 } }));
+  const book = XLSX.read(Buffer.from(download.content_base64, 'base64'), { type: 'buffer' });
+  const exported: any = XLSX.utils.sheet_to_json(book.Sheets.Numbers)[0];
+  assert.equal(String(exported.base_price), '2500.00');
+  assert.equal(String(exported.additional_discount_pct), '10.00');
+  assert.equal(validateImportRow(exported).values.offer_price, '2671.88');
 });
 
 test('only successful mutations create staff notifications, without broadcasting analysis or zero-row imports', () => {
@@ -105,6 +128,36 @@ test('single-number save validates in the backend even when browser analysis is 
   assert.equal(invalid.status, -33); assert.equal(saved, false);
   const invalidDate = await admin.numberSave({ display_number: '9876543210', mrp: 1000, rtp_status: 'NON_RTP', rtp_available_date: '2030-02-31', user_id: 1 });
   assert.equal(invalidDate.status, -33); assert.equal(saved, false);
-  const edited = await admin.numberSave({ number_id: 3, display_number: '9876543210', mrp: 1000, stock: 0, status: 'SOLD', user_id: 1 });
+  const edited = await admin.numberSave({ number_id: 3, display_number: '9876543210', mrp: 1000, visibility_type: 'ONLINE', rtp_status: 'RTP', stock: 0, status: 'SOLD', user_id: 1 });
   assert.equal(edited.status, 1); assert.equal(saved, true);
+});
+
+test('admin creation hides omitted presentation fields, strips stock and preserves optional fields on edits', async () => {
+  const admin = new Admin(); let written: any;
+  (admin as any).numbers = { create: async (input: any) => { written = input; return { status: 1 }; }, update: async (input: any) => { written = input; return { status: 1 }; } };
+  const input = { display_number: '8008005413', base_price: '2500', visibility_type: 'ONLINE', rtp_status: 'RTP', user_id: 1, stock: 500 };
+  assert.equal((await admin.numberSave(input)).status, 1);
+  assert.equal(written.title_label, ''); assert.equal(written.badge, 'NONE'); assert.equal(written.status, 'AVAILABLE'); assert.equal(written.stock, undefined);
+  assert.equal((await admin.numberSave({ ...input, number_id: 7 })).status, 1);
+  assert.equal(written.title_label, undefined); assert.equal(written.badge, undefined); assert.equal(written.status, undefined); assert.equal(written.stock, undefined);
+  assert.equal((await admin.numberSave({ ...input, number_id: 7, title_label: '', badge: '', status: '' })).status, 1);
+  assert.equal(written.title_label, ''); assert.equal(written.badge, 'NONE'); assert.equal(written.status, 'AVAILABLE');
+});
+
+test('entry fields enforce required visibility/readiness and conditional PIN/date rules with optional presentation', () => {
+  const minimal = { number: '8008005413', base_price: '2500', visibility_type: 'ONLINE', rtp_status: 'RTP' };
+  const valid = validateImportRow(minimal);
+  assert.deepEqual(valid.reasons, []);
+  assert.equal(valid.values.title_label, ''); assert.equal(valid.values.badge, 'NONE'); assert.equal(valid.values.status, 'AVAILABLE');
+  assert.equal(valid.values.offer_price, '2968.75'); assert.equal(valid.values.stock, undefined);
+  assert.match(validateImportRow({ ...minimal, status: 0 }).reasons.join(), /Unknown catalog status/);
+  assert.match(validateImportRow({ ...minimal, badge: 0 }).reasons.join(), /Unknown badge/);
+  for (const key of ['number','base_price','visibility_type','rtp_status']) assert.ok(validateImportRow({ ...minimal, [key]: '' }).reasons.length, key);
+  assert.match(validateImportRow({ ...minimal, rtp_status: 'RTA' }).reasons.join(), /PIN/);
+  assert.deepEqual(validateImportRow({ ...minimal, rtp_status: 'RTA', serviceable_pin_codes: '400001' }).reasons, []);
+  assert.ok(validateImportRow({ ...minimal, rtp_status: 'NON-RTP' }).reasons.length);
+  assert.deepEqual(validateImportRow({ ...minimal, rtp_status: 'NON-RTP', rtp_available_date: '2030-02-28', additional_discount_pct: '10', title_label: ' ', status: ' ', badge: ' ' }).reasons, []);
+  assert.equal(validateImportRow({ ...minimal, additional_discount_pct: '10' }).values.discount_pct, '14.50');
+  assert.throws(() => readNumberRows({}, { name: 'old.csv', data: Buffer.from('number,base_price,stock,visibility_type,rtp_status\n8008005413,2500,2,ONLINE,RTP') }), /unsupported/);
+  assert.throws(() => readNumberRows({}, { name: 'missing.csv', data: Buffer.from('number,base_price\n8008005413,2500') }), /visibility_type and rtp_status/);
 });

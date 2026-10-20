@@ -2,7 +2,7 @@ import { normalizeServiceablePins, saveServiceablePins } from '../numbers/servic
 import { MySqlClient } from '../../../gen_db/database';
 import { MasterModel } from '../../../models/MasterModel';
 import { normalizeIndianNumber, syncNumberCategories } from '../categories/categoryClassifier';
-import { discountedPrice, readGlobalDiscount } from '../numbers/globalPricing';
+import { resolveNumberPricing } from '../numbers/numberPricing';
 import { istDateToUtc } from '../prebooks/prebooks';
 
 type DealerState = 'INVENTORY' | 'SOLD' | 'DELETED';
@@ -147,12 +147,10 @@ export class DealerPurchases {
             const rtpAvailableAt = rtpDate ? istDateToUtc(rtpDate) : null;
             if (rtpStatus === 'NON_RTP' && !rtpAvailableAt) throw new Error('NON-RTP numbers require a future ready-to-port date.');
             if (rtpAvailableAt && new Date(rtpAvailableAt.replace(' ', 'T') + 'Z') <= new Date()) throw new Error('NON-RTP ready-to-port date must be in the future.');
-            const purchase = Number(payload.purchase_price); const intended = Number(payload.intended_sale_price);
+            const purchase = Number(payload.purchase_price);
             if (!Number.isFinite(purchase) || purchase < 0) throw new Error('Purchase price must be zero or greater.');
-            if (!Number.isFinite(intended) || intended <= 0) throw new Error('Intended sale price must be greater than zero.');
+            const pricing = resolveNumberPricing({ base_price: payload.base_price ?? payload.intended_sale_price, additional_discount_pct: payload.additional_discount_pct });
             connection = await this.dao.getConnection(); await connection.beginTransaction();
-            const globalDiscount = await readGlobalDiscount(connection);
-            const catalogPrice = discountedPrice(intended, globalDiscount);
             const [dealers]: any = await connection.query("SELECT d.external_dealer_id FROM external_dealers d JOIN auth_user u ON u.user_id=d.dealer_user_id WHERE d.external_dealer_id=? AND d.is_active=1 AND u.role='DEALER' AND u.status='ACTIVE' FOR UPDATE", [dealerId]);
             if (!dealers?.length) throw new Error('Dealer not found or inactive.');
             const [existing]: any = await connection.query(`SELECT number_value FROM vip_numbers WHERE number_value IN (${numbers.map(()=>'?').join(',')}) FOR UPDATE`, numbers);
@@ -160,19 +158,19 @@ export class DealerPurchases {
             const created: number[] = [];
             for (const number of numbers) {
                 const [numberInsert]: any = await connection.query(
-                    `INSERT INTO vip_numbers (number_value,display_number,seller_id,seller_type,title_label,mrp,offer_price,discount_pct,stock,status,visibility_type,rtp_status,rtp_available_at)
-                     VALUES (?,?,?,'ADMIN','VIP Number',?,?,?,1,'AVAILABLE',?,?,?)`,
-                    [number, number, Number(payload.user_id), intended, catalogPrice, globalDiscount, visibility, rtpStatus,
-                     rtpAvailableAt],
+                    `INSERT INTO vip_numbers (number_value,display_number,seller_id,seller_type,title_label,mrp,offer_price,discount_pct,stock,status,visibility_type,rtp_status,rtp_available_at,base_price,additional_discount_pct)
+                     VALUES (?,?,?,'ADMIN','VIP Number',?,?,?,1,'AVAILABLE',?,?,?,?,?)`,
+                    [number, number, Number(payload.user_id), pricing.mrp, pricing.offer_price, pricing.discount_pct, visibility, rtpStatus,
+                     rtpAvailableAt, pricing.base_price, pricing.additional_discount_pct],
                 );
                 const numberId = Number(numberInsert.insertId); await saveServiceablePins(connection, numberId, rtpStatus === 'RTA' ? pins : []); await syncNumberCategories(connection, numberId, number);
                 const [purchaseInsert]: any = await connection.query(
                     `INSERT INTO dealer_purchase_numbers (number_id,external_dealer_id,purchase_price,intended_sale_price,created_by) VALUES (?,?,?,?,?)`,
-                    [numberId,dealerId,purchase,intended,Number(payload.user_id)],
+                    [numberId,dealerId,purchase,pricing.base_price,Number(payload.user_id)],
                 );
                 const purchaseId = Number(purchaseInsert.insertId);
                 await connection.query(`INSERT INTO dealer_purchase_events (dealer_purchase_id,external_dealer_id,event_type,details,created_by) VALUES (?,?,'CREATED',?,?)`,
-                    [purchaseId,dealerId,JSON.stringify({ visibility_type: visibility, rtp_status: rtpStatus, purchase_price: purchase, intended_sale_price: intended }),Number(payload.user_id)]);
+                    [purchaseId,dealerId,JSON.stringify({ visibility_type: visibility, rtp_status: rtpStatus, purchase_price: purchase, intended_sale_price: Number(pricing.base_price) }),Number(payload.user_id)]);
                 created.push(purchaseId);
             }
             await connection.commit(); response.status=1; response.info=`${created.length} dealer number${created.length===1?'':'s'} added.`; response.data={ dealer_purchase_ids:created };

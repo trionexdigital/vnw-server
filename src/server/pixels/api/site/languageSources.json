@@ -8,6 +8,10 @@
     "context": "pages/orders/OrderDetail.tsx"
   },
   {
+    "source": "· BLOCKED",
+    "context": "pages/dealerManagement/components.tsx"
+  },
+  {
     "source": "(prefers-color-scheme: dark)",
     "context": "shared/theme/ThemeProvider.tsx"
   },
@@ -32,6 +36,10 @@
     "context": "pages/home/components/HomeDiscovery.tsx"
   },
   {
+    "source": "{count} total · Page {page} of {pages}",
+    "context": "pages/dealerManagement/components.tsx"
+  },
+  {
     "source": "{label}: {value}",
     "context": "pages/shop/Shop.tsx"
   },
@@ -42,6 +50,10 @@
   {
     "source": "% OFF",
     "context": "shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+  },
+  {
+    "source": "© {year} VIP Number World. All rights reserved.",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "© OpenStreetMap contributors",
@@ -364,10 +376,6 @@
     "context": "pages/legal/LegalPage.tsx"
   },
   {
-    "source": "A premium VIP number, with support through booking and ownership transfer.",
-    "context": "pages/shop/NumberDetail.tsx"
-  },
-  {
     "source": "A small set of distinct digits can make a number remarkably easy to remember.",
     "context": "pages/home/components/HomeDiscovery.tsx"
   },
@@ -420,6 +428,10 @@
     "context": "pages/legal/LegalPage.tsx"
   },
   {
+    "source": "Access your account, saved wishlist and orders.",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "Accessible fancy numbers",
     "context": "pages/home/components/HomeSections.tsx"
   },
@@ -433,7 +445,7 @@
   },
   {
     "source": "Account created",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Account navigation",
@@ -528,6 +540,10 @@
     "context": "pages/settings/Settings.tsx"
   },
   {
+    "source": "Adjustments",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Admin settings",
     "context": "pages/settings/Settings.tsx"
   },
@@ -592,12 +608,20 @@
     "context": "pages/home/components/HomeDiscovery.tsx, pages/home/components/MarketplaceSections.tsx, shared/components/FamilyPackCard.tsx"
   },
   {
+    "source": "All module dealers",
+    "context": "pages/dealerManagement/components.tsx"
+  },
+  {
     "source": "All operators",
     "context": "pages/prebook/PreBook.tsx"
   },
   {
     "source": "All Orders",
     "context": "pages/orders/OrderDetail.tsx"
+  },
+  {
+    "source": "All statuses",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "All subcategories",
@@ -609,11 +633,15 @@
   },
   {
     "source": "Already have an account?",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Already in your comparison.",
     "context": "shared/components/NumberCard.tsx"
+  },
+  {
+    "source": "Amount",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "An admin will review the full refund.",
@@ -622,10 +650,6 @@
   {
     "source": "and",
     "context": "pages/checkout/Checkout.tsx, pages/prebook/PreBookCheckout.tsx"
-  },
-  {
-    "source": "and acknowledge our",
-    "context": "pages/auth/Auth.tsx"
   },
   {
     "source": "Any",
@@ -741,7 +765,7 @@
   },
   {
     "source": "Back",
-    "context": "pages/orders/OrderDetail.tsx"
+    "context": "pages/orders/OrderDetail.tsx, shared/components/FirstVisitTour.tsx"
   },
   {
     "source": "Back to cart",
@@ -761,7 +785,7 @@
   },
   {
     "source": "Back to store",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Back to Store",
@@ -856,16 +880,16 @@
     "context": "pages/categories/Categories.tsx"
   },
   {
-    "source": "Browse all available VIP numbers, including offline inventory.",
-    "context": "pages/shop/PrivateCollection.tsx"
-  },
-  {
     "source": "Browse all numbers",
     "context": "pages/categories/Categories.tsx, pages/numerology/Numerology.tsx, pages/shop/SimilarNumbers.tsx"
   },
   {
+    "source": "Browse categories, compare prices and save your favourites. Open a number card for its details.",
+    "context": "shared/components/FirstVisitTour.tsx"
+  },
+  {
     "source": "Browse numbers",
-    "context": "pages/checkout/PaymentReturn.tsx, pages/home/components/HomeSections.tsx, pages/shop/Shop.tsx"
+    "context": "pages/checkout/PaymentReturn.tsx, pages/home/components/HomeSections.tsx, pages/shop/Shop.tsx, shared/components/FirstVisitTour.tsx"
   },
   {
     "source": "Browse Numbers",
@@ -936,8 +960,8 @@
     "context": "pages/legal/LegalPage.tsx"
   },
   {
-    "source": "By creating an account, you agree to our",
-    "context": "pages/auth/Auth.tsx"
+    "source": "By creating an account, you agree to the following policies.",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "By paying, you agree to the",
@@ -1128,6 +1152,14 @@
     "context": "pages/home/Home.tsx"
   },
   {
+    "source": "Choose dealer",
+    "context": "pages/dealerManagement/components.tsx"
+  },
+  {
+    "source": "Choose how to get your number",
+    "context": "shared/components/FirstVisitTour.tsx"
+  },
+  {
     "source": "Choose literal digits or a preset, not both.",
     "context": "pages/shop/SearchWorkbench.tsx"
   },
@@ -1182,6 +1214,10 @@
   {
     "source": "Clear prices",
     "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Clear pricing",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Clear Pricing",
@@ -1248,6 +1284,10 @@
     "context": "pages/numerology/Numerology.tsx"
   },
   {
+    "source": "Coming soon",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "Communication, freedom, intellect & versatility.",
     "context": "pages/numerology/Numerology.tsx"
   },
@@ -1301,7 +1341,7 @@
   },
   {
     "source": "Confirm password",
-    "context": "pages/auth/Auth.tsx, pages/settings/ChangePassword.tsx"
+    "context": "pages/auth/AuthView.tsx, pages/settings/ChangePassword.tsx"
   },
   {
     "source": "Consumer Protection material",
@@ -1513,11 +1553,11 @@
   },
   {
     "source": "Create Account",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Create one",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Creativity, wisdom, optimism & growth.",
@@ -1557,7 +1597,7 @@
   },
   {
     "source": "Customer",
-    "context": "pages/home/components/HomeSections.tsx, pages/shop/NumberDetail.tsx"
+    "context": "pages/home/components/HomeSections.tsx"
   },
   {
     "source": "Customer feedback",
@@ -1589,11 +1629,23 @@
   },
   {
     "source": "Date",
-    "context": "pages/dashboard/Dashboard.tsx"
+    "context": "pages/dashboard/Dashboard.tsx, pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Date of birth",
     "context": "pages/numerology/Numerology.tsx"
+  },
+  {
+    "source": "Dealer",
+    "context": "pages/dealerManagement/components.tsx"
+  },
+  {
+    "source": "Dealer amount",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
+    "source": "Dealer Management",
+    "context": "shared/layout/AccountLayout.tsx"
   },
   {
     "source": "Dealer Profile",
@@ -1602,6 +1654,10 @@
   {
     "source": "Dealer Purchases",
     "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
+    "source": "Dealer Statement",
+    "context": "pages/dealerManagement/Statement.tsx, shared/layout/AccountLayout.tsx"
   },
   {
     "source": "dealer.dashboard",
@@ -1713,7 +1769,7 @@
   },
   {
     "source": "Discover a memorable VIP number with clear pricing and guidance from selection to activation.",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Discover your signature pattern",
@@ -1793,7 +1849,7 @@
   },
   {
     "source": "Edit profile",
-    "context": "pages/checkout/Checkout.tsx"
+    "context": "pages/checkout/Checkout.tsx, pages/prebook/PreBookCheckout.tsx"
   },
   {
     "source": "Edit Search",
@@ -1813,7 +1869,7 @@
   },
   {
     "source": "Email address",
-    "context": "pages/auth/Auth.tsx, pages/static/About.tsx"
+    "context": "pages/static/About.tsx"
   },
   {
     "source": "Email us",
@@ -1864,6 +1920,10 @@
     "context": "shared/components/DetectedCategories.tsx"
   },
   {
+    "source": "Enter a valid mobile number or email address.",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "Enter a valid six-digit PIN code.",
     "context": "shared/location/LocationProvider.tsx"
   },
@@ -1884,8 +1944,12 @@
     "context": "pages/numerology/Numerology.tsx, pages/static/About.tsx"
   },
   {
+    "source": "Entry",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Error",
-    "context": "pages/auth/Auth.tsx, pages/sell/SellNumber.tsx, pages/settings/ChangePassword.tsx, pages/settings/Settings.tsx, pages/shop/NumberDetail.tsx, shared/components/NewsletterForm.tsx, shared/components/NumberCard.tsx, shared/components/WalletPanel.tsx"
+    "context": "pages/sell/SellNumber.tsx, pages/settings/ChangePassword.tsx, pages/settings/Settings.tsx, pages/shop/NumberDetail.tsx, shared/components/NewsletterForm.tsx, shared/components/NumberCard.tsx, shared/components/WalletPanel.tsx"
   },
   {
     "source": "Escalation and statutory remedies",
@@ -1938,6 +2002,10 @@
   {
     "source": "Explore all patterns",
     "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Explore available VIP numbers.",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Explore every VIP pattern",
@@ -2048,6 +2116,14 @@
     "context": "pages/numerology/Numerology.tsx"
   },
   {
+    "source": "Find a number that feels like you.",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
+    "source": "Find a pattern you love",
+    "context": "shared/components/FirstVisitTour.tsx"
+  },
+  {
     "source": "Find a pre-book number",
     "context": "pages/prebook/PreBook.tsx"
   },
@@ -2133,7 +2209,7 @@
   },
   {
     "source": "Forgot password?",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Four clear steps",
@@ -2172,6 +2248,10 @@
     "context": "pages/home/components/MarketplaceSections.tsx"
   },
   {
+    "source": "From date",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Fulfilment problems",
     "context": "pages/legal/LegalPage.tsx"
   },
@@ -2185,7 +2265,7 @@
   },
   {
     "source": "Full name",
-    "context": "pages/auth/Auth.tsx, pages/settings/Settings.tsx"
+    "context": "pages/auth/AuthView.tsx, pages/settings/Settings.tsx"
   },
   {
     "source": "Full name (optional)",
@@ -2289,7 +2369,11 @@
   },
   {
     "source": "Guided support",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
+    "source": "Help from selection to activation.",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Help when you need it",
@@ -2338,6 +2422,14 @@
   {
     "source": "Hi! I am interested in a VIP number.",
     "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Hide confirm password",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
+    "source": "Hide password",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Highly desirable • Easy to remember",
@@ -2448,10 +2540,6 @@
     "context": "shared/ui/input.tsx"
   },
   {
-    "source": "input-luxury w-full",
-    "context": "pages/auth/Auth.tsx"
-  },
-  {
     "source": "Instant VIP number results",
     "context": "shared/layout/HeaderNumberSearch.tsx"
   },
@@ -2477,7 +2565,7 @@
   },
   {
     "source": "Join VIP Number World",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Jupiter",
@@ -2525,7 +2613,7 @@
   },
   {
     "source": "Legal",
-    "context": "shared/layout/PublicLayout.tsx"
+    "context": "pages/auth/AuthView.tsx, shared/layout/PublicLayout.tsx"
   },
   {
     "source": "Legal contact:",
@@ -2604,12 +2692,28 @@
     "context": "pages/home/components/MarketplaceSections.tsx"
   },
   {
+    "source": "Loading statement…",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Loading…",
     "context": "shared/layout/HeaderNumberSearch.tsx"
   },
   {
     "source": "Location access failed or was denied. Enter your PIN code manually.",
     "context": "shared/location/LocationProvider.tsx"
+  },
+  {
+    "source": "Location lookup is busy. Please wait a moment and try again.",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
+    "source": "Location lookup is temporarily unavailable. Please try again or enter your PIN code.",
+    "context": "shared/location/LocationProvider.tsx"
+  },
+  {
+    "source": "Login failed",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Logout",
@@ -2658,10 +2762,6 @@
   {
     "source": "Lucky sequence",
     "context": "pages/home/components/HomeSections.tsx"
-  },
-  {
-    "source": "Make it yours",
-    "context": "pages/auth/Auth.tsx"
   },
   {
     "source": "Make the move",
@@ -2746,6 +2846,10 @@
   {
     "source": "Memorable fancy numbers",
     "context": "shared/components/categories/CategoryCard.tsx"
+  },
+  {
+    "source": "Memorable patterns",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Menu",
@@ -2880,6 +2984,10 @@
     "context": "pages/numerology/Numerology.tsx"
   },
   {
+    "source": "Mobile number or email",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "mode=advanced",
     "context": "pages/shop/SearchWorkbench.tsx"
   },
@@ -3001,7 +3109,7 @@
   },
   {
     "source": "Next",
-    "context": "pages/shop/PrivateCollection.tsx, pages/shop/SimilarNumbers.tsx, shared/ui/pagination.tsx"
+    "context": "pages/dealerManagement/components.tsx, pages/shop/PrivateCollection.tsx, pages/shop/SimilarNumbers.tsx, shared/components/FirstVisitTour.tsx, shared/ui/pagination.tsx"
   },
   {
     "source": "Next Lucky Pick",
@@ -3017,7 +3125,7 @@
   },
   {
     "source": "No account?",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "No advanced conditions",
@@ -3084,10 +3192,6 @@
     "context": "pages/home/components/HomeDiscovery.tsx"
   },
   {
-    "source": "No reviews yet. Be the first!",
-    "context": "pages/shop/NumberDetail.tsx"
-  },
-  {
     "source": "No RTA numbers match your PIN code and current filters.",
     "context": "shared/location/LocationProvider.tsx"
   },
@@ -3100,6 +3204,10 @@
     "context": "pages/shop/SimilarNumbers.tsx"
   },
   {
+    "source": "No statement records match these filters.",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "No Sum",
     "context": "pages/numerology/Numerology.tsx"
   },
@@ -3110,6 +3218,10 @@
   {
     "source": "No unlawful use",
     "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "NON-RTP",
+    "context": "pages/dealerManagement/components.tsx"
   },
   {
     "source": "NON-RTP · Pre-book ·",
@@ -3144,6 +3256,10 @@
     "context": "pages/settings/Notifications.tsx"
   },
   {
+    "source": "Number",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Number categories",
     "context": "pages/home/components/HomeSections.tsx"
   },
@@ -3153,10 +3269,6 @@
   },
   {
     "source": "Number details",
-    "context": "pages/shop/NumberDetail.tsx"
-  },
-  {
-    "source": "Number Details",
     "context": "pages/shop/NumberDetail.tsx"
   },
   {
@@ -3400,8 +3512,16 @@
     "context": "shared/ui/pagination.tsx"
   },
   {
+    "source": "Paid",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Paid amount",
     "context": "pages/prebook/PreBook.tsx"
+  },
+  {
+    "source": "Paid date",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Pairs and progressions",
@@ -3429,15 +3549,15 @@
   },
   {
     "source": "Password",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Password changed",
     "context": "pages/settings/ChangePassword.tsx"
   },
   {
-    "source": "Password reset request",
-    "context": "pages/auth/Auth.tsx"
+    "source": "Password reset is coming soon. Please sign in if you remember your password.",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Password tips",
@@ -3445,7 +3565,7 @@
   },
   {
     "source": "Passwords do not match",
-    "context": "pages/auth/Auth.tsx, pages/settings/ChangePassword.tsx"
+    "context": "pages/auth/AuthView.tsx, pages/settings/ChangePassword.tsx"
   },
   {
     "source": "Pattern discovery",
@@ -3472,6 +3592,10 @@
     "context": "pages/prebook/PreBook.tsx"
   },
   {
+    "source": "Payable reversal",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Payment awaiting confirmation",
     "context": "pages/checkout/PaymentReturn.tsx"
   },
@@ -3486,6 +3610,10 @@
   {
     "source": "Payment hold created for 20 minutes",
     "context": "pages/prebook/PreBookCheckout.tsx"
+  },
+  {
+    "source": "Payment ID",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Payment received — review needed",
@@ -3532,6 +3660,10 @@
     "context": "shared/layout/AccountLayout.tsx"
   },
   {
+    "source": "Pending",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Penta",
     "context": "pages/home/components/DealOfDayShowcase.tsx, pages/home/components/HomeDiscovery.tsx, pages/shop/searchTypes.ts"
   },
@@ -3569,7 +3701,7 @@
   },
   {
     "source": "Phone number",
-    "context": "pages/auth/Auth.tsx, pages/numerology/Numerology.tsx"
+    "context": "pages/numerology/Numerology.tsx"
   },
   {
     "source": "Pick a root to see available matches.",
@@ -3594,6 +3726,10 @@
   {
     "source": "Play carousel",
     "context": "pages/home/components/HomeCarousel.tsx"
+  },
+  {
+    "source": "Please add a valid mobile number to your profile before paying.",
+    "context": "pages/checkout/Checkout.tsx, pages/prebook/PreBookCheckout.tsx"
   },
   {
     "source": "Please contact me about this numerology service.",
@@ -3689,7 +3825,7 @@
   },
   {
     "source": "Premium numbers, personal identity",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Premium stories",
@@ -3705,7 +3841,7 @@
   },
   {
     "source": "Previous",
-    "context": "pages/shop/PrivateCollection.tsx, pages/shop/SimilarNumbers.tsx, shared/ui/pagination.tsx"
+    "context": "pages/dealerManagement/components.tsx, pages/shop/PrivateCollection.tsx, pages/shop/SimilarNumbers.tsx, shared/ui/pagination.tsx"
   },
   {
     "source": "Previous Lucky Pick",
@@ -3761,11 +3897,7 @@
   },
   {
     "source": "Privacy Policy",
-    "context": "pages/auth/Auth.tsx, pages/legal/LegalPage.tsx, shared/layout/PublicLayout.tsx"
-  },
-  {
-    "source": "Private access",
-    "context": "pages/shop/PrivateCollection.tsx"
+    "context": "pages/auth/AuthView.tsx, pages/legal/LegalPage.tsx, shared/layout/PublicLayout.tsx"
   },
   {
     "source": "Private collection unavailable",
@@ -3844,6 +3976,10 @@
     "context": "pages/static/HowItWorks.tsx"
   },
   {
+    "source": "Readiness",
+    "context": "pages/dealerManagement/components.tsx"
+  },
+  {
     "source": "Ready to activate",
     "context": "pages/home/components/HomeDiscovery.tsx, pages/shop/Shop.tsx"
   },
@@ -3876,8 +4012,8 @@
     "context": "shared/components/PremiumShowcaseCards.tsx"
   },
   {
-    "source": "Reason for reset",
-    "context": "pages/auth/Auth.tsx"
+    "source": "Reason for reset (optional)",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Receive order guidance and the information needed to begin your number transfer.",
@@ -3896,16 +4032,16 @@
     "context": "shared/layout/HeaderNumberSearch.tsx"
   },
   {
+    "source": "Recovery",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Recycle",
     "context": "shared/layout/AccountLayout.tsx"
   },
   {
     "source": "Referral Code",
     "context": "pages/referrals/Referrals.tsx"
-  },
-  {
-    "source": "Referral code (optional)",
-    "context": "pages/auth/Auth.tsx"
   },
   {
     "source": "Referral Earnings",
@@ -3926,6 +4062,10 @@
   {
     "source": "Reflections and balanced digits",
     "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Refresh",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Refund and Cancellation Policy",
@@ -3952,8 +4092,12 @@
     "context": "shared/layout/StoreHeader.tsx"
   },
   {
+    "source": "Registration failed",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "Remembered it?",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Remove",
@@ -4017,7 +4161,7 @@
   },
   {
     "source": "Request submitted",
-    "context": "pages/auth/Auth.tsx, pages/sell/SellNumber.tsx"
+    "context": "pages/sell/SellNumber.tsx"
   },
   {
     "source": "Require minimum or maximum counts for up to ten unique digits",
@@ -4045,7 +4189,7 @@
   },
   {
     "source": "Reset Password",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Reset search",
@@ -4080,10 +4224,6 @@
     "context": "pages/home/components/HomeSections.tsx"
   },
   {
-    "source": "Review submitted",
-    "context": "pages/shop/NumberDetail.tsx"
-  },
-  {
     "source": "Review the listing and complete checkout through the existing protected payment flow.",
     "context": "pages/home/components/MarketplaceSections.tsx"
   },
@@ -4096,6 +4236,10 @@
     "context": "pages/static/HowItWorks.tsx"
   },
   {
+    "source": "Review the price before you buy.",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "Review your numbers and billing.",
     "context": "pages/checkout/Checkout.tsx"
   },
@@ -4105,7 +4249,7 @@
   },
   {
     "source": "Reviews",
-    "context": "pages/shop/NumberDetail.tsx, shared/layout/AccountLayout.tsx"
+    "context": "shared/layout/AccountLayout.tsx"
   },
   {
     "source": "Reviews from our customers",
@@ -4117,7 +4261,7 @@
   },
   {
     "source": "Root sum",
-    "context": "pages/shop/Shop.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+    "context": "pages/shop/NumberDetail.tsx, pages/shop/Shop.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
   },
   {
     "source": "Root Sum",
@@ -4136,12 +4280,24 @@
     "context": "shared/components/ui-bits.tsx"
   },
   {
+    "source": "RTA",
+    "context": "pages/dealerManagement/components.tsx"
+  },
+  {
     "source": "RTA · Ready to activate",
     "context": "shared/components/NumberCard.tsx"
   },
   {
     "source": "RTA · Ready to activate within minutes",
     "context": "pages/shop/NumberDetail.tsx"
+  },
+  {
+    "source": "RTA is ready to activate, RTP is ready to port, and NON-RTP is available for pre-booking. Set your PIN code for local RTA numbers.",
+    "context": "shared/components/FirstVisitTour.tsx"
+  },
+  {
+    "source": "RTP",
+    "context": "pages/dealerManagement/components.tsx"
   },
   {
     "source": "RTP · Ready to begin porting",
@@ -4182,6 +4338,10 @@
   {
     "source": "Safety",
     "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "Sale",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Sales",
@@ -4264,6 +4424,10 @@
     "context": "shared/layout/HeaderNumberSearch.tsx"
   },
   {
+    "source": "Search for digits, a budget or a pattern. Use AI Search when you have an idea in mind.",
+    "context": "shared/components/FirstVisitTour.tsx"
+  },
+  {
     "source": "Search is temporarily unavailable",
     "context": "pages/shop/Shop.tsx"
   },
@@ -4280,12 +4444,20 @@
     "context": "pages/categories/Categories.tsx"
   },
   {
+    "source": "Search number",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Search offline catalog",
     "context": "pages/shop/PrivateCollection.tsx"
   },
   {
     "source": "Search results pagination",
     "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Search statement",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Search the marketplace or send an enquiry",
@@ -4314,10 +4486,6 @@
   {
     "source": "Secure checkout",
     "context": "pages/home/components/HomeSections.tsx"
-  },
-  {
-    "source": "Secure collection",
-    "context": "pages/shop/PrivateCollection.tsx"
   },
   {
     "source": "Secure Payment",
@@ -4512,12 +4680,12 @@
     "context": "pages/static/About.tsx"
   },
   {
-    "source": "Share transfer information only where required.",
-    "context": "pages/static/HowItWorks.tsx"
+    "source": "Share statement summary",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
-    "source": "Share your experience...",
-    "context": "pages/shop/NumberDetail.tsx"
+    "source": "Share transfer information only where required.",
+    "context": "pages/static/HowItWorks.tsx"
   },
   {
     "source": "Share your referral link",
@@ -4544,12 +4712,20 @@
     "context": "shared/location/LocationProvider.tsx"
   },
   {
+    "source": "Show confirm password",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "Show Numbers",
     "context": "pages/shop/SearchWorkbench.tsx"
   },
   {
     "source": "Show numbers for my PIN",
     "context": "shared/location/LocationProvider.tsx"
+  },
+  {
+    "source": "Show password",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Showing all RTA numbers. Activation availability depends on the service area.",
@@ -4565,19 +4741,15 @@
   },
   {
     "source": "Sign in",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Sign In",
-    "context": "pages/auth/Auth.tsx, shared/layout/StoreHeader.tsx"
+    "context": "pages/auth/AuthView.tsx, shared/layout/StoreHeader.tsx"
   },
   {
     "source": "Sign in to see your reserved numbers, cancellation countdowns, and refund progress.",
     "context": "pages/prebook/PreBook.tsx"
-  },
-  {
-    "source": "Sign in to your account",
-    "context": "pages/auth/Auth.tsx"
   },
   {
     "source": "Signature choices",
@@ -4637,7 +4809,7 @@
   },
   {
     "source": "Skip",
-    "context": "shared/location/LocationProvider.tsx"
+    "context": "shared/components/FirstVisitTour.tsx, shared/location/LocationProvider.tsx"
   },
   {
     "source": "Slide",
@@ -4646,6 +4818,10 @@
   {
     "source": "smart local matching",
     "context": "pages/shop/Shop.tsx"
+  },
+  {
+    "source": "Sold date",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Sort",
@@ -4680,6 +4856,10 @@
     "context": "pages/static/HowItWorks.tsx"
   },
   {
+    "source": "Standalone Dealer Module",
+    "context": "shared/layout/AccountLayout.tsx"
+  },
+  {
     "source": "Start automatic Lucky Pick rotation",
     "context": "pages/home/components/DealOfDayShowcase.tsx"
   },
@@ -4702,6 +4882,10 @@
   {
     "source": "Start with a memorable pattern",
     "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "Start with a search",
+    "context": "shared/components/FirstVisitTour.tsx"
   },
   {
     "source": "Starting payment creates a 20-minute exclusive hold. Successful full payment keeps the number reserved only for you.",
@@ -4732,12 +4916,20 @@
     "context": "pages/home/components/HomeDiscovery.tsx"
   },
   {
+    "source": "Statement status",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Status",
-    "context": "pages/compare/Compare.tsx, pages/dashboard/Dashboard.tsx"
+    "context": "pages/compare/Compare.tsx, pages/dashboard/Dashboard.tsx, pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Step",
     "context": "pages/home/components/MarketplaceSections.tsx"
+  },
+  {
+    "source": "Step {current} of {total}",
+    "context": "shared/components/FirstVisitTour.tsx"
   },
   {
     "source": "Still need help?",
@@ -4794,10 +4986,6 @@
   {
     "source": "Submit issue",
     "context": "pages/prebook/PreBook.tsx"
-  },
-  {
-    "source": "Submit Review",
-    "context": "pages/shop/NumberDetail.tsx"
   },
   {
     "source": "Submit your first number above.",
@@ -4909,7 +5097,7 @@
   },
   {
     "source": "Terms",
-    "context": "pages/auth/Auth.tsx, pages/checkout/Checkout.tsx"
+    "context": "pages/auth/AuthView.tsx, pages/checkout/Checkout.tsx"
   },
   {
     "source": "Terms & Conditions",
@@ -5048,6 +5236,10 @@
     "context": "pages/shop/Shop.tsx"
   },
   {
+    "source": "To date",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Today's Lucky Pick",
     "context": "pages/home/components/DealOfDayShowcase.tsx"
   },
@@ -5061,7 +5253,7 @@
   },
   {
     "source": "Total",
-    "context": "pages/dashboard/Dashboard.tsx, pages/orders/OrderDetail.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
+    "context": "pages/dashboard/Dashboard.tsx, pages/orders/OrderDetail.tsx, pages/shop/NumberDetail.tsx, shared/components/NumberCard.tsx, shared/components/PremiumShowcaseCards.tsx"
   },
   {
     "source": "Total Earned",
@@ -5154,6 +5346,10 @@
   {
     "source": "Two-digit & minimal",
     "context": "pages/home/components/HomeDiscovery.tsx"
+  },
+  {
+    "source": "Type",
+    "context": "pages/dealerManagement/Statement.tsx"
   },
   {
     "source": "Ulta-Pulta",
@@ -5252,6 +5448,10 @@
     "context": "pages/shop/SearchWorkbench.tsx"
   },
   {
+    "source": "Use at least 6 characters.",
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
     "source": "Use at least 8 characters with letters, numbers and symbols.",
     "context": "pages/settings/ChangePassword.tsx"
   },
@@ -5345,7 +5545,11 @@
   },
   {
     "source": "Verified listings",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
+  },
+  {
+    "source": "Verified listings · Guided support",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Verified numbers",
@@ -5425,11 +5629,15 @@
   },
   {
     "source": "VIP Number",
-    "context": "pages/cart/Cart.tsx, pages/checkout/Checkout.tsx, pages/home/components/DealOfDayShowcase.tsx, pages/shop/NumberDetail.tsx, shared/components/NumberCard.tsx, shared/layout/HeaderNumberSearch.tsx"
+    "context": "pages/cart/Cart.tsx, pages/checkout/Checkout.tsx, pages/home/components/DealOfDayShowcase.tsx, pages/shop/NumberDetail.tsx, shared/layout/HeaderNumberSearch.tsx"
   },
   {
     "source": "VIP number and pre-book refunds",
     "context": "pages/legal/LegalPage.tsx"
+  },
+  {
+    "source": "VIP number benefits",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "VIP number search modes",
@@ -5441,7 +5649,7 @@
   },
   {
     "source": "VIP Number World",
-    "context": "pages/legal/LegalPage.tsx, shared/components/Logo.tsx, shared/layout/StoreHeader.tsx"
+    "context": "pages/dealerManagement/Statement.tsx, pages/legal/LegalPage.tsx, shared/components/Logo.tsx, shared/layout/StoreHeader.tsx"
   },
   {
     "source": "VIP Number World - Premium Numbers. Premium Identity.",
@@ -5450,6 +5658,10 @@
   {
     "source": "VIP Number World currently presents pan-India delivery and support contact paths through the existing site content and layout.",
     "context": "pages/home/components/HomeSections.tsx"
+  },
+  {
+    "source": "VIP Number World home",
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "VIP Number World location map",
@@ -5544,12 +5756,8 @@
     "context": "pages/legal/LegalPage.tsx"
   },
   {
-    "source": "We will review your request",
-    "context": "pages/auth/Auth.tsx"
-  },
-  {
     "source": "Welcome back!",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "What happens next",
@@ -5701,7 +5909,7 @@
   },
   {
     "source": "Your identity.",
-    "context": "pages/auth/Auth.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Your name",
@@ -5721,11 +5929,7 @@
   },
   {
     "source": "Your number.",
-    "context": "pages/auth/Auth.tsx"
-  },
-  {
-    "source": "Your number. Your identity.",
-    "context": "pages/shop/NumberDetail.tsx"
+    "context": "pages/auth/AuthView.tsx"
   },
   {
     "source": "Your Number. Your Identity.",
@@ -5760,8 +5964,16 @@
     "context": "pages/prebook/PreBook.tsx"
   },
   {
+    "source": "Your standalone dealer account",
+    "context": "pages/dealerManagement/Statement.tsx"
+  },
+  {
     "source": "Your unpaid reservation has ended. Please begin a new checkout.",
     "context": "pages/checkout/PaymentReturn.tsx"
+  },
+  {
+    "source": "Your VIP number journey",
+    "context": "shared/components/FirstVisitTour.tsx"
   },
   {
     "source": "Your VIP number order is confirmed and its transfer progress is shown below.",

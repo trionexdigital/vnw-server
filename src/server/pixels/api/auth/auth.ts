@@ -8,14 +8,15 @@ import { getEffectivePermissions } from '../../../pixels-utility/authContext';
 import { randomBytes } from "crypto";
 import * as path from 'path';
 import * as fs from 'fs';
+import { contact, registrationContact, PHONE_LOOKUP, phoneVariants } from './contact';
 
 export class PixelsAuth {
     private mysqlDAO: MySqlClient;
     private logger: Logger;
     private cryptoJS: CryptoJS;
     private masterModel: MasterModel;
-    constructor() {
-        this.mysqlDAO = new MySqlClient('pixels');
+    constructor(dao?: MySqlClient, private permissions = getEffectivePermissions, private notify = pushNotification) {
+        this.mysqlDAO = dao || new MySqlClient('pixels');
         this.logger = new Logger();
         this.cryptoJS = new CryptoJS();
         this.masterModel = new MasterModel();
@@ -25,7 +26,7 @@ export class PixelsAuth {
         return randomBytes(length).toString("hex");
     }
 
-    async userLogin(payload: { email: string, password: string }) {
+    async userLogin(payload: { identifier?: string, email?: string, phone?: string, password: string }) {
         //generating query
         let startMS = new Date().getTime();
         let query = '';
@@ -34,25 +35,22 @@ export class PixelsAuth {
         try {
             const tableName = 'auth_user'
 
-            if (!payload.email || payload.email === '') {
-                throw new Error('Invalid Email ID.')
-            }
-
-            if (!payload.password || payload.password === '') {
+            const identifier=contact(payload.identifier || payload.email || payload.phone);
+            if (typeof payload.password !== 'string' || !payload.password) {
                 throw new Error('Invalid Password.')
             }
 
-            // A02/A03: look up by email only (parameterized), then verify the
+            // A02/A03: look up the supplied contact (parameterized), then verify the
             // password hash in code. Never match the password inside SQL.
-            query = `SELECT * FROM ${tableName} WHERE email = ?`;
-            queryModel = await this.mysqlDAO.executeQuery(query, [payload.email.trim()]);
+            query = identifier.email ? `SELECT * FROM ${tableName} WHERE email = ?` : `SELECT * FROM ${tableName} WHERE ${PHONE_LOOKUP}`;
+            queryModel = await this.mysqlDAO.executeQuery(query, identifier.email ? [identifier.email] : phoneVariants(identifier.phone!));
 
             if (queryModel.status !== 1) {
                 throw new Error('Unable to verify credentials, please try again.')
             }
 
             // Uniform error for unknown email vs wrong password (no user enumeration).
-            if (queryModel.fetchedRows === 0 || !verifyPassword(payload.password, queryModel.rows[0].password)) {
+            if (queryModel.fetchedRows !== 1 || queryModel.rows[0].status !== 'ACTIVE' || !verifyPassword(payload.password, queryModel.rows[0].password)) {
                 throw new Error('Invalid login credentials, please try again.')
             }
 
@@ -70,7 +68,7 @@ export class PixelsAuth {
 
             delete userRow.password; // A02: never return the password hash
             // Attach the user's effective RBAC permissions for the client.
-            userRow.permissions = await getEffectivePermissions(userRow.user_id, userRow.role);
+            userRow.permissions = await this.permissions(userRow.user_id, userRow.role);
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = userRow;
@@ -87,8 +85,9 @@ export class PixelsAuth {
 
     async userRegister(payload: {
         "full_name": string,
-        "phone": string,
-        "email": string,
+        "phone"?: string,
+        "email"?: string,
+        "identifier"?: string,
         "password": string,
         "confirm_password": string,
         "ref_code"?: string
@@ -101,12 +100,18 @@ export class PixelsAuth {
         const tableName = 'auth_user';
         try {
 
-            const { email, password, confirm_password, full_name, phone, ref_code } = payload;
-            if (!email || !password || !confirm_password || !full_name || !phone) {
+            const { password, confirm_password, full_name, ref_code } = payload;
+            const {email,phone}=registrationContact(payload);
+            if (typeof full_name!=='string' || !full_name.trim() || full_name.trim().length>96 || typeof password!=='string' || password.length<6 || !confirm_password) {
                 throw new Error('All fields are required, please provide valid details.')
             }
             if (password !== confirm_password) {
                 throw new Error('Password and Confirm Password do not match.')
+            }
+            if(phone){
+                const existing:any=await this.mysqlDAO.executeQuery(`SELECT user_id FROM ${tableName} WHERE ${PHONE_LOOKUP}`,phoneVariants(phone));
+                if(existing.status!==1)throw new Error('Unable to register user, please try again.');
+                if(existing.fetchedRows>0)throw new Error('Phone number already exists, please use a different phone number.');
             }
 
             // Resolve the optional referrer from their referral code.
@@ -130,7 +135,7 @@ export class PixelsAuth {
             const requestedRole = 'USER';
 
             query = `INSERT INTO ${tableName} (email, phone, password, full_name, role, logo, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, '', ?, ?)`;
-            queryModel = await this.mysqlDAO.executeQuery(query, [email.trim(), phone.trim(), hashPassword(password), full_name.trim(), requestedRole, newReferralCode, referrerId]);
+            queryModel = await this.mysqlDAO.executeQuery(query, [email, phone, hashPassword(password), full_name.trim(), requestedRole, newReferralCode, referrerId]);
 
             if (queryModel.status !== 1 || queryModel.insertId == 0) {
                 let message = 'Unable to register user, please try again.'
@@ -150,7 +155,7 @@ export class PixelsAuth {
             await this.mysqlDAO.executeQuery(`INSERT IGNORE INTO carts (user_id) VALUES (?)`, [newUserId]);
 
             // Welcome notification for the new user.
-            await pushNotification({
+            await this.notify({
                 user_id: newUserId, type: 'welcome',
                 title: 'Welcome to VIP Number World! 👑',
                 message: 'Your account is ready. Browse premium VIP numbers, build your wishlist, and grab your perfect number. Share your referral link to earn rewards.',
@@ -169,7 +174,7 @@ export class PixelsAuth {
 
             const registered = queryModel.rows[0];
             delete registered.password; // A02: never return the password hash
-            registered.permissions = await getEffectivePermissions(registered.user_id, registered.role);
+            registered.permissions = await this.permissions(registered.user_id, registered.role);
             resModel.status = 1;
             resModel.info = 'OK';
             resModel.data = registered;

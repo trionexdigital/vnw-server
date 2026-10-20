@@ -1,8 +1,8 @@
 -- Schema only. This file intentionally contains no seed data.
 CREATE TABLE IF NOT EXISTS `auth_user` (
   `user_id` int unsigned NOT NULL AUTO_INCREMENT,
-  `email` varchar(128) NOT NULL,
-  `phone` varchar(20) NOT NULL,
+  `email` varchar(128) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
   `password` varchar(512) NOT NULL,
   `role` enum('ADMIN','USER','DEALER','EMPLOYEE','SYSTEM') NOT NULL DEFAULT 'USER',
   `full_name` varchar(96) NOT NULL,

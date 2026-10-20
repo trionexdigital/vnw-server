@@ -176,7 +176,10 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
         return res.status(gtUtil.Constants.HTTP_UNAUTHORIZED).json(model);
     } finally {
         try {
-            logger.log('userID=' + userID + ':: message=' + message + ':: req=' + JSON.stringify(masterModel.getRequestModel(req)) + ':: resModel=' + JSON.stringify(model));
+            const requestLog = req.path.replace(/\/+$/, '') === `${BASE}/site/location/pincode`
+                ? { reqPath: req.path, reqMethod: req.method, reqBody: '[REDACTED: GPS location]' }
+                : masterModel.getRequestModel(req);
+            logger.log('userID=' + userID + ':: message=' + message + ':: req=' + JSON.stringify(requestLog) + ':: resModel=' + JSON.stringify(model));
         } catch (error) {
             logger.log('catch: auth logging:: ' + error + ':: ' + JSON.stringify(error) + ':: ' + JSON.stringify(model));
         }

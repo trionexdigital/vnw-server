@@ -17,7 +17,7 @@ test('GPS lookup uses a shared atomic throttle, hashed cache, attribution identi
     const dao = {executeQuery:async(sql:string,params:any[])=>{
         if(sql.startsWith('SELECT')) return {status:1,rows:cache.has(params[0])?[{pin_code:cache.get(params[0])}]:[]};
         if(sql.startsWith('UPDATE')) { const allowed=now>=nextAllowed; if(allowed)nextAllowed=now+1100; return {status:1,affectedRows:allowed?1:0}; }
-        if(sql.startsWith('INSERT')) { assert.match(params[0],/^[a-f0-9]{64}$/); cache.set(params[0],params[1]); }
+        if(sql.startsWith('INSERT INTO location_geocode_cache')) { assert.match(params[0],/^[a-f0-9]{64}$/); cache.set(params[0],params[1]); }
         return {status:1};
     }};
     const a=new LocationPincode(),b=new LocationPincode(); (a as any).dao=dao;(b as any).dao=dao;
@@ -27,6 +27,33 @@ test('GPS lookup uses a shared atomic throttle, hashed cache, attribution identi
     assert.equal((await a.lookup({latitude:19.076123,longitude:72.8777})).data.pin_code,'400001'); assert.equal(upstreamCalls,1);
     now=1100;
     await b.lookup({latitude:19.0761,longitude:73}); assert.equal(upstreamCalls,2);
+});
+
+test('an unseeded throttle row is repaired before the atomic request reservation',async t=>{
+    const original=axios.get;t.after(()=>{axios.get=original;});
+    (axios as any).get=async()=>({data:{address:{country_code:'in',postcode:'400070'}}});
+    const service=new LocationPincode();let seeded=false,requested=false;
+    (service as any).dao={executeQuery:async(sql:string)=>{
+        if(sql.startsWith('SELECT'))return {status:1,rows:[]};
+        if(sql.startsWith('INSERT IGNORE')) { seeded=true;return {status:1}; }
+        if(sql.startsWith('UPDATE')) { assert.ok(seeded);requested=true;return {status:1,affectedRows:1}; }
+        return {status:1};
+    }};
+    assert.equal((await service.lookup({latitude:19.0761,longitude:72.8777})).data.pin_code,'400070');
+    assert.ok(requested);
+});
+
+test('a malformed provider response is unavailable and never cached as a missing postcode',async t=>{
+    const original=axios.get;t.after(()=>{axios.get=original;});
+    (axios as any).get=async()=>({data:{error:'Provider temporarily unavailable'}});
+    const service=new LocationPincode();let cached=false;
+    (service as any).logger={error:()=>{}};
+    (service as any).dao={executeQuery:async(sql:string)=>{
+        if(sql.startsWith('INSERT INTO location_geocode_cache'))cached=true;
+        return {status:1,rows:[],affectedRows:1};
+    }};
+    assert.deepEqual((await service.lookup({latitude:19.0761,longitude:72.8777})).data,{pin_code:null,reason:'UNAVAILABLE'});
+    assert.equal(cached,false);
 });
 
 test('invalid coordinates, foreign or missing PINs and upstream failure are recoverable', async t=>{

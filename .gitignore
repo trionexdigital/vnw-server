@@ -1,62 +1,63 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# Dependencies and local caches
+/node_modules/
+/.cache/
+**/__pycache__/
+*.py[cod]
 
-# compiled output
-/dist
-/tmp
-/out-tsc
+# Compiled output and compiler caches
+/dist/
+/out-tsc/
+/tmp/
+/bazel-out/
+*.tsbuildinfo
 
-#Data Folder
-/data
+# Generated verification output (keep test sources and SQL)
+/output/
+/coverage/
+/test-results/
+/playwright-report/
+/blob-report/
 
-# Only exists if Bazel was run
-/bazel-out
+# Runtime data and logs (never commit customer data)
+/data/
+/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-#logs folder
-/logs
-
-#Environment & Config
+# Local environment and host-specific deployment files
 .env
-deploy.sh
-pm2.json
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+/deploy.sh
+/pm2.json
 
-
-# dependencies
-/node_modules
-
-
-# profiling files
+# Profiling output
 chrome-profiler-events*.json
 speed-measure-plugin*.json
 
-# IDEs and editors
-/.idea
+# Local editor/tool state and operating-system files
+/.cla*
+/.idea/
 .project
 .classpath
-.c9/
+/.c9/
 *.launch
-.settings/
+/.settings/
 *.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.history/*
-
-# misc
-/.sass-cache
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/tasks.json
+!/.vscode/launch.json
+!/.vscode/extensions.json
+/.history/
+/.sass-cache/
 /connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
+/typings/
 .DS_Store
 Thumbs.db
-
-.cla*
+Desktop.ini

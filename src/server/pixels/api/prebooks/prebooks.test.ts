@@ -18,6 +18,21 @@ test('48-hour cancellation is eligible through the exact boundary only', () => {
   assert.equal(isCancellationEligible(deadline, new Date('2026-08-05T10:00:00.001Z')), false);
 });
 
+test('reservation history includes category evidence for consistent number spacing', async () => {
+  const prebooks = new Prebooks();
+  (prebooks as any).reconcile = async () => undefined;
+  (prebooks as any).dao = { executeQuery: async () => ({ rows: [{
+    prebook_id: 1, number_id: 7, number_value: '8008005413', display_number: '8008005413',
+    status: 'BOOKED', cancellation_deadline: '2099-01-01 00:00:00',
+  }] }) };
+  const response: any = await prebooks.my({ user_id: 1 });
+  assert.equal(response.status, 1);
+  assert.equal(response.data[0].primary_category?.slug, 'doublling-aabbcc');
+  assert.ok(Array.isArray(response.data[0].primary_category?.match_spans));
+  assert.equal(response.data[0].can_cancel, true);
+  assert.equal(response.data[0].number_value, '8008005413');
+});
+
 test('pre-book filters validate the parent and scope the child with other filters', async () => {
   const prebooks = new Prebooks();
   (prebooks as any).reconcile = async () => undefined;

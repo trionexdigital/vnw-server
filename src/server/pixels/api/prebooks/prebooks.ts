@@ -300,7 +300,7 @@ export class Prebooks {
       );
       res.status = 1; res.info = 'OK';
       res.data = (q.rows || []).map((row: any) => ({
-        ...row,
+        ...decorateNumberCategories(row),
         can_cancel: ['BOOKED', 'READY'].includes(row.status) && isCancellationEligible(row.cancellation_deadline),
         cancellation_seconds_remaining: row.cancellation_deadline ? Math.max(0, Math.floor((new Date(row.cancellation_deadline + 'Z').getTime() - Date.now()) / 1000)) : 0,
       }));

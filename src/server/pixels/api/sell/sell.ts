@@ -131,10 +131,10 @@ export class Sell {
 
     /**
      * Admin approves a sell request → creates a live platform listing for the
-     * number and links it back to the request. MRP defaults to the user's asking
-     * price; the store-wide discount determines the catalog selling price.
+     * number and links it back to the request. Base price defaults to the user's
+     * asking price; the central catalog calculator applies markup and discounts.
      */
-    async approve(payload: { user_id: number, request_id: number, offer_price?: number, mrp?: number, buy_price?: number, category_id?: unknown, admin_note?: string, rtp_status?: string, serviceable_pin_codes?: unknown }) {
+    async approve(payload: { user_id: number, request_id: number, offer_price?: number, mrp?: number, base_price?: string | number, additional_discount_pct?: string | number, buy_price?: number, category_id?: unknown, admin_note?: string, rtp_status?: string, serviceable_pin_codes?: unknown }) {
         let resModel = this.masterModel.getResponseModel();
         try {
             const rid = Number(payload.request_id);
@@ -144,7 +144,7 @@ export class Sell {
             const reqRow = r.rows[0];
             if (reqRow.status !== 'PENDING') throw new Error('This request has already been processed.');
 
-            const mrp = Number(payload.mrp) || Number(reqRow.asking_price) || 0;
+            const basePrice = payload.base_price ?? payload.mrp ?? reqRow.asking_price;
             // What the platform pays the seller (credited to their wallet). Defaults to asking price.
             const buyPrice = Number(payload.buy_price) || Number(reqRow.asking_price) || 0;
             // Create the catalog listing owned by the platform (admin seller_id = 1).
@@ -156,7 +156,8 @@ export class Sell {
                 title_label: 'VIP Number',
                 rtp_status: payload.rtp_status || 'RTA',
                 serviceable_pin_codes: payload.serviceable_pin_codes,
-                mrp,
+                base_price: basePrice,
+                additional_discount_pct: payload.additional_discount_pct,
                 description: reqRow.description,
                 status: 'AVAILABLE',
             });
